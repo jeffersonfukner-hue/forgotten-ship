@@ -32,6 +32,9 @@ class Player(Entity):
         self.x += direction.x * self.speed * dt
         self.y += direction.y * self.speed * dt
 
+        self.x = max(100, min(self.x, 668))
+        self.y = max(80, min(self.y, 488))
+
     def draw(self, screen):
         pygame.draw.rect(screen, (70, 150, 150),
                          (self.x, self.y, self.width, self.height),)
