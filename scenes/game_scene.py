@@ -27,12 +27,33 @@ class GameScene(Scene):
         self.draw_ui(screen)
 
     def draw_background(self, screen):
+
         screen.fill((18, 20, 30))
 
         room = pygame.Rect(80, 60, 640, 480,)
 
+        wall = 20
+
+        # Piso
         pygame.draw.rect(screen, (55, 60, 70), room,)
 
+        # Parede Superior
+        pygame.draw.rect(screen, (95, 100, 115),
+                         (room.left, room.top, room.width, wall),)
+
+        # Parede Inferior
+        pygame.draw.rect(screen, (95, 100, 115), (room.left,
+                         room.bottom - wall, room.width, wall),)
+
+        # Parede Esquerda
+        pygame.draw.rect(screen, (95, 100, 115),
+                         (room.left, room.top, wall, room.height),)
+
+        # Parede Direita
+        pygame.draw.rect(screen, (95, 100, 115),
+                         (room.right - wall, room.top, wall, room.height),)
+
+        # Contorno
         pygame.draw.rect(screen, (120, 130, 145), room, width=3,)
 
     def draw_world(self, screen):
