@@ -7,9 +7,18 @@ class Player(Entity):
 
     def __init__(self, x: float, y: float):
         super().__init__(x=x, y=y, width=32, height=32,)
+
+        self.state = "walking"
+
         self.speed = 250
 
+        self.room = None
+
     def update(self, dt: float):
+
+        if self.state != "walking":
+            return
+
         keys = pygame.key.get_pressed()
 
         direction = pygame.Vector2()
@@ -32,9 +41,15 @@ class Player(Entity):
         self.x += direction.x * self.speed * dt
         self.y += direction.y * self.speed * dt
 
-        self.x = max(100, min(self.x, 668))
-        self.y = max(80, min(self.y, 488))
+        if self.room:
 
-    def draw(self, screen):
-        pygame.draw.rect(screen, (70, 150, 150),
-                         (self.x, self.y, self.width, self.height),)
+            left, top, right, bottom = self.room.get_bounds()
+
+            self.x = max(left, min(self.x, right - self.width),)
+            self.y = max(top, min(self.y, bottom - self.height),)
+
+            self.rect.x = self.x
+            self.rect.y = self.y
+
+    def draw(self, screen: pygame.Surface) -> None:
+        pygame.draw.rect(screen, (70, 150, 150), self.rect,)
