@@ -38,12 +38,29 @@ class GameScene(Scene):
         for current_door in self.room.get_doors():
             current_door.close()
 
+        print("----------------")
+        print("Door:", door)
+        print("Current:", self.player.current_door)
+        print("State:", self.player.state)
+
         if door:
+
             door.open()
 
-            if self.player.state == "walking":
-                self.player.state = "entering_door"
-                print("Entrando na porta...")
+            if self.player.current_door != door:
+                self.player.current_door = door
+
+                if self.player.state == "walking":
+                    self.player.target_position = pygame.Vector2(
+                        self.player.x, self.player.y - 40,)
+
+                    self.player.state = "entering_door"
+
+                    print("Entrando na porta...")
+
+        else:
+
+            self.player.current_door = None
 
     def draw(self, screen):
         self.draw_background(screen)

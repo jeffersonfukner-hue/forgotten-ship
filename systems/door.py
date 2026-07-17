@@ -17,19 +17,7 @@ class Door:
         self.side = side
         self.trigger = self.build_trigger()
 
-        self.draw_rect = self.rect.copy()
-
-        if self.side == TOP:
-            self.draw_rect.y += 10
-
-        elif self.side == BOTTOM:
-            self.draw_rect.y -= 10
-
-        elif self.side == LEFT:
-            self.draw_rect.x += 10
-
-        elif self.side == RIGHT:
-            self.draw_rect.x -= 10
+        self.build_draw_rect = self.build_draw_rect()
 
         self.target_room = target_room
 
@@ -56,6 +44,22 @@ class Door:
             return pygame.Rect(self.rect.left - self.trigger_height, self.rect.top, self.trigger_height, self.rect.height,)
 
         raise ValueError(f"Lado Inválido:{self.side}")
+
+    def build_draw_rect(self):
+
+        self.draw_rect = self.rect.copy()
+
+        if self.side == TOP:
+            self.draw_rect.y += 10
+
+        elif self.side == BOTTOM:
+            self.draw_rect.y -= 10
+
+        elif self.side == LEFT:
+            self.draw_rect.x += 10
+
+        elif self.side == RIGHT:
+            self.draw_rect.x -= 10
 
     def draw(self, screen: pygame.Surface) -> None:
 

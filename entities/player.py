@@ -14,11 +14,19 @@ class Player(Entity):
 
         self.room = None
 
+        self.target_position = None
+
+        self.current_door = None
+
     def update(self, dt: float):
 
-        if self.state != "walking":
-            return
+        if self.state == "walking":
+            self.update_walking(dt)
 
+        elif self.state == "entering_door":
+            self.update_entering_door(dt)
+
+    def update_walking(self, dt: float):
         keys = pygame.key.get_pressed()
 
         direction = pygame.Vector2()
@@ -50,6 +58,31 @@ class Player(Entity):
 
             self.rect.x = self.x
             self.rect.y = self.y
+
+    def update_entering_door(self, dt: float):
+
+        if self.target_position is None:
+            return
+
+        direction = self.target_position - pygame.Vector2(self.x, self.y)
+
+        if direction.length() < 2:
+
+            self.x = self.target_position.x
+            self.y = self.target_position.y
+
+            self.target_position = None
+            self.state = "walking"
+
+            return
+
+        direction = direction.normalize()
+
+        self.x += direction.x * self.speed * dt
+        self.y += direction.y * self.speed * dt
+
+        self.rect.x = self.x
+        self.rect.y = self.y
 
     def draw(self, screen: pygame.Surface) -> None:
         pygame.draw.rect(screen, (70, 150, 150), self.rect,)
