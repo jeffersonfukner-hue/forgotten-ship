@@ -1,6 +1,6 @@
-WINDOW_WIDTH = 800
-WINDOW_HEIGHT = 600
+WINDOW_WIDTH: int = 800
+WINDOW_HEIGHT: int = 600
 
-WINDOW_TITLE = "Forgotten Ship"
+WINDOW_TITLE: str = "Forgotten Ship"
 
-FPS = 60
+FPS: int = 60

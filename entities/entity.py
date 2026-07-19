@@ -2,17 +2,18 @@ import pygame
 
 
 class Entity:
-    def __init__(self, x: float, y: float, width: int, height: int):
+    def __init__(self, x: float, y: float, width: int, height: int) -> None:
 
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
+        self.x: float = x
+        self.y: float = y
+        self.width: int = width
+        self.height: int = height
 
-        self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
+        self.rect: pygame.Rect = pygame.Rect(
+            self.x, self.y, self.width, self.height)
 
-    def update(self, dt: float):
+    def update(self, dt: float) -> None:
         pass
 
-    def draw(self, screen):
+    def draw(self, screen: pygame.Surface) -> None:
         pass

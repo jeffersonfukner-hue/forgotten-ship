@@ -6,19 +6,19 @@ from scenes.game_scene import GameScene
 
 
 class Game:
-    def __init__(self):
+    def __init__(self) -> None:
         pygame.init()
 
-        self.screen = pygame.display.set_mode(
+        self.screen: pygame.Surface = pygame.display.set_mode(
             (settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT))
 
         pygame.display.set_caption(settings.WINDOW_TITLE)
 
-        self.clock = pygame.time.Clock()
+        self.clock: pygame.time.Clock = pygame.time.Clock()
 
-        self.scene = GameScene()
+        self.scene: GameScene = GameScene()
 
-    def run(self):
+    def run(self) -> None:
         running = True
 
         while running:

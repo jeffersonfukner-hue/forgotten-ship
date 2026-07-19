@@ -1,5 +1,7 @@
 import pygame
 
+from entities.player import Player
+
 TOP = "top"
 BOTTOM = "bottom"
 LEFT = "left"
@@ -8,24 +10,22 @@ RIGHT = "right"
 
 class Door:
 
-    def __init__(self, x: int, y: int, width: int, height: int, side, target_room: str | None = None,):
+    def __init__(self, x: int, y: int, width: int, height: int, side: str, target_room: int | None = None,):
 
-        self.trigger_height = 12
+        self.trigger_height: int = 12
 
-        self.rect = pygame.Rect(x, y, width, height,)
+        self.rect: pygame.Rect = pygame.Rect(x, y, width, height,)
 
-        self.side = side
-        self.trigger = self.build_trigger()
+        self.side: str = side
+        self.trigger: pygame.Rect = self.build_trigger()
 
-        self.build_draw_rect = self.build_draw_rect()
+        self.build_draw_rect()
 
-        self.target_room = target_room
+        self.target_room: int | None = target_room
 
-        self.state = "closed"
+        self.state: str = "closed"
 
-        self.entry_point = pygame.Vector2(self.rect.centerx, self.rect.bottom)
-
-    def build_trigger(self):
+    def build_trigger(self) -> pygame.Rect:
 
         if self.side == TOP:
 
@@ -45,9 +45,9 @@ class Door:
 
         raise ValueError(f"Lado Inválido:{self.side}")
 
-    def build_draw_rect(self):
+    def build_draw_rect(self) -> None:
 
-        self.draw_rect = self.rect.copy()
+        self.draw_rect: pygame.Rect = self.rect.copy()
 
         if self.side == TOP:
             self.draw_rect.y += 10
@@ -61,6 +61,21 @@ class Door:
         elif self.side == RIGHT:
             self.draw_rect.x -= 10
 
+    def get_entry_target(self) -> pygame.Vector2:
+
+        offset = 40
+
+        if self.side == TOP:
+            return pygame.Vector2(self.rect.centerx, self.rect.centery - offset,)
+
+        if self.side == BOTTOM:
+            return pygame.Vector2(self.rect.centerx, self.rect.centery + offset,)
+
+        if self.side == LEFT:
+            return pygame.Vector2(self.rect.centerx - offset, self.rect.centery,)
+
+        return pygame.Vector2(self.rect.centerx + offset, self.rect.centery,)
+
     def draw(self, screen: pygame.Surface) -> None:
 
         color = ((70, 180, 70)
@@ -69,7 +84,7 @@ class Door:
 
         pygame.draw.rect(screen, color, self.draw_rect,)
 
-    def collides(self, player) -> bool:
+    def collides(self, player: Player) -> bool:
 
         return self.trigger.colliderect(player.rect)
 
