@@ -1,6 +1,6 @@
 import pygame
 
-from entities.player import Player
+from src.entities.player import Player
 
 TOP = "top"
 BOTTOM = "bottom"

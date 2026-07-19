@@ -1,8 +1,8 @@
 import pygame
 
-import settings
+from src import settings
 
-from scenes.game_scene import GameScene
+from src.scenes.game_scene import GameScene
 
 
 class Game:

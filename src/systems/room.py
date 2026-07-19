@@ -1,8 +1,8 @@
 import pygame
 
-from systems.door import Door
+from src.systems.door import Door
 
-from entities.player import Player
+from src.entities.player import Player
 
 
 class Room:

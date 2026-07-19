@@ -1,14 +1,14 @@
 import pygame
 
-from scenes.scene import Scene
+from src.scenes.scene import Scene
 
-from systems.entity_manager import EntityManager
+from src.systems.entity_manager import EntityManager
 
-from entities.player import Player
+from src.entities.player import Player
 
-from systems.room import Room
+from src.systems.room import Room
 
-from systems.door import Door, TOP, BOTTOM
+from src.systems.door import Door, TOP, BOTTOM
 
 
 class GameScene(Scene):
@@ -16,6 +16,12 @@ class GameScene(Scene):
 
         self.entity_manager: EntityManager = EntityManager()
 
+        self.rooms: dict[int, Room] = {}
+        self.room_connections: dict[int, int] = {
+            1: 2,
+            2: 3,
+            3: 1,
+        }
         self.current_room_id: int = 1
         self.room: Room = self.create_room(self.current_room_id)
 
@@ -29,17 +35,49 @@ class GameScene(Scene):
 
     def create_room(self, room_id: int) -> Room:
 
+        if room_id in self.rooms:
+            return self.rooms[room_id]
+
         room = Room(80, 60, 640, 480)
 
-        if room_id == 1:
-            room.add_door(Door(x=340, y=60, width=40,
-                          height=20, side=TOP, target_room=2))
+        self.configure_room(room, room_id)
 
-        elif room_id == 2:
-            room.add_door(Door(x=340, y=520, width=40,
-                          height=20, side=BOTTOM, target_room=1))
+        self.rooms[room_id] = room
 
         return room
+
+    def configure_room(self, room: Room, room_id: int) -> None:
+        # TODO: mover a configuração das salas para uma estrutura de dados.
+
+        # Configuração das salas
+        if room_id == 1:
+            room.add_door(Door(
+                x=340,
+                y=60,
+                width=40,
+                height=20,
+                side=TOP,
+                target_room=self.room_connections[1],
+            ))
+
+        elif room_id == 2:
+            room.add_door(Door(
+                x=340,
+                y=520,
+                width=40,
+                height=20,
+                side=BOTTOM,
+                target_room=self.room_connections[2],
+            ))
+        elif room_id == 3:
+            room.add_door(Door(
+                x=340,
+                y=520,
+                width=40,
+                height=20,
+                side=BOTTOM,
+                target_room=self.room_connections[3],
+            ))
 
     def handle_event(self, event: pygame.event.Event) -> None:
         pass
