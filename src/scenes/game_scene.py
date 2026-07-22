@@ -17,10 +17,55 @@ class GameScene(Scene):
         self.entity_manager: EntityManager = EntityManager()
 
         self.rooms: dict[int, Room] = {}
-        self.room_connections: dict[int, int] = {
-            1: 2,
-            2: 3,
-            3: 1,
+        self.door_data = {
+            1: {
+                "room": 1,
+                "x": 340,
+                "y": 60,
+                "width": 40,
+                "height": 20,
+                "side": TOP,
+                "target": 3,
+            },
+            2: {
+                "room": 1,
+                "x": 340,
+                "y": 520,
+                "width": 40,
+                "height": 20,
+                "side": BOTTOM,
+                "target": 4,
+            },
+            3: {
+                "room": 2,
+                "x": 340,
+                "y": 520,
+                "width": 40,
+                "height": 20,
+                "side": BOTTOM,
+                "target": 1,
+            },
+            4: {
+                "room": 3,
+                "x": 340,
+                "y": 60,
+                "width": 40,
+                "height": 20,
+                "side": TOP,
+                "target": 2,
+            },
+
+        }
+        self.room_data = {
+            1: {
+                "doors": [1, 2],
+            },
+            2: {
+                "doors": [3],
+            },
+            3: {
+                "doors": [4],
+            }
         }
         self.current_room_id: int = 1
         self.room: Room = self.create_room(self.current_room_id)
@@ -47,37 +92,23 @@ class GameScene(Scene):
         return room
 
     def configure_room(self, room: Room, room_id: int) -> None:
-        # TODO: mover a configuração das salas para uma estrutura de dados.
 
-        # Configuração das salas
-        if room_id == 1:
-            room.add_door(Door(
-                x=340,
-                y=60,
-                width=40,
-                height=20,
-                side=TOP,
-                target_room=self.room_connections[1],
-            ))
+        room_info = self.room_data[room_id]
 
-        elif room_id == 2:
-            room.add_door(Door(
-                x=340,
-                y=520,
-                width=40,
-                height=20,
-                side=BOTTOM,
-                target_room=self.room_connections[2],
-            ))
-        elif room_id == 3:
-            room.add_door(Door(
-                x=340,
-                y=520,
-                width=40,
-                height=20,
-                side=BOTTOM,
-                target_room=self.room_connections[3],
-            ))
+        for door_id in room_info["doors"]:
+
+            door_info = self.door_data[door_id]
+
+            room.add_door(
+                Door(
+                    id=door_id,
+                    x=door_info["x"],
+                    y=door_info["y"],
+                    width=door_info["width"],
+                    height=door_info["height"],
+                    side=door_info["side"],
+                    target_door=door_info["target"]
+                ))
 
     def handle_event(self, event: pygame.event.Event) -> None:
         pass
@@ -88,13 +119,17 @@ class GameScene(Scene):
 
         if self.player.consume_room_change():
 
-            self.current_room_id = self.player.current_door.target_room
+            target_door_id = self.player.current_door.target_door
+
+            self.current_room_id = self.door_data[target_door_id]["room"]
 
             self.room = self.create_room(self.current_room_id)
 
             self.player.room = self.room
 
-            spawn_x, spawn_y = self.room.get_spawn()
+            target_door = self.room.get_door_by_id(target_door_id)
+
+            spawn_x, spawn_y = target_door.get_spawn_position()
 
             self.player.rect.center = (spawn_x, spawn_y)
 
@@ -121,7 +156,8 @@ class GameScene(Scene):
 
                     self.player.state = "entering_door"
 
-                    print(f"Door -> {door.side} -> Room {door.target_room}")
+                    target_room = self.door_data[door.target_door]["room"]
+                    print(f"Door -> {door.side} -> Room {target_room}")
 
         else:
 

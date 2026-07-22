@@ -67,3 +67,11 @@ class Room:
             if door.collides(player):
                 return door
         return None
+
+    def get_door_by_id(self, door_id: int) -> Door | None:
+
+        for door in self.doors:
+            if door.id == door_id:
+                return door
+
+        return None

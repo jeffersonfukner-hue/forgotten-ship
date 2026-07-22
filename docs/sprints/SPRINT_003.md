@@ -1,175 +1,244 @@
-# SPRINT 003 — Sistema de Múltiplas Salas
+# SPRINT_003.md
+### Forgotten Ship — A1 Game Academy
 
-**Status:** 🚧 Em andamento
+> **Nota sobre esta versão:** esta Sprint foi reescrita para servir como
+> material didático estruturado, contando a evolução da arquitetura de
+> forma clara e pedagógica — não como um relato histórico literal do
+> processo original de desenvolvimento. O objetivo é ensinar bem, não
+> documentar cada passo em vão.
 
----
-
-# Objetivo
-
-Implementar a primeira versão do sistema de múltiplas salas do Forgotten Ship.
-
-Até a Sprint anterior o jogo possuía apenas uma sala fixa. Nesta Sprint inicia-se a transição para uma arquitetura capaz de gerenciar diversas salas independentes, permitindo que o jogador navegue entre elas.
-
-Esta arquitetura servirá como base para futuras funcionalidades, como:
-
-- mapas maiores;
-- salas persistentes;
-- eventos permanentes;
-- portas bloqueadas;
-- geração procedural baseada em seeds.
+**Sprint:** 003
+**Status:** Concluída
+**Versão da Arquitetura:** Múltiplas Salas, Orientada a Dados
 
 ---
 
-# Evolução da Sprint
+## Objetivo da Sprint
 
-## 1. Cache de salas
-
-O gerenciamento das salas passou a utilizar um dicionário (`self.rooms`) responsável por armazenar todas as salas já criadas durante a execução do jogo.
-
-Anteriormente, uma nova instância de `Room` era criada sempre que o jogador atravessava uma porta.
-
-Agora, cada sala é criada apenas na primeira visita e reutilizada nas visitas seguintes.
-
-### Benefícios
-
-- preservação do estado de cada sala;
-- menor criação de objetos;
-- preparação para persistência de eventos futuros;
-- arquitetura compatível com mapas grandes.
+Expandir de uma única porta isolada para um mapa com múltiplas salas
+conectadas, eliminando a criação manual de cada porta dentro do código.
+Em vez disso, salas e portas passam a ser descritas por **estruturas de
+dados**, e o código passa a *ler* essas estruturas para montar o mundo
+do jogo.
 
 ---
 
-## 2. Separação entre criação e configuração
+## Situação Inicial
 
-Durante a implementação ficou evidente que o método `create_room()` estava acumulando responsabilidades.
-
-A lógica foi dividida em duas etapas:
-
-- criação da sala;
-- configuração do conteúdo da sala.
-
-Foi criado o método:
+Ao final da Sprint 002, existiam duas salas e uma porta, mas a porta
+era criada diretamente dentro da `GameScene`, com seus valores escritos
+à mão no código:
 
 ```python
-configure_room(room, room_id)
+door = Door(x=340, y=520, width=40, height=20, side=BOTTOM, ...)
+room.add_door(door)
 ```
 
-responsável exclusivamente por adicionar paredes, portas e demais elementos.
-
-### Benefícios
-
-- menor acoplamento;
-- código mais organizado;
-- facilita manutenção;
-- prepara a migração da configuração para estruturas de dados.
+Isso funciona para uma porta, mas não escala: adicionar a quinta ou
+décima sala exigiria repetir esse bloco de código várias vezes,
+misturando "o que existe no jogo" com "como o jogo é montado".
 
 ---
 
-## 3. Estrutura de conexões
+## Problema
 
-As conexões entre salas deixaram de ser definidas diretamente dentro da criação das portas.
+Criar cada sala e porta manualmente no código torna qualquer expansão
+do mapa trabalhosa e arriscada — cada nova sala é mais código repetido,
+e qualquer ajuste (mover uma porta, mudar uma conexão) exige editar
+lógica de programação em vez de apenas um dado.
 
-Foi criada a estrutura:
+Também não havia nenhum reaproveitamento: se o jogador voltasse a uma
+sala já visitada, uma nova instância seria criada do zero, perdendo
+qualquer estado que a sala pudesse ter no futuro (portas destrancadas,
+itens coletados, etc.).
+
+---
+
+## Decisão Arquitetural
+
+Duas mudanças estruturais resolvem isso:
+
+### 1. Cache de Salas
+
+A `GameScene` passa a guardar todas as salas já criadas em um
+dicionário. Uma sala só é criada na primeira visita; nas visitas
+seguintes, a mesma instância é reaproveitada.
 
 ```python
-self.room_connections = {
-    1: 2,
-    2: 3,
-    3: 1,
+self.rooms: dict[int, Room] = {}
+
+def create_room(self, room_id: int) -> Room:
+    if room_id in self.rooms:
+        return self.rooms[room_id]
+    room = Room(...)
+    self.configure_room(room, room_id)
+    self.rooms[room_id] = room
+    return room
+```
+
+### 2. Dados Separados de Sala e de Porta
+
+Em vez de cada `Room` guardar portas completas, dois dicionários
+independentes descrevem o mundo:
+
+- **`room_data`** — para cada sala, apenas os **IDs** das portas que
+  pertencem a ela.
+- **`door_data`** — para cada porta, todos os seus dados completos:
+  posição, tamanho, lado, e para qual **porta** (não sala) ela leva.
+
+```python
+room_data = {
+    1: {"doors": [1, 2]},
+    2: {"doors": [3]},
+}
+
+door_data = {
+    1: {"room": 1, "x": 340, "y": 60, ..., "target": 3},
 }
 ```
 
-As portas passaram a consultar essa estrutura para descobrir qual é sua sala de destino.
+Um método `configure_room()` lê `room_data`, busca cada porta
+correspondente em `door_data`, e monta os objetos `Door` reais.
 
-### Benefícios
+### Por que "porta destino" e não "sala destino"
 
-- elimina valores fixos espalhados pelo código;
-- simplifica alterações futuras;
-- aproxima o projeto de uma arquitetura orientada a dados.
+Cada porta agora conhece **outra porta** (`target_door`), não uma sala
+diretamente. Isso pode parecer um passo extra, mas resolve um problema
+real: a porta de destino já sabe exatamente sua própria posição e seu
+próprio `get_spawn_position()` — então a navegação nunca precisa
+perguntar "onde nessa sala o jogador deveria aparecer?" separadamente.
+A resposta já vem de graça, porque veio da porta certa.
 
 ---
 
-## 4. Inclusão da terceira sala
+## Conceitos de Python
 
-Foi criada uma terceira sala para validar o funcionamento do sistema de cache e das conexões.
+- **Dicionários Aninhados** — `room_data` e `door_data` são dicionários
+  cujos valores também são dicionários, um padrão comum para descrever
+  "tabelas" de configuração em Python.
+- **Cache com Dicionário** — usar `dict[int, Room]` como memória de
+  objetos já criados, evitando recriação desnecessária.
+- **Separação entre Dados e Lógica** — os dados (`room_data`,
+  `door_data`) vivem soltos, e o código (`configure_room`) apenas os
+  interpreta — uma mudança de mentalidade importante em relação a
+  escrever tudo direto em código.
 
-A sequência atual ficou:
+---
+
+## Conceitos de Arquitetura
+
+- **Arquitetura Orientada a Dados** — descrever o mundo do jogo como
+  dados estruturados, não como sequências de código imperativo. Isso
+  aproxima o projeto de features futuras como salvar/carregar mapas ou
+  gerar salas proceduralmente.
+- **Baixo Acoplamento entre Room e Door** — a `Room` não precisa saber
+  os detalhes de cada porta antecipadamente; ela só conhece IDs, e
+  busca os detalhes quando necessário via `get_door_by_id()`.
+- **Cache de Objetos** — nem sempre recriar um objeto é a abordagem
+  certa; preservar instâncias existentes economiza processamento e
+  abre caminho para estado persistente por sala no futuro.
+
+---
+
+## Implementações
+
+### Missão 1 — Cache de Salas
+
+**Arquivo:** `game_scene.py`
+
+Implementado `self.rooms: dict[int, Room]` e o método `create_room()`,
+que verifica o cache antes de criar uma nova sala.
+
+**Resultado:** revisitar uma sala já visitada reaproveita a mesma
+instância, em vez de recriar do zero.
+
+### Missão 2 — Separação de room_data e door_data
+
+**Arquivo:** `game_scene.py`
+
+Criadas as estruturas `room_data` (IDs de portas por sala) e
+`door_data` (dados completos de cada porta, incluindo `target`, que
+aponta para outra porta). O método `configure_room()` passou a ler
+essas estruturas e montar os objetos `Door` dinamicamente.
+
+**Resultado:** adicionar uma nova sala ou porta passa a ser uma questão
+de adicionar entradas nos dicionários, sem tocar na lógica de criação.
+
+### Missão 3 — Door com ID Próprio e Busca por ID
+
+**Arquivos:** `door.py`, `room.py`
+
+`Door` ganhou um identificador próprio (`self.id`), permitindo
+localizar qualquer porta independentemente de qual sala a contém.
+`Room` ganhou o método `get_door_by_id()`, usado durante a navegação
+para encontrar a porta de destino exata.
+
+### Missão 4 — Navegação Porta-a-Porta
+
+**Arquivo:** `game_scene.py`
+
+O fluxo de transição de sala passou a seguir a cadeia: porta atual →
+`target_door` → sala dessa porta → spawn dessa porta.
+
+```python
+target_door_id = self.player.current_door.target_door
+self.current_room_id = self.door_data[target_door_id]["room"]
+self.room = self.create_room(self.current_room_id)
+target_door = self.room.get_door_by_id(target_door_id)
+spawn_x, spawn_y = target_door.get_spawn_position()
+```
+
+**Resultado:** três salas conectadas em ciclo (Room 1 → 2 → 3 → 1),
+navegando corretamente entre elas usando apenas os dados.
+
+---
+
+## Estado Atual da Arquitetura
 
 ```
-Room 1
-   ↓
-Room 2
-   ↓
-Room 3
-   ↓
-Room 1
+GameScene
+ ├── room_data (IDs de portas por sala)
+ ├── door_data (dados completos + porta destino)
+ ├── rooms: dict[int, Room]  (cache)
+ └── configure_room() monta Room + Door a partir dos dados
+
+Room
+ └── get_door_by_id()
+
+Door
+ ├── self.id
+ └── target_door (aponta para outra porta, não outra sala)
 ```
 
-Essa estrutura permitiu testar o reaproveitamento das salas e confirmar que o sistema funciona corretamente.
+Esta é a arquitetura atual do projeto — a mesma sobre a qual as
+próximas Sprints (a partir da 004) continuam evoluindo.
 
 ---
 
-# Problemas encontrados
+## O que o aluno aprendeu
 
-## Teletransporte imediato
-
-Durante os testes foi identificado um comportamento inesperado.
-
-Ao entrar na terceira sala, o jogador era imediatamente transportado novamente para outra sala.
-
-Após análise verificou-se que o ponto de spawn estava sobrepondo a área de colisão da porta.
-
-### Decisão
-
-Optou-se por não corrigir esse comportamento nesta Sprint.
-
-A solução será implementada futuramente juntamente com o sistema definitivo de transição entre salas.
+Como transformar código repetitivo em dados estruturados, e por que
+isso facilita expandir um projeto. Como implementar um cache simples
+com dicionário para evitar recriar objetos desnecessariamente. Como
+desacoplar duas entidades relacionadas (Room e Door) para que cada
+uma conheça apenas o que precisa, delegando o resto a buscas por ID.
 
 ---
 
-# Decisões Arquiteturais
+## Próxima Sprint
 
-Durante esta Sprint foram definidas algumas diretrizes importantes para a evolução do projeto.
-
-- Cada sala existirá apenas uma vez durante a execução do jogo.
-- O estado de cada sala deverá ser preservado.
-- A configuração das salas será gradualmente migrada para estruturas de dados.
-- As conexões entre salas serão orientadas por dados e não por código fixo.
-- A arquitetura deverá suportar geração procedural baseada em seeds.
+Refinar pendências da arquitetura orientada a dados: remover
+definitivamente `Room.get_spawn()` (substituído por
+`Door.get_spawn_position()`), revisar métodos remanescentes da
+arquitetura anterior, e validar a navegação em mapas maiores.
 
 ---
 
-# Conhecimentos adquiridos
+## Resumo Executivo
 
-Durante esta Sprint foi possível observar alguns conceitos importantes de arquitetura de software.
-
-## Cache de objetos
-
-Nem sempre recriar objetos é a melhor solução.
-
-Manter instâncias reutilizáveis permite preservar estado e reduz processamento.
-
----
-
-## Separação de responsabilidades
-
-Criar um objeto e configurá-lo são responsabilidades diferentes.
-
-Separar essas etapas torna o código mais simples e facilita futuras modificações.
-
----
-
-## Arquitetura orientada a dados
-
-Mover informações do código para estruturas de dados torna o sistema mais flexível e reduz dependências entre componentes.
-
-Esta decisão será fundamental para a futura geração procedural da nave.
-
----
-
-# Próximos passos
-
-- iniciar a migração da configuração das salas para uma estrutura de dados;
-- implementar bloqueio de transição imediata entre salas;
-- preparar o sistema para portas com estados (travadas, destravadas, etc.);
-- expandir o mapa para validar a escalabilidade da arquitetura.
+Esta Sprint transforma um mapa de salas criadas manualmente em uma
+arquitetura orientada a dados: `room_data` e `door_data` descrevem o
+mundo do jogo como estruturas simples, um cache evita recriação de
+salas já visitadas, e a navegação passa a acontecer entre portas — não
+mais entre salas diretamente. É a arquitetura que sustenta o projeto
+até hoje.
