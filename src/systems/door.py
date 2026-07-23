@@ -26,6 +26,15 @@ class Door:
         self.target_door: int | None = target_door
 
         self.state: str = "closed"
+        self.locked: bool = False  # quando True, a porta nao reage ao trigger do player
+
+    def lock(self) -> None:
+
+        self.locked = True
+
+    def unlock(self) -> None:
+
+        self.locked = False
 
     def build_trigger(self) -> pygame.Rect:
 
@@ -87,6 +96,9 @@ class Door:
 
     def collides(self, player: Player) -> bool:
 
+        if self.locked:
+            return False  # porta trancada nunca colide, mesmo com o trigger sobreposto
+
         return self.trigger.colliderect(player.rect)
 
     def open(self) -> None:
@@ -119,9 +131,13 @@ class Door:
 
     def draw(self, screen: pygame.Surface, camera_x: float = 0, camera_y: float = 0) -> None:
 
-        color = ((70, 180, 70)
-                 if self.state == "open"
-                 else (180, 120, 40))
+        if self.locked:
+            # vermelho escuro: porta trancada, precisa limpar a sala
+            color = (140, 40, 40)
+        elif self.state == "open":
+            color = (70, 180, 70)
+        else:
+            color = (180, 120, 40)
 
         screen_rect = self.draw_rect.copy()
         screen_rect.x -= camera_x

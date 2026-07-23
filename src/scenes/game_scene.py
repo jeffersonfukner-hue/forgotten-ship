@@ -147,6 +147,7 @@ class GameScene(Scene):
                 ))
 
         if room_id == 1:
+
             from src.entities.enemy import Enemy
             import random
 
@@ -166,6 +167,10 @@ class GameScene(Scene):
                     x, y = right, random.randint(top, bottom)
 
                 room.add_enemy(Enemy(x, y))
+        # tranca todas as portas da sala se ela tiver inimigos - destranca quando a sala for limpa
+        if room.get_enemies():
+            for door in room.get_doors():
+                door.lock()
 
     def handle_event(self, event: pygame.event.Event) -> None:
         pass
@@ -177,6 +182,11 @@ class GameScene(Scene):
 
         # limpa inimigos derrotados antes de processar a sala
         self.room.remove_dead_enemies()
+
+        if not self.room.get_enemies():
+            # sala limpa: destranca todas as portas
+            for door in self.room.get_doors():
+                door.unlock()
 
         enemies = self.room.get_enemies()
 

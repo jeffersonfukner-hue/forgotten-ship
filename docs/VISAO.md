@@ -1,7 +1,7 @@
 # Forgotten Ship
 ## VISAO.md
 
-> **Versão:** 2.7
+> **Versão:** 2.8
 > **Status:** Em desenvolvimento — mudança de direção
 > **Projeto:** Jogo 01 da A1 Game Academy
 
@@ -202,6 +202,32 @@ Este conceito depende de:
   livremente, sem essa condição.
 - Vínculo entre o material dropado e **qual** porta/sala ele repara ou
   reforça — provavelmente um dado adicional em `door_data`.
+
+### Ondas Múltiplas e Material Composto (Refinamento)
+
+Uma sala pode exigir mais de uma onda de inimigos antes de destravar
+sua porta, não apenas uma horda única:
+
+- Cada onda, ao ser derrotada, dropa uma peça de material específica
+  (ex: uma engrenagem).
+- A porta só destrava quando **todas** as peças necessárias tiverem
+  sido coletadas — completando, na prática, uma espécie de
+  quebra-cabeça de montagem (reunir as peças do reparo).
+- Isso pode exigir, inclusive, retornar a salas já visitadas para obter
+  material adicional faltante, reforçando a mecânica de idas e vindas
+  já prevista no conceito de Reparo em Cadeia.
+
+### Primeira Vez vs. Revisita
+
+A condição de destravamento **muda** dependendo se é a primeira vez
+que a sala é destravada, ou uma revisita posterior:
+
+- **Primeira vez:** a condição completa se aplica — múltiplas ondas,
+  coleta de material, montagem do quebra-cabeça de reparo.
+- **Revisitas subsequentes:** a porta já está fisicamente reparada;
+  a única condição para reabri-la é derrotar a horda (mais desafiadora,
+  ver "Rejogabilidade" abaixo) presente naquele momento — sem repetir a
+  coleta de material ou montagem.
 
 ## Rejogabilidade: Hordas Mais Desafiadoras a Cada Retorno
 
@@ -450,6 +476,12 @@ ou onda. Esse detalhamento tem duplo propósito:
 ---
 
 # Histórico
+
+## v2.8
+- Expandida a Progressão Espacial: ondas múltiplas por sala com
+  material composto (quebra-cabeça de reparo), e distinção explícita
+  entre condição de destravamento na primeira vez (ondas + material)
+  vs. revisitas subsequentes (apenas derrotar a horda).
 
 ## v2.7
 - Adicionadas as seções: Dois Tipos de Progressão (vitalícia vs. de
