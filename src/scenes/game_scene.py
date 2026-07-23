@@ -16,6 +16,9 @@ class GameScene(Scene):
 
         self.entity_manager: EntityManager = EntityManager()
 
+        from src.entities.projectile import Projectile
+        self.projectiles: list[Projectile] = []
+
         self.rooms: dict[int, Room] = {}
         self.door_data = {
             1: {
@@ -120,6 +123,21 @@ class GameScene(Scene):
 
         self.last_state: str | None = None
 
+    def find_closest_enemy(self, enemies: list):
+
+        closest = None
+        closest_distance = None
+
+        for enemy in enemies:
+            distance = pygame.Vector2(
+                enemy.x - self.player.x, enemy.y - self.player.y).length()
+
+            if closest_distance is None or distance < closest_distance:
+                closest = enemy
+                closest_distance = distance
+
+        return closest
+
     def create_room(self, room_id: int) -> Room:
 
         if room_id in self.rooms:
@@ -180,13 +198,53 @@ class GameScene(Scene):
 
         self.entity_manager.update(dt)
 
+        # limpa inimigos derrotados antes de processar a sala
+        self.room.remove_dead_enemies()
+
         enemies = self.room.get_enemies()
 
-        for enemy in self.room.get_enemies():
-            enemy.update(dt, self.player.x, self.player.y, enemies)
+        if self.player.ready_to_shoot() and enemies:
+            target = self.find_closest_enemy(enemies)
 
-        if not self.player.is_dead:
-            for enemy in self.room.get_enemies():
+            if target is not None:
+
+                direction = pygame.Vector2(
+                    target.x - self.player.x, target.y - self.player.y)
+
+                if direction.length_squared() > 0:
+                    direction = direction.normalize()
+
+                    from src.entities.projectile import Projectile
+                    self.projectiles.append(Projectile(
+                        self.player.x, self.player.y, direction))
+
+                    self.player.confirm_shot()
+                    print(f"Projectile criado! Total: {len(self.projectiles)}")
+
+        for projectile in self.projectiles:
+            projectile.update(dt)
+
+            for enemy in enemies:
+                if not enemy.is_dead and projectile.rect.colliderect(enemy.rect):
+                    enemy.take_damage(projectile.damage)
+                    projectile.is_dead = True
+                    break  # projetil atinge apenas 1 inimigo por enquanto
+
+        left, top, right, bottom = self.room.get_bounds()
+
+        for projectile in self.projectiles:
+            if (projectile.x < left or projectile.x > right
+                    or projectile.y < top or projectile.y > bottom):
+                projectile.is_dead = True  # saiu da area jogavel, marca para remocao
+
+        self.projectiles = [p for p in self.projectiles if not p.is_dead]
+
+        if not self.player.is_dead:  # inimigos param de agir assim que o jogador morre
+
+            for enemy in enemies:
+                enemy.update(dt, self.player.x, self.player.y, enemies)
+
+            for enemy in enemies:
                 if self.player.rect.colliderect(enemy.rect):
                     self.player.take_damage(10)
                     self.player.apply_knockback(enemy.x, enemy.y)
@@ -194,8 +252,7 @@ class GameScene(Scene):
 
                     if self.player.is_dead:
                         print("GAME OVER")
-                    break  # evita levar dano de 2 inimigos no mesmo frame
-
+                    break
         if self.player.consume_room_change():
 
             target_door_id = self.player.current_door.target_door
@@ -266,6 +323,9 @@ class GameScene(Scene):
 
     def draw_world(self, screen: pygame.Surface) -> None:
         self.entity_manager.draw(screen)
+
+        for projectile in self.projectiles:
+            projectile.draw(screen)
 
     def draw_ui(self, screen: pygame.Surface) -> None:
         pass

@@ -1,7 +1,7 @@
 # Forgotten Ship
 ## VISAO.md
 
-> **Versão:** 2.1
+> **Versão:** 2.6
 > **Status:** Em desenvolvimento — mudança de direção
 > **Projeto:** Jogo 01 da A1 Game Academy
 
@@ -173,7 +173,65 @@ Sprint a Sprint — esta seção não representa escopo de uma única Sprint.
   os inimigos soltam são usadas para restaurar sistemas (conectando
   com a mecânica de restauração central do jogo).
 
-## Tipos de Inimigo
+## Progressão Espacial: Portas Danificadas e Reparo em Cadeia
+
+Conceito central que estrutura o ritmo do Modo 1, conectando combate,
+drops e restauração em um único ciclo:
+
+- O jogador começa em uma sala inicial com portas **danificadas/
+  trancadas** — não é possível avançar até repará-las.
+- Uma primeira horda surge de imediato na sala inicial. Ao ser
+  derrotada, dropa material suficiente para reparar **uma** das portas
+  da sala (a sala inicial pode ter mais de uma porta, cada uma levando
+  a uma sala diferente).
+- Reparada a porta, o jogador acessa a próxima sala, onde uma nova
+  horda aguarda. Essa horda dropa material para: (a) reparar a porta
+  de acesso a uma sala seguinte, e (b) reforçar a defesa de uma sala
+  **já visitada** (por exemplo, uma torreta ou sistema na sala
+  anterior).
+- O ciclo se repete: cada sala nova conquistada tanto abre caminho
+  adiante quanto retroalimenta a defesa do que já foi conquistado —
+  criando uma progressão onde avançar e fortalecer o que já foi feito
+  acontecem em paralelo, não em sequência isolada.
+
+Este conceito depende de:
+- Estado de porta "danificada/trancada" vs. "reparada/aberta" — uma
+  extensão do estado atual de `Door` (hoje só `open`/`closed`).
+- Uma condição de "sala limpa" (todos os inimigos da horda eliminados)
+  como gatilho de drop de material de reparo — hoje as portas já abrem
+  livremente, sem essa condição.
+- Vínculo entre o material dropado e **qual** porta/sala ele repara ou
+  reforça — provavelmente um dado adicional em `door_data`.
+
+## Rejogabilidade: Hordas Mais Desafiadoras a Cada Retorno
+
+Ao retornar a uma sala já visitada, o jogador deve enfrentar uma horda
+mais desafiadora que a anterior naquela mesma sala — tornando cada
+partida única mesmo dentro do mesmo nível, e incentivando o jogador a
+não "farmar" segurança revisitando salas fracas repetidamente.
+
+Estatísticas a registrar para sustentar isso (conectando com a seção
+de Estatísticas Detalhadas por Jogador, acima):
+- Quantas vezes o jogador entrou em cada sala, por nível.
+- Pontos totais obtidos naquela sala, e pontos por visita individual.
+- **Stardate** de cada visita (data/hora real do jogador), usada para
+  construir uma narrativa histórica da progressão do jogador ao longo
+  do tempo — não apenas números, mas uma linha do tempo jogável.
+
+## Visão de Longuíssimo Prazo: Narrativa Histórica e Área de Membros
+
+Ideia de horizonte distante, fora de qualquer escopo próximo: usar o
+histórico de stardates e estatísticas do jogador para gerar uma
+narrativa pessoal (uma "história de vida" dentro do jogo, no espírito
+de simuladores de vida como The Sims), publicável como uma página HTML
+individual do jogador — parte de uma futura área de membros pagantes
+(assinatura mensal), criando vínculo de longo prazo entre jogador e
+jogo.
+
+> Esta ideia está muitos passos além do Modo 1 e da Fase 2 do
+> `ROADMAP.md` — registrada aqui apenas para não se perder, sem
+> nenhuma dependência técnica imediata. Vale revisitá-la quando o
+> jogo já tiver uma base sólida de jogadores e dados reais.
 
 - Inimigos fracos e fortes, variando em resistência.
 - Inimigo especial: aparece uma vez por onda, demora mais para matar,
@@ -185,19 +243,209 @@ Sprint a Sprint — esta seção não representa escopo de uma única Sprint.
   **volume e posicionamento** de tiros simultâneos, não da velocidade
   individual de cada projétil.
 
+## Re-arquitetura Espacial: Mapas Contínuos por Nível
+
+Mudança de direção fundamental na estrutura espacial do jogo — visão
+original do criador, ajustada agora com mais clareza após revisão.
+Substitui o conceito de "sala como tela fixa" por salas maiores que a
+tela, conectadas em um mapa contínuo por nível.
+
+### Câmera Seguindo o Jogador
+
+O jogador permanece centralizado na tela; é o mundo (salas, paredes,
+portas, inimigos, projéteis) que se desloca visualmente ao redor dele.
+Isso permite salas maiores que a tela, adequadas ao formato 16:9
+predominante em celulares, com obstáculos e itens espalhados pelo
+espaço a ser explorado — não apenas uma sala vista inteira de uma vez.
+
+### Crescimento de Complexidade por Nível
+
+- **Nível 1:** uma única sala, várias vezes maior que o tamanho atual
+  de uma sala (referência: 4x o tamanho atual), com uma porta levando
+  ao Nível 2.
+- **Nível 2:** duas salas conectadas entre si, mais uma porta levando
+  ao Nível 3.
+- **Padrão geral:** o nível N possui N salas conectadas, com uma porta
+  adicional levando ao nível seguinte.
+- **A partir do Nível 11:** geração procedural (já registrada na
+  Fase 2B do `ROADMAP.md`), com o conceito de jogador "fundador" de
+  cada novo nível gerado.
+
+### Transição Cinematográfica Entre Regiões do Mapa
+
+Ao atravessar a porta que leva a uma nova sala/nível, uma cena breve
+mostra a nova área em seu estado destruído/danificado, antes de
+devolver o controle normal ao jogador — reforçando narrativamente a
+mecânica de restauração (o jogador vê o "antes" do que vai reconstruir).
+
+### Impacto na Arquitetura Existente
+
+Esta é a maior mudança estrutural desde o início do projeto — mais
+ampla que a virada para o gênero Horde, pois afeta a fundação espacial
+(`Room`/`Door`) construída desde a Sprint 002:
+
+- O conceito atual de sala como "tela fixa com 4 paredes visíveis por
+  completo" é substituído por salas maiores que a tela, exigindo um
+  sistema de câmera/scroll inexistente até aqui.
+- A relação entre `Room` e `Door` permanece conceitualmente válida
+  (portas ainda conectam espaços), mas a navegação deixa de ser
+  "trocar completamente de tela" e passa a ser "revelar uma nova
+  região do mesmo mapa contínuo".
+- Esta mudança será tratada como uma Sprint dedicada e isolada, por
+  seu tamanho e risco — não um ajuste incremental sobre o que já
+  existe.
+
+- Upgrade de raio de percepção: aumenta a distância em que o jogador
+  "nota" inimigos.
+- Feedback visual: um círculo discreto ao redor do jogador, visível
+  apenas quando um inimigo está dentro desse raio (não fica sempre
+  visível).
+
+## Comportamento de Projétil (Tiro Base)
+
+- Um projétil não desaparece sozinho após uma distância fixa: ele
+  persiste até atingir um inimigo ou colidir com uma parede.
+
+## Upgrades do Tiro (até 5 níveis cada, upgrades independentes entre si)
+
+- Velocidade do projétil
+- Tamanho do projétil
+- Penetração (atinge 1 alvo → 2 alvos → 3 alvos, etc.)
+- Quantidade de projéteis simultâneos, com padrões de disparo distintos
+  (ex: dois tiros retos em paralelo, ou um reto + dois em diagonal,
+  ou um reto + um para cima + um para baixo)
+- Intervalo entre disparos (cadência de tiro)
+
+## Campo de Força (Arma 2)
+
+- Causa dano contínuo a inimigos dentro de sua área, a cada meio
+  segundo.
+- Dois upgrades independentes, até 5 níveis cada:
+  - Área do campo (raio)
+  - Dano causado
+
+## Espada Giratória (Arma 3)
+
+- Uma ou mais espadas orbitando o jogador.
+- Três upgrades independentes, até 5 níveis cada:
+  - Quantidade de espadas
+  - Velocidade de giro
+  - Dano por espada
+
+## Penalidade por Dano Recebido
+
+Ao ser atingido, o jogador perde uma pequena porcentagem dos pontos
+acumulados (ex: 0,01%) — o valor da penalidade varia por tipo de
+inimigo, assim como os pontos ganhos ao eliminá-lo variam por tipo.
+Isso adiciona uma dimensão de risco/recompensa às estatísticas já
+descritas acima, incentivando o jogador a evitar dano, não apenas
+acumular eliminações.
+
+## Energia Afetando Qualidade das Skills
+
+Uma reserva de energia diminui com o uso das habilidades e regenera
+com o tempo. Enquanto a energia está baixa, a qualidade/potência das
+skills é proporcionalmente reduzida, voltando ao normal conforme a
+energia regenera. Isso introduz um ritmo de "gerenciamento de recurso"
+à jogabilidade, além do combate direto.
+
+## Interface de Usuário (UI) — Visão Geral
+
+Elementos a exibir visualmente, conectando os sistemas acima:
+- Barra de HP do jogador.
+- Indicadores por skill (ex: "Skill X — Nível 3"), mostrando o nível
+  atual de cada upgrade adquirido.
+- Barra de progresso de drops (rumo à próxima escolha de skill).
+- Indicador de energia (afetando visualmente a qualidade das skills
+  quando baixa).
+
+Builds diferentes de upgrade (ex: priorizar cadência de tiro vs.
+priorizar divisão de tiros) devem gerar resultados mensuravelmente
+diferentes — tempo para completar uma horde, pontos obtidos, inimigos
+eliminados — permitindo comparar jogadores não apenas por "quem venceu",
+mas por qualidade da estratégia escolhida (similar a rankings de nível
+em jogos como Angry Birds, baseados em performance dentro do nível, não
+apenas em conclusão).
+
+## Estatísticas Detalhadas por Jogador
+
+Além do resultado agregado (pontos totais, tempo de conclusão), o jogo
+deve registrar estatísticas granulares por partida: quantos inimigos de
+cada tipo foram eliminados, quantos pontos cada tipo rendeu, por nível
+ou onda. Esse detalhamento tem duplo propósito:
+
+- **Para o jogo:** alimenta o ranking por qualidade de escolha (acima)
+  com dados reais de desempenho, não apenas o placar final.
+- **Para a Academia:** os próprios dados do jogo se tornam material
+  didático de ciência de dados e análise de dados — os alunos podem
+  aprender a analisar estatísticas reais geradas pelo jogo que eles
+  mesmos constroem, em vez de datasets genéricos de tutorial.
+
+> **Dependência de dados (consolidada):** tanto o ranking por qualidade
+> de escolha quanto as estatísticas detalhadas dependem da mesma
+> estrutura de registro de partida — build escolhida, inimigos
+> eliminados por tipo, pontos por tipo, por nível/onda, tempo de
+> conclusão. Vale desenhar essa estrutura de dados já pensando nas
+> duas necessidades desde a primeira Sprint de progressão/persistência,
+> mesmo que a implementação completa (ranking, dashboards de análise)
+> só aconteça na Fase 2B do `ROADMAP.md`.
+
 ## Ordem de Implementação Sugerida
 
 1. Ataque automático mirando o inimigo mais próximo + inimigos podendo
    morrer (fundação mínima).
-2. Sistema de drops e barra de progresso.
-3. Escolha de skill (1 ou combo).
-4. Segunda arma (espada giratória) provando o sistema de acumulação.
-5. Diferenciação de inimigos (fraco/forte/especial).
-6. Inimigos à distância (fase avançada).
+2. Condição de "sala limpa" (todos os inimigos eliminados) + portas
+   danificadas/trancadas até então — base da Progressão Espacial.
+3. Sistema de drops e barra de progresso.
+4. Escolha de skill (1 ou combo).
+5. Vínculo de material dropado a reparo de porta específica e reforço
+   de defesa em salas já visitadas (Progressão Espacial completa).
+6. Segunda arma (espada giratória) provando o sistema de acumulação.
+7. Diferenciação de inimigos (fraco/forte/especial).
+8. Inimigos à distância (fase avançada).
 
 ---
 
 # Histórico
+
+## v2.6
+- Adicionada a seção "Re-arquitetura Espacial: Mapas Contínuos por
+  Nível" — câmera seguindo o jogador, salas maiores que a tela,
+  crescimento de complexidade por nível (nível N = N salas), e
+  transição cinematográfica entre regiões do mapa. Marcada como
+  mudança estrutural de maior impacto desde o início do projeto,
+  a ser tratada como Sprint dedicada e isolada.
+- Adicionadas Penalidade por Dano Recebido, Energia afetando Skills,
+  e visão geral de UI ao backlog de upgrades.
+
+## v2.5
+- Adicionada seção de Rejogabilidade (hordas mais desafiadoras a cada
+  retorno à mesma sala) e registro de Stardate por visita.
+- Registrada visão de longuíssimo prazo: narrativa histórica do
+  jogador e área de membros pagantes com página individual — sem
+  dependência técnica imediata.
+
+## v2.4
+- Adicionada a seção "Progressão Espacial: Portas Danificadas e
+  Reparo em Cadeia" — conceito central conectando combate, drops e
+  restauração: portas trancadas até a sala ser limpa, material
+  dropado reparando a próxima porta e reforçando salas já visitadas.
+  Reordenada a Ordem de Implementação Sugerida para refletir essa
+  dependência.
+
+## v2.3
+- Adicionadas Estatísticas Detalhadas por Jogador ao backlog: registro
+  granular de inimigos eliminados por tipo/nível, com duplo propósito
+  (alimentar ranking e servir de material didático de ciência de
+  dados para a Academia). Consolidada a nota de dependência de dados
+  do ranking e das estatísticas em um único ponto.
+
+## v2.2
+- Expandido o Backlog Detalhado do Modo 1: upgrades independentes de
+  tiro (velocidade, tamanho, penetração, quantidade, cadência), campo
+  de força e espada giratória (5 níveis cada atributo), percepção de
+  inimigos com feedback visual, e conceito de ranking por qualidade de
+  escolha de build (com nota de dependência de dados).
 
 ## v2.1
 - Adicionado Backlog Detalhado do Modo 1: sistema de ataque automático,

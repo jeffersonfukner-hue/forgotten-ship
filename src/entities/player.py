@@ -35,12 +35,14 @@ class Player(Entity):
 
         self.knockback_force: int = 220
 
+        self.shoot_cooldown: float = 0.0
+        self.shoot_interval: float = 0.8  # segundos entre disparos automaticos
+
     def apply_knockback(self, from_x: float, from_y: float) -> None:
 
         direction = pygame.Vector2(self.x - from_x, self.y - from_y)
 
         if direction.length_squared() == 0:
-            # evita direcao nula, empurra para um lado padrao
             direction = pygame.Vector2(1, 0)
         else:
             direction = direction.normalize()
@@ -48,8 +50,20 @@ class Player(Entity):
         self.x += direction.x * self.knockback_force / 10
         self.y += direction.y * self.knockback_force / 10
 
+        if self.room:  # respeita os limites da sala, mesmo apos empurrao
+            left, top, right, bottom = self.room.get_bounds()
+            self.x = max(left, min(self.x, right - self.width))
+            self.y = max(top, min(self.y, bottom - self.height))
+
         self.rect.x = self.x
         self.rect.y = self.y
+
+    def ready_to_shoot(self) -> bool:
+
+        return self.shoot_cooldown <= 0
+
+    def confirm_shot(self) -> None:
+        self.shoot_cooldown = self.shoot_interval
 
     def update(self, dt: float) -> None:
 
@@ -58,6 +72,9 @@ class Player(Entity):
 
         if self.damage_cooldown > 0:
             self.damage_cooldown -= dt  # cooldown corre independente do estado
+
+        if self.shoot_cooldown > 0:
+            self.shoot_cooldown -= dt  # cooldown de tiro corre sempre, independente do estado
 
         if self.state == "walking":
             self.update_walking(dt)

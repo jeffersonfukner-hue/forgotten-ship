@@ -9,6 +9,18 @@ class Enemy(Entity):
         super().__init__(x=x, y=y, width=28, height=28)
 
         self.speed: int = 80
+        self.hp: int = 20
+        self.is_dead: bool = False
+
+    def take_damage(self, amount: int) -> None:
+        if self.is_dead:
+            return
+
+        self.hp -= amount
+
+        if self.hp <= 0:
+            self.hp = 0
+            self.is_dead = True  # sinaliza para GameScene remover da lista de inimigos
 
     def update(self, dt: float, target_x: float, target_y: float, others: list) -> None:
 

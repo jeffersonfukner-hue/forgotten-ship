@@ -80,6 +80,10 @@ class Room:
 
         return self.enemies
 
+    def remove_dead_enemies(self) -> None:
+
+        self.enemies = [e for e in self.enemies if not e.is_dead]
+
     def get_colliding_door(self, player: Player) -> Door | None:
 
         for door in self.doors:
