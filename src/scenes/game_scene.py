@@ -154,8 +154,24 @@ class GameScene(Scene):
 
         if room_id == 1:
             from src.entities.enemy import Enemy
-            # TODO: mover para room_data quando tivermos mais tipos de inimigo
-            room.add_enemy(Enemy(500, 300))
+            import random
+
+            left, top, right, bottom = room.get_bounds()
+
+            for _ in range(3):
+                # escolhe uma borda aleatoria (0=topo, 1=baixo, 2=esquerda, 3=direita)
+                edge = random.randint(0, 3)
+
+                if edge == 0:
+                    x, y = random.randint(left, right), top
+                elif edge == 1:
+                    x, y = random.randint(left, right), bottom
+                elif edge == 2:
+                    x, y = left, random.randint(top, bottom)
+                else:
+                    x, y = right, random.randint(top, bottom)
+
+                room.add_enemy(Enemy(x, y))
 
     def handle_event(self, event: pygame.event.Event) -> None:
         pass
@@ -164,13 +180,16 @@ class GameScene(Scene):
 
         self.entity_manager.update(dt)
 
+        enemies = self.room.get_enemies()
+
         for enemy in self.room.get_enemies():
-            enemy.update(dt, self.player.x, self.player.y)
+            enemy.update(dt, self.player.x, self.player.y, enemies)
 
         if not self.player.is_dead:
             for enemy in self.room.get_enemies():
                 if self.player.rect.colliderect(enemy.rect):
                     self.player.take_damage(10)
+                    self.player.apply_knockback(enemy.x, enemy.y)
                     print(f"HP -> {self.player.hp}")
 
                     if self.player.is_dead:

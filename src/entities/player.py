@@ -33,6 +33,24 @@ class Player(Entity):
         self.damage_cooldown: float = 0.0
         self.damage_cooldown_time: float = 1.0  # 1s de invencibilidade após levar dano
 
+        self.knockback_force: int = 220
+
+    def apply_knockback(self, from_x: float, from_y: float) -> None:
+
+        direction = pygame.Vector2(self.x - from_x, self.y - from_y)
+
+        if direction.length_squared() == 0:
+            # evita direcao nula, empurra para um lado padrao
+            direction = pygame.Vector2(1, 0)
+        else:
+            direction = direction.normalize()
+
+        self.x += direction.x * self.knockback_force / 10
+        self.y += direction.y * self.knockback_force / 10
+
+        self.rect.x = self.x
+        self.rect.y = self.y
+
     def update(self, dt: float) -> None:
 
         if self.is_dead:

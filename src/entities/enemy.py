@@ -10,13 +10,33 @@ class Enemy(Entity):
 
         self.speed: int = 80
 
-    def update(self, dt: float, target_x: float, target_y: float) -> None:
+    def update(self, dt: float, target_x: float, target_y: float, others: list) -> None:
 
         direction = pygame.Vector2(
             target_x - self.x, target_y - self.y)
 
         if direction.length_squared() > 0:
             direction = direction.normalize()
+
+        separation = pygame.Vector2()
+
+        for other in others:
+            if other is self:
+                continue
+
+            if self.rect.colliderect(other.rect):
+                # empurra na direcao oposta ao inimigo sobreposto
+                push = pygame.Vector2(self.x - other.x, self.y - other.y)
+
+                if push.length_squared() > 0:
+                    separation += push.normalize()
+
+        if separation.length_squared() > 0:
+            separation = separation.normalize()
+            direction = (direction + separation)
+
+            if direction.length_squared() > 0:
+                direction = direction.normalize()
 
         self.x += direction.x * self.speed * dt
         self.y += direction.y * self.speed * dt

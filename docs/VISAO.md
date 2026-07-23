@@ -1,7 +1,7 @@
 # Forgotten Ship
 ## VISAO.md
 
-> **Versão:** 2.0
+> **Versão:** 2.1
 > **Status:** Em desenvolvimento — mudança de direção
 > **Projeto:** Jogo 01 da A1 Game Academy
 
@@ -148,7 +148,61 @@ Visão redefinida. Aguardando definição do roadmap interno do jogo
 
 ---
 
+# Backlog Detalhado — Modo 1 (Horde Interna)
+
+Visão completa do sistema de combate e progressão do Modo 1, capturada
+para referência futura. Implementação ocorre de forma incremental,
+Sprint a Sprint — esta seção não representa escopo de uma única Sprint.
+
+## Ataque
+
+- Automático: o jogador apenas se move (evitando inimigos); o ataque
+  mira sempre o inimigo mais próximo, sem necessidade de mira manual.
+- Armas se acumulam ao longo da partida (não substituem umas às
+  outras): tiro simples → espada giratória → campo de força → e assim
+  por diante. Cada arma nova se soma às anteriores.
+
+## Drops e Progressão
+
+- Inimigos derrotados soltam drops, que enchem uma barra de progresso.
+- Ao atingir um número de drops (10 no início), o jogador escolhe uma
+  skill para melhorar — ou, alternativamente, um combo de múltiplas
+  skills de uma vez (mecanismo similar ao "vídeo simulado" já descrito
+  na mecânica geral de upgrades do jogo).
+- Drops de inimigos também alimentam a restauração da nave: peças que
+  os inimigos soltam são usadas para restaurar sistemas (conectando
+  com a mecânica de restauração central do jogo).
+
+## Tipos de Inimigo
+
+- Inimigos fracos e fortes, variando em resistência.
+- Inimigo especial: aparece uma vez por onda, demora mais para matar,
+  e concede uma recompensa maior (3 skills bônus) ao ser derrotado.
+- Nos primeiros níveis, nenhum inimigo ataca à distância — apenas
+  contato direto.
+- Em níveis mais avançados, inimigos à distância são introduzidos,
+  com tiros **lentos e desviáveis**. A dificuldade pretendida vem do
+  **volume e posicionamento** de tiros simultâneos, não da velocidade
+  individual de cada projétil.
+
+## Ordem de Implementação Sugerida
+
+1. Ataque automático mirando o inimigo mais próximo + inimigos podendo
+   morrer (fundação mínima).
+2. Sistema de drops e barra de progresso.
+3. Escolha de skill (1 ou combo).
+4. Segunda arma (espada giratória) provando o sistema de acumulação.
+5. Diferenciação de inimigos (fraco/forte/especial).
+6. Inimigos à distância (fase avançada).
+
+---
+
 # Histórico
+
+## v2.1
+- Adicionado Backlog Detalhado do Modo 1: sistema de ataque automático,
+  armas acumulativas, drops/progressão, tipos de inimigo, e ordem de
+  implementação sugerida.
 
 ## v2.0
 - Mudança de direção: de jogo relaxante para jogo de sobrevivência
