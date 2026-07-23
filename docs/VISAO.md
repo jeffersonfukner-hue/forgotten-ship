@@ -1,7 +1,7 @@
 # Forgotten Ship
 ## VISAO.md
 
-> **Versão:** 2.8
+> **Versão:** 2.9
 > **Status:** Em desenvolvimento — mudança de direção
 > **Projeto:** Jogo 01 da A1 Game Academy
 
@@ -321,16 +321,33 @@ ampla que a virada para o gênero Horde, pois afeta a fundação espacial
   seu tamanho e risco — não um ajuste incremental sobre o que já
   existe.
 
-- Upgrade de raio de percepção: aumenta a distância em que o jogador
-  "nota" inimigos.
-- Feedback visual: um círculo discreto ao redor do jogador, visível
-  apenas quando um inimigo está dentro desse raio (não fica sempre
-  visível).
+## Percepção de Inimigos e Alcance de Tiro (Raio Único)
+
+Percepção do jogador (o que ele mira) e alcance do tiro (distância que
+o projétil percorre antes de desaparecer, mesmo sem atingir nada)
+compartilham **o mesmo valor de raio** — decisão consciente para que o
+jogador consiga prever exatamente quais inimigos serão afetados ao
+ver o indicador visual, sem surpresas.
+
+- O raio é **sempre visível** ao redor do jogador (não apenas quando um
+  inimigo entra nele) — feedback claro e constante, mais simples de
+  entender do que um indicador condicional.
+- Upgrade de raio: aumenta esse valor único (afetando percepção e
+  alcance de tiro simultaneamente), até 5 níveis, como os demais
+  upgrades de tiro.
 
 ## Comportamento de Projétil (Tiro Base)
 
-- Um projétil não desaparece sozinho após uma distância fixa: ele
-  persiste até atingir um inimigo ou colidir com uma parede.
+- **Decisão revisada:** o projétil possui uma distância máxima de
+  alcance (ligada ao raio único acima), desaparecendo ao percorrê-la
+  mesmo sem atingir nada — substituindo a decisão anterior de "persiste
+  até atingir um inimigo ou colidir com uma parede".
+- **Nota técnica para implementação:** o projétil deve ser construído
+  já prevendo o upgrade futuro de Penetração (abaixo) — ou seja, a
+  lógica de colisão não deve simplesmente marcar o projétil como morto
+  no primeiro impacto, e sim permitir configurá-lo para sobreviver a
+  múltiplos impactos antes de desaparecer, mesmo que o valor inicial
+  (sem upgrade) seja "1 impacto".
 
 ## Upgrades do Tiro (até 5 níveis cada, upgrades independentes entre si)
 
@@ -341,6 +358,7 @@ ampla que a virada para o gênero Horde, pois afeta a fundação espacial
   (ex: dois tiros retos em paralelo, ou um reto + dois em diagonal,
   ou um reto + um para cima + um para baixo)
 - Intervalo entre disparos (cadência de tiro)
+- Alcance (raio único de percepção/tiro, ver seção acima)
 
 ## Campo de Força (Arma 2)
 
@@ -476,6 +494,16 @@ ou onda. Esse detalhamento tem duplo propósito:
 ---
 
 # Histórico
+
+## v2.9
+- Revisado: percepção de inimigo e alcance de tiro passam a
+  compartilhar um único raio (jogador prevê exatamente quem é afetado),
+  com indicador visual sempre visível (não mais condicional).
+- Revisado: projétil passa a ter distância máxima de alcance
+  (desaparece ao percorrê-la), substituindo a decisão anterior de
+  persistir até atingir algo. Registrada nota técnica: implementar já
+  prevendo o upgrade futuro de Penetração (múltiplos impactos antes
+  de desaparecer).
 
 ## v2.8
 - Expandida a Progressão Espacial: ondas múltiplas por sala com

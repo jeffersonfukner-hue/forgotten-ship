@@ -100,6 +100,9 @@ class GameScene(Scene):
             distance = pygame.Vector2(
                 enemy.x - self.player.x, enemy.y - self.player.y).length()
 
+            if distance > self.player.range_radius:
+                continue  # fora do alcance de percepcao, ignora
+
             if closest_distance is None or distance < closest_distance:
                 closest = enemy
                 closest_distance = distance
@@ -203,7 +206,8 @@ class GameScene(Scene):
 
                     from src.entities.projectile import Projectile
                     self.projectiles.append(Projectile(
-                        self.player.x, self.player.y, direction))
+                        self.player.x, self.player.y, direction,
+                        max_range=self.player.range_radius))
 
                     self.player.confirm_shot()
 
@@ -213,8 +217,8 @@ class GameScene(Scene):
             for enemy in enemies:
                 if not enemy.is_dead and projectile.rect.colliderect(enemy.rect):
                     enemy.take_damage(projectile.damage)
-                    projectile.is_dead = True
-                    break  # projetil atinge apenas 1 inimigo por enquanto
+                    projectile.register_hit()  # decrementa pierce; morre quando chega a 0
+                    break
 
         left, top, right, bottom = self.room.get_bounds()
 

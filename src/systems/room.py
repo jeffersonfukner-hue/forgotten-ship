@@ -59,14 +59,39 @@ class Room:
 
         return None
 
+    def draw_floor_grid(self, screen: pygame.Surface, rl: float, rt: float) -> None:
+
+        # grade sutil no piso, para dar referencia visual de movimento
+        grid_size = 64
+        # levemente mais claro que o piso (55, 60, 70)
+        grid_color = (60, 66, 78)
+
+        # linhas verticais
+        x = self.wall
+        while x < self.rect.width - self.wall:
+            start = (rl + x, rt + self.wall)
+            end = (rl + x, rt + self.rect.height - self.wall)
+            pygame.draw.line(screen, grid_color, start, end, 1)
+            x += grid_size
+
+        # linhas horizontais
+        y = self.wall
+        while y < self.rect.height - self.wall:
+            start = (rl + self.wall, rt + y)
+            end = (rl + self.rect.width - self.wall, rt + y)
+            pygame.draw.line(screen, grid_color, start, end, 1)
+            y += grid_size
+
     def draw(self, screen: pygame.Surface, camera_x: float = 0, camera_y: float = 0) -> None:
 
         # todas as coordenadas da sala sao deslocadas pela camera antes de desenhar
         rl, rt = self.rect.left - camera_x, self.rect.top - camera_y
 
-        # Piso
+       # Piso
         pygame.draw.rect(
             screen, (55, 60, 70), (rl, rt, self.rect.width, self.rect.height),)
+
+        self.draw_floor_grid(screen, rl, rt)
 
         # Parede Superior
         pygame.draw.rect(screen, (95, 100, 115),

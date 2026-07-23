@@ -38,6 +38,9 @@ class Player(Entity):
         self.shoot_cooldown: float = 0.0
         self.shoot_interval: float = 0.8  # segundos entre disparos automaticos
 
+        # raio unico: percepcao de inimigos e alcance do tiro
+        self.range_radius: float = 100
+
     def apply_knockback(self, from_x: float, from_y: float) -> None:
 
         direction = pygame.Vector2(self.x - from_x, self.y - from_y)
@@ -208,6 +211,8 @@ class Player(Entity):
         # posicao na tela = posicao no mundo menos o deslocamento da camera
         screen_pos = (self.rect.x - camera_x, self.rect.y - camera_y)
 
+        self.draw_range_indicator(screen, camera_x, camera_y)
+
         if self.alpha >= 255:
             pygame.draw.rect(
                 screen, (70, 150, 150), (*screen_pos, self.rect.width, self.rect.height),)
@@ -220,3 +225,20 @@ class Player(Entity):
             surface, (70, 150, 150, self.alpha), surface.get_rect(),)
 
         screen.blit(surface, screen_pos)
+
+    def draw_range_indicator(self, screen: pygame.Surface, camera_x: float, camera_y: float) -> None:
+
+        # circulo sempre visivel: percepcao de inimigos e alcance do tiro compartilham este raio
+        center = (self.rect.centerx - camera_x, self.rect.centery - camera_y)
+
+        # desenhado numa surface separada com alpha, para ficar discreto (nao solido)
+        diameter = int(self.range_radius * 2)
+        surface = pygame.Surface((diameter, diameter), pygame.SRCALPHA)
+
+        pygame.draw.circle(
+            surface, (150, 200, 220, 18), (self.range_radius, self.range_radius), self.range_radius,)
+        pygame.draw.circle(
+            surface, (150, 200, 220, 45), (self.range_radius, self.range_radius), self.range_radius, width=2,)
+
+        screen.blit(
+            surface, (center[0] - self.range_radius, center[1] - self.range_radius))
