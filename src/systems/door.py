@@ -85,22 +85,6 @@ class Door:
 
         return pygame.Vector2(self.rect.centerx + offset, self.rect.centery - player_height / 2,)
 
-    def draw(self, screen: pygame.Surface) -> None:
-
-        color = ((70, 180, 70)
-                 if self.state == "open"
-                 else (180, 120, 40))
-
-        pygame.draw.rect(screen, color, self.draw_rect,)
-
-        font = pygame.font.Font(None, 24)
-
-        text = font.render(str(self.id), True, (255, 255, 255))
-
-        text_rect = text.get_rect(center=self.draw_rect.center)
-
-        screen.blit(text, text_rect)
-
     def collides(self, player: Player) -> bool:
 
         return self.trigger.colliderect(player.rect)
@@ -132,3 +116,23 @@ class Door:
             return pygame.Vector2(self.rect.centerx - player_width / 2, current_y)
 
         return pygame.Vector2(current_x, self.rect.centery - player_height / 2)
+
+    def draw(self, screen: pygame.Surface, camera_x: float = 0, camera_y: float = 0) -> None:
+
+        color = ((70, 180, 70)
+                 if self.state == "open"
+                 else (180, 120, 40))
+
+        screen_rect = self.draw_rect.copy()
+        screen_rect.x -= camera_x
+        screen_rect.y -= camera_y
+
+        pygame.draw.rect(screen, color, screen_rect,)
+
+        font = pygame.font.Font(None, 24)
+
+        text = font.render(str(self.id), True, (255, 255, 255))
+
+        text_rect = text.get_rect(center=screen_rect.center)
+
+        screen.blit(text, text_rect)

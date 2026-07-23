@@ -15,47 +15,6 @@ class Room:
         # tipo Enemy, import evitado aqui p/ nao criar dependencia circular
         self.enemies: list = []
 
-    def draw(self, screen: pygame.Surface,) -> None:
-
-        # Piso
-        pygame.draw.rect(screen, (55, 60, 70), self.rect,)
-
-        # Parede Superior
-        pygame.draw.rect(screen, (95, 100, 115), (self.rect.left,
-                         self.rect.top, self.rect.width, self.wall),)
-
-        # Parede Inferior
-        pygame.draw.rect(screen, (95, 100, 115), (self.rect.left,
-                         self.rect.bottom - self.wall, self.rect.width, self.wall),)
-
-        # Parede Esquerda
-        pygame.draw.rect(screen, (95, 100, 115), (self.rect.left,
-                         self.rect.top, self.wall, self.rect.height),)
-
-        # Parde Direita
-        pygame.draw.rect(screen, (95, 100, 115), (self.rect.right -
-                         self.wall, self.rect.top, self.wall, self.rect.height),)
-
-        # Contorno
-        pygame.draw.rect(screen, (145, 150, 165), self.rect, width=2,)
-
-        # Numerar as salas
-
-        font = pygame.font.Font(None, 32)
-
-        text = font.render(f"Room {self.room_id}", True, (255, 255, 255))
-
-        text_rect = text.get_rect()
-        text_rect.topleft = (self.rect.left + 12, self.rect.top + 12)
-
-        screen.blit(text, text_rect)
-
-        for door in self.doors:
-            door.draw(screen)
-
-        for enemy in self.enemies:
-            enemy.draw(screen)
-
     def get_bounds(self) -> tuple[int, int, int, int]:
 
         return (self.rect.left + self.wall,
@@ -99,3 +58,47 @@ class Room:
                 return door
 
         return None
+
+    def draw(self, screen: pygame.Surface, camera_x: float = 0, camera_y: float = 0) -> None:
+
+        # todas as coordenadas da sala sao deslocadas pela camera antes de desenhar
+        rl, rt = self.rect.left - camera_x, self.rect.top - camera_y
+
+        # Piso
+        pygame.draw.rect(
+            screen, (55, 60, 70), (rl, rt, self.rect.width, self.rect.height),)
+
+        # Parede Superior
+        pygame.draw.rect(screen, (95, 100, 115),
+                         (rl, rt, self.rect.width, self.wall),)
+
+        # Parede Inferior
+        pygame.draw.rect(screen, (95, 100, 115), (rl,
+                                                  rt + self.rect.height - self.wall, self.rect.width, self.wall),)
+
+        # Parede Esquerda
+        pygame.draw.rect(screen, (95, 100, 115),
+                         (rl, rt, self.wall, self.rect.height),)
+
+        # Parde Direita
+        pygame.draw.rect(screen, (95, 100, 115), (rl + self.rect.width -
+                                                  self.wall, rt, self.wall, self.rect.height),)
+
+        # Contorno
+        pygame.draw.rect(screen, (145, 150, 165),
+                         (rl, rt, self.rect.width, self.rect.height), width=2,)
+
+        font = pygame.font.Font(None, 32)
+
+        text = font.render(f"Room {self.room_id}", True, (255, 255, 255))
+
+        text_rect = text.get_rect()
+        text_rect.topleft = (rl + 12, rt + 12)
+
+        screen.blit(text, text_rect)
+
+        for door in self.doors:
+            door.draw(screen, camera_x, camera_y)
+
+        for enemy in self.enemies:
+            enemy.draw(screen, camera_x, camera_y)

@@ -20,5 +20,9 @@ class Projectile(Entity):
         self.rect.x = self.x
         self.rect.y = self.y
 
-    def draw(self, screen: pygame.Surface) -> None:
-        pygame.draw.circle(screen, (255, 220, 80), self.rect.center, 4,)
+    def draw(self, screen: pygame.Surface, camera_x: float = 0, camera_y: float = 0) -> None:
+
+        screen_center = (
+            self.rect.centerx - camera_x, self.rect.centery - camera_y)
+
+        pygame.draw.circle(screen, (255, 220, 80), screen_center, 4,)

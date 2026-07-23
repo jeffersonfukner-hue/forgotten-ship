@@ -56,5 +56,10 @@ class Enemy(Entity):
         self.rect.x = self.x
         self.rect.y = self.y
 
-    def draw(self, screen: pygame.Surface) -> None:
-        pygame.draw.rect(screen, (180, 60, 60), self.rect,)
+    def draw(self, screen: pygame.Surface, camera_x: float = 0, camera_y: float = 0) -> None:
+
+        screen_rect = self.rect.copy()
+        screen_rect.x -= camera_x
+        screen_rect.y -= camera_y
+
+        pygame.draw.rect(screen, (180, 60, 60), screen_rect,)

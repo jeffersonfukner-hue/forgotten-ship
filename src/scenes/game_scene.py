@@ -10,6 +10,8 @@ from src.systems.room import Room
 
 from src.systems.door import Door, TOP, BOTTOM, LEFT, RIGHT
 
+from src import settings
+
 
 class GameScene(Scene):
     def __init__(self) -> None:
@@ -122,6 +124,8 @@ class GameScene(Scene):
         self.entity_manager.add(self.player)
 
         self.last_state: str | None = None
+        self.camera_x: float = 0.0
+        self.camera_y: float = 0.0
 
     def find_closest_enemy(self, enemies: list):
 
@@ -143,7 +147,11 @@ class GameScene(Scene):
         if room_id in self.rooms:
             return self.rooms[room_id]
 
-        room = Room(80, 60, 640, 480, room_id=room_id)
+        if room_id == 1:
+            # sala 1 passa a ser maior que a tela, para testar a camera de verdade
+            room = Room(80, 60, 1280, 960, room_id=room_id)
+        else:
+            room = Room(80, 60, 640, 480, room_id=room_id)
 
         self.configure_room(room, room_id)
 
@@ -197,6 +205,7 @@ class GameScene(Scene):
     def update(self, dt: float) -> None:
 
         self.entity_manager.update(dt)
+        self.update_camera()
 
         # limpa inimigos derrotados antes de processar a sala
         self.room.remove_dead_enemies()
@@ -310,6 +319,25 @@ class GameScene(Scene):
             if self.player.state == "walking":
                 self.player.current_door = None
 
+    def update_camera(self) -> None:
+
+        room_rect = self.room.rect
+
+        if room_rect.width <= settings.WINDOW_WIDTH:
+            # sala menor que a tela nesse eixo: centraliza a sala, nao segue o player
+            self.camera_x = room_rect.centerx - settings.WINDOW_WIDTH / 2
+        else:
+            target_x = self.player.rect.centerx - settings.WINDOW_WIDTH / 2
+            max_camera_x = room_rect.right - settings.WINDOW_WIDTH
+            self.camera_x = max(room_rect.left, min(target_x, max_camera_x))
+
+        if room_rect.height <= settings.WINDOW_HEIGHT:
+            self.camera_y = room_rect.centery - settings.WINDOW_HEIGHT / 2
+        else:
+            target_y = self.player.rect.centery - settings.WINDOW_HEIGHT / 2
+            max_camera_y = room_rect.bottom - settings.WINDOW_HEIGHT
+            self.camera_y = max(room_rect.top, min(target_y, max_camera_y))
+
     def draw(self, screen: pygame.Surface) -> None:
         self.draw_background(screen)
         self.draw_world(screen)
@@ -319,13 +347,13 @@ class GameScene(Scene):
 
         screen.fill((18, 20, 30))
 
-        self.room.draw(screen)
+        self.room.draw(screen, self.camera_x, self.camera_y)
 
     def draw_world(self, screen: pygame.Surface) -> None:
-        self.entity_manager.draw(screen)
+        self.entity_manager.draw(screen, self.camera_x, self.camera_y)
 
         for projectile in self.projectiles:
-            projectile.draw(screen)
+            projectile.draw(screen, self.camera_x, self.camera_y)
 
     def draw_ui(self, screen: pygame.Surface) -> None:
         pass

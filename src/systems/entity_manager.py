@@ -13,6 +13,6 @@ class EntityManager:
         for entity in self.entities:
             entity.update(dt)
 
-    def draw(self, screen: pygame.Surface) -> None:
+    def draw(self, screen: pygame.Surface, camera_x: float = 0, camera_y: float = 0) -> None:
         for entity in self.entities:
-            entity.draw(screen)
+            entity.draw(screen, camera_x, camera_y)

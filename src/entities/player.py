@@ -203,10 +203,14 @@ class Player(Entity):
             self.hp = 0
             self.is_dead = True
 
-    def draw(self, screen: pygame.Surface) -> None:
+    def draw(self, screen: pygame.Surface, camera_x: float = 0, camera_y: float = 0) -> None:
+
+        # posicao na tela = posicao no mundo menos o deslocamento da camera
+        screen_pos = (self.rect.x - camera_x, self.rect.y - camera_y)
 
         if self.alpha >= 255:
-            pygame.draw.rect(screen, (70, 150, 150), self.rect,)
+            pygame.draw.rect(
+                screen, (70, 150, 150), (*screen_pos, self.rect.width, self.rect.height),)
             return
 
         surface = pygame.Surface(
@@ -215,4 +219,4 @@ class Player(Entity):
         pygame.draw.rect(
             surface, (70, 150, 150, self.alpha), surface.get_rect(),)
 
-        screen.blit(surface, self.rect.topleft)
+        screen.blit(surface, screen_pos)
