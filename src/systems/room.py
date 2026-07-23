@@ -7,11 +7,10 @@ from src.entities.player import Player
 
 class Room:
 
-    def __init__(self, x: int, y: int, width: int, height: int, wall: int = 20) -> None:
+    def __init__(self, x: int, y: int, width: int, height: int, room_id: int, wall: int = 20) -> None:
         self.rect: pygame.Rect = pygame.Rect(x, y, width, height)
         self.wall: int = wall
-        self.spawn: tuple[int, int] = (
-            self.rect.centerx - 16, self.rect.centery - 16,)
+        self.room_id: int = room_id
         self.doors: list[Door] = []
 
     def draw(self, screen: pygame.Surface,) -> None:
@@ -38,6 +37,17 @@ class Room:
         # Contorno
         pygame.draw.rect(screen, (145, 150, 165), self.rect, width=2,)
 
+        # Numerar as salas
+
+        font = pygame.font.Font(None, 32)
+
+        text = font.render(f"Room {self.room_id}", True, (255, 255, 255))
+
+        text_rect = text.get_rect()
+        text_rect.topleft = (self.rect.left + 12, self.rect.top + 12)
+
+        screen.blit(text, text_rect)
+
         for door in self.doors:
             door.draw(screen)
 
@@ -48,9 +58,6 @@ class Room:
                 self.rect.right - self.wall,
                 self.rect.bottom - self.wall,
                 )
-
-    def get_spawn(self) -> tuple[int, int]:
-        return self.spawn
 
     def add_door(self, door: Door) -> None:
 

@@ -20,6 +20,12 @@ class Player(Entity):
 
         self.room_change_requested: bool = False
 
+        self.path: list[pygame.Vector2] = []
+
+        self.alpha: int = 255
+        self.door_leg_start: pygame.Vector2 | None = None
+        self.door_thickness: float = 0.0
+
     def update(self, dt: float) -> None:
 
         if self.state == "walking":
@@ -73,7 +79,20 @@ class Player(Entity):
             self.x = self.target_position.x
             self.y = self.target_position.y
 
+            self.rect.x = self.x
+            self.rect.y = self.y
+
+            if self.path:
+                self.target_position = self.path.pop(0)
+
+                if not self.path:
+                    self._begin_final_leg()
+
+                return
+
             self.target_position = None
+            self.alpha = 255
+            self.door_leg_start = None
 
             self.room_change_requested = True
 
@@ -89,6 +108,9 @@ class Player(Entity):
         self.rect.x = self.x
         self.rect.y = self.y
 
+        if self.door_leg_start is not None:
+            self._update_fade()
+
     def consume_room_change(self) -> bool:
 
         if self.room_change_requested:
@@ -97,5 +119,40 @@ class Player(Entity):
             return True
         return False
 
+    def start_door_sequence(self, waypoints: list[pygame.Vector2], door_thickness: float) -> None:
+
+        self.path = list(waypoints)
+        self.door_thickness = door_thickness
+        self.target_position = self.path.pop(0)
+
+    def _begin_final_leg(self) -> None:
+
+        self.door_leg_start = pygame.Vector2(self.x, self.y)
+
+    def _update_fade(self) -> None:
+
+        if self.door_thickness <= 0:
+            self.alpha = 0
+            return
+
+        traveled = (pygame.Vector2(self.x, self.y) -
+                    self.door_leg_start).length()
+
+        progress = traveled / self.door_thickness
+        progress = max(0.0, min(progress, 1.0))
+
+        self.alpha = int(255 * (1 - progress))
+
     def draw(self, screen: pygame.Surface) -> None:
-        pygame.draw.rect(screen, (70, 150, 150), self.rect,)
+
+        if self.alpha >= 255:
+            pygame.draw.rect(screen, (70, 150, 150), self.rect,)
+            return
+
+        surface = pygame.Surface(
+            (self.rect.width, self.rect.height), pygame.SRCALPHA)
+
+        pygame.draw.rect(
+            surface, (70, 150, 150, self.alpha), surface.get_rect(),)
+
+        screen.blit(surface, self.rect.topleft)

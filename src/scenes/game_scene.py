@@ -8,7 +8,7 @@ from src.entities.player import Player
 
 from src.systems.room import Room
 
-from src.systems.door import Door, TOP, BOTTOM
+from src.systems.door import Door, TOP, BOTTOM, LEFT, RIGHT
 
 
 class GameScene(Scene):
@@ -54,23 +54,66 @@ class GameScene(Scene):
                 "side": TOP,
                 "target": 2,
             },
-
+            5: {
+                "room": 3,
+                "x": 80,
+                "y": 260,
+                "width": 20,
+                "height": 40,
+                "side": LEFT,
+                "target": 6,
+            },
+            6: {
+                "room": 4,
+                "x": 700,
+                "y": 260,
+                "width": 20,
+                "height": 40,
+                "side": RIGHT,
+                "target": 5,
+            },
+            7: {
+                "room": 4,
+                "x": 340,
+                "y": 520,
+                "width": 40,
+                "height": 20,
+                "side": BOTTOM,
+                "target": 8,
+            },
+            8: {
+                "room": 5,
+                "x": 340,
+                "y": 60,
+                "width": 40,
+                "height": 20,
+                "side": TOP,
+                "target": 7,
+            },
         }
         self.room_data = {
             1: {
                 "doors": [1, 2],
+                "spawn": (384, 284),
             },
             2: {
                 "doors": [3],
             },
             3: {
-                "doors": [4],
-            }
+                "doors": [4, 5],
+            },
+            4: {
+                "doors": [6, 7],
+            },
+            5: {
+                "doors": [8],
+            },
         }
+
         self.current_room_id: int = 1
         self.room: Room = self.create_room(self.current_room_id)
 
-        spawn_x, spawn_y = self.room.get_spawn()
+        spawn_x, spawn_y = self.room_data[self.current_room_id]["spawn"]
         self.player: Player = Player(spawn_x, spawn_y,)
         self.player.room = self.room
 
@@ -83,7 +126,7 @@ class GameScene(Scene):
         if room_id in self.rooms:
             return self.rooms[room_id]
 
-        room = Room(80, 60, 640, 480)
+        room = Room(80, 60, 640, 480, room_id=room_id)
 
         self.configure_room(room, room_id)
 
@@ -131,6 +174,9 @@ class GameScene(Scene):
 
             spawn_x, spawn_y = target_door.get_spawn_position()
 
+            self.player.x = spawn_x - self.player.width / 2
+            self.player.y = spawn_y - self.player.height / 2
+
             self.player.rect.center = (spawn_x, spawn_y)
 
             return
@@ -152,12 +198,19 @@ class GameScene(Scene):
                 self.player.current_door = door
 
                 if self.player.state == "walking":
-                    self.player.target_position = door.get_entry_target()
+
+                    alignment_point = door.get_alignment_point(
+                        self.player.x, self.player.y, self.player.width, self.player.height)
+                    entry_point = door.get_entry_target(
+                        self.player.width, self.player.height)
+
+                    self.player.start_door_sequence(
+                        [alignment_point, entry_point], door.get_thickness())
 
                     self.player.state = "entering_door"
 
-                    target_room = self.door_data[door.target_door]["room"]
-                    print(f"Door -> {door.side} -> Room {target_room}")
+                target_room_id = self.door_data[door.target_door]["room"]
+                print(f"Door -> {door.side} -> Room {target_room_id}")
 
         else:
 

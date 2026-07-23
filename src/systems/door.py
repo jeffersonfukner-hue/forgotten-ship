@@ -6,7 +6,7 @@ TOP: str = "top"
 BOTTOM: str = "bottom"
 LEFT: str = "left"
 RIGHT: str = "right"
-SPAWN_OFFSET: int = 16
+SPAWN_OFFSET: int = 40
 
 
 class Door:
@@ -63,20 +63,27 @@ class Door:
         elif self.side == RIGHT:
             self.draw_rect.x -= 10
 
-    def get_entry_target(self) -> pygame.Vector2:
+    def get_thickness(self) -> float:
+
+        if self.side in (TOP, BOTTOM):
+            return self.rect.height
+
+        return self. rect.width
+
+    def get_entry_target(self, player_width: int, player_height: int) -> pygame.Vector2:
 
         offset = 40
 
         if self.side == TOP:
-            return pygame.Vector2(self.rect.centerx, self.rect.centery - offset,)
+            return pygame.Vector2(self.rect.centerx - player_width / 2, self.rect.centery - offset,)
 
         if self.side == BOTTOM:
-            return pygame.Vector2(self.rect.centerx, self.rect.centery + offset,)
+            return pygame.Vector2(self.rect.centerx - player_width / 2, self.rect.centery + offset,)
 
         if self.side == LEFT:
-            return pygame.Vector2(self.rect.centerx - offset, self.rect.centery,)
+            return pygame.Vector2(self.rect.centerx - offset, self.rect.centery - player_height / 2,)
 
-        return pygame.Vector2(self.rect.centerx + offset, self.rect.centery,)
+        return pygame.Vector2(self.rect.centerx + offset, self.rect.centery - player_height / 2,)
 
     def draw(self, screen: pygame.Surface) -> None:
 
@@ -118,3 +125,10 @@ class Door:
             return pygame.Vector2(self.rect.centerx + SPAWN_OFFSET, self.rect.centery,)
 
         return pygame.Vector2(self.rect.centerx - SPAWN_OFFSET, self.rect.centery,)
+
+    def get_alignment_point(self, current_x: float, current_y: float, player_width: int, player_height: int) -> pygame.Vector2:
+
+        if self.side in (TOP, BOTTOM):
+            return pygame.Vector2(self.rect.centerx - player_width / 2, current_y)
+
+        return pygame.Vector2(current_x, self.rect.centery - player_height / 2)
