@@ -6,7 +6,7 @@ from src.entities.entity import Entity
 class Enemy(Entity):
 
     def __init__(self, x: float, y: float) -> None:
-        super().__init__(x=x, y=y, width=28, height=28)
+        super().__init__(x=x, y=y, width=14, height=14)
 
         self.speed: int = 80
         self.hp: int = 20

@@ -91,6 +91,9 @@ class GameScene(Scene):
         self.camera_x: float = 0.0
         self.camera_y: float = 0.0
 
+    # inimigos nao nascem mais perto que isso de qualquer porta da sala
+    SAFE_DISTANCE_FROM_DOOR = 120
+
     def spawn_horde(self, room: Room) -> None:
 
         from src.entities.enemy import Enemy
@@ -101,17 +104,32 @@ class GameScene(Scene):
 
         left, top, right, bottom = room.get_bounds()
 
-        for _ in range(enemy_count):
-            edge = random.randint(0, 3)
+        door_positions = [door.rect.center for door in room.get_doors()]
 
-            if edge == 0:
-                x, y = random.randint(left, right), top
-            elif edge == 1:
-                x, y = random.randint(left, right), bottom
-            elif edge == 2:
-                x, y = left, random.randint(top, bottom)
-            else:
-                x, y = right, random.randint(top, bottom)
+        for _ in range(enemy_count):
+
+            # tenta ate 20 vezes achar uma posicao longe o suficiente das portas
+            for _attempt in range(20):
+
+                edge = random.randint(0, 3)
+
+                if edge == 0:
+                    x, y = random.randint(left, right), top
+                elif edge == 1:
+                    x, y = random.randint(left, right), bottom
+                elif edge == 2:
+                    x, y = left, random.randint(top, bottom)
+                else:
+                    x, y = right, random.randint(top, bottom)
+
+                far_enough = all(
+                    pygame.Vector2(
+                        x - dx, y - dy).length() >= self.SAFE_DISTANCE_FROM_DOOR
+                    for dx, dy in door_positions
+                )
+
+                if far_enough or not door_positions:
+                    break
 
             room.add_enemy(Enemy(x, y))
 
@@ -184,8 +202,7 @@ class GameScene(Scene):
                     target_door=door_info["target"]
                 ))
 
-        if room_id == 1:
-            self.spawn_horde(room)
+        self.spawn_horde(room)
         # tranca todas as portas da sala se ela tiver inimigos - destranca quando a sala for limpa
         if room.get_enemies():
             for door in room.get_doors():
