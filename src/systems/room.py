@@ -12,6 +12,8 @@ class Room:
         self.wall: int = wall
         self.room_id: int = room_id
         self.doors: list[Door] = []
+        # tipo Enemy, import evitado aqui p/ nao criar dependencia circular
+        self.enemies: list = []
 
     def draw(self, screen: pygame.Surface,) -> None:
 
@@ -51,6 +53,9 @@ class Room:
         for door in self.doors:
             door.draw(screen)
 
+        for enemy in self.enemies:
+            enemy.draw(screen)
+
     def get_bounds(self) -> tuple[int, int, int, int]:
 
         return (self.rect.left + self.wall,
@@ -66,6 +71,14 @@ class Room:
     def get_doors(self) -> list[Door]:
 
         return self.doors
+
+    def add_enemy(self, enemy) -> None:
+
+        self.enemies.append(enemy)
+
+    def get_enemies(self) -> list:
+
+        return self.enemies
 
     def get_colliding_door(self, player: Player) -> Door | None:
 

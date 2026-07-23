@@ -116,7 +116,6 @@ class GameScene(Scene):
         spawn_x, spawn_y = self.room_data[self.current_room_id]["spawn"]
         self.player: Player = Player(spawn_x, spawn_y,)
         self.player.room = self.room
-
         self.entity_manager.add(self.player)
 
         self.last_state: str | None = None
@@ -153,12 +152,30 @@ class GameScene(Scene):
                     target_door=door_info["target"]
                 ))
 
+        if room_id == 1:
+            from src.entities.enemy import Enemy
+            # TODO: mover para room_data quando tivermos mais tipos de inimigo
+            room.add_enemy(Enemy(500, 300))
+
     def handle_event(self, event: pygame.event.Event) -> None:
         pass
 
     def update(self, dt: float) -> None:
 
         self.entity_manager.update(dt)
+
+        for enemy in self.room.get_enemies():
+            enemy.update(dt, self.player.x, self.player.y)
+
+        if not self.player.is_dead:
+            for enemy in self.room.get_enemies():
+                if self.player.rect.colliderect(enemy.rect):
+                    self.player.take_damage(10)
+                    print(f"HP -> {self.player.hp}")
+
+                    if self.player.is_dead:
+                        print("GAME OVER")
+                    break  # evita levar dano de 2 inimigos no mesmo frame
 
         if self.player.consume_room_change():
 

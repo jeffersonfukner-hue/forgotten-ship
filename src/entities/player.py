@@ -26,7 +26,20 @@ class Player(Entity):
         self.door_leg_start: pygame.Vector2 | None = None
         self.door_thickness: float = 0.0
 
+        self.max_hp: int = 100
+        self.hp: int = self.max_hp
+        self.is_dead: bool = False
+
+        self.damage_cooldown: float = 0.0
+        self.damage_cooldown_time: float = 1.0  # 1s de invencibilidade após levar dano
+
     def update(self, dt: float) -> None:
+
+        if self.is_dead:
+            return  # jogador morto nao processa mais input nem movimento
+
+        if self.damage_cooldown > 0:
+            self.damage_cooldown -= dt  # cooldown corre independente do estado
 
         if self.state == "walking":
             self.update_walking(dt)
@@ -142,6 +155,18 @@ class Player(Entity):
         progress = max(0.0, min(progress, 1.0))
 
         self.alpha = int(255 * (1 - progress))
+
+    def take_damage(self, amount: int) -> None:
+
+        if self.is_dead or self.damage_cooldown > 0:
+            return  # ainda invencivel, ignora o dano
+
+        self.hp -= amount
+        self.damage_cooldown = self.damage_cooldown_time
+
+        if self.hp <= 0:
+            self.hp = 0
+            self.is_dead = True
 
     def draw(self, screen: pygame.Surface) -> None:
 
