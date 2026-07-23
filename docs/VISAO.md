@@ -1,7 +1,7 @@
 # Forgotten Ship
 ## VISAO.md
 
-> **Versão:** 2.9
+> **Versão:** 3.1
 > **Status:** Em desenvolvimento — mudança de direção
 > **Projeto:** Jogo 01 da A1 Game Academy
 
@@ -243,6 +243,77 @@ de Estatísticas Detalhadas por Jogador, acima):
 - **Stardate** de cada visita (data/hora real do jogador), usada para
   construir uma narrativa histórica da progressão do jogador ao longo
   do tempo — não apenas números, mas uma linha do tempo jogável.
+
+### Salas Trancadas nos Dois Sentidos
+
+Uma sala com inimigos vivos tranca **todas** as suas portas — não
+apenas a que leva adiante, mas também a que permite recuar. O jogador
+que entra em uma sala precisa limpá-la antes de poder sair por
+qualquer direção. Essa regra deve ser comunicada claramente ao jogador
+(mensagem explicativa), já que cria um compromisso obrigatório ao
+entrar.
+
+### Reentradas Limitadas (Sistema de Tentativas)
+
+Reentrar em uma sala já visitada consome uma **reentrada**, um recurso
+limitado e regenerável com o tempo — distinto da "Energia" que afeta a
+qualidade das skills (ver seção de Upgrades):
+
+- Limite máximo de reentradas acumuláveis (exemplo de referência: 5).
+- Regeneração de +1 reentrada a cada intervalo de tempo real (exemplo
+  de referência: 1 hora), até o teto máximo.
+- Ao esgotar as reentradas disponíveis, o jogador precisa aguardar a
+  regeneração para reentrar em uma sala já visitada.
+- **Entrar em uma sala/nível pela primeira vez não consome reentrada**
+  — o custo se aplica apenas a visitas repetidas.
+- Antes de consumir uma reentrada, o jogo deve **confirmar com o
+  jogador** (ele pode ter entrado sem intenção de fato reentrar),
+  evitando desperdício acidental de um recurso escasso.
+
+> Este sistema é conceitualmente parecido com mecanismos de "energia/
+> vidas" comuns em jogos mobile (ex: Candy Crush), aplicado aqui
+> especificamente a revisitas de salas — não à ação de jogar em si.
+
+### Sistema de Vidas (Continuar Após Morrer)
+
+Ao morrer (HP zerado) dentro de uma sala com inimigos vivos, o jogador
+tem a opção de continuar de onde parou:
+
+- **Continuar via vídeo simulado:** disponível apenas **uma vez** por
+  sessão de morte. Se morrer novamente logo em seguida, essa opção não
+  está mais disponível — precisa reiniciar a sala/nível.
+- **Vidas como recurso limitado:** limite máximo de vidas acumuláveis
+  (exemplo de referência: 5), regenerando +1 a cada intervalo de tempo
+  real (exemplo de referência: 1 hora), mesmo esquema das Reentradas.
+- **Compra com dinheiro real:** vidas extras (além do limite gratuito)
+  podem ser adquiridas diretamente com dinheiro real — um dos pontos
+  de monetização do jogo.
+- **Motivação:** sem essa regra, um jogador quase morto poderia sempre
+  escapar pela porta (mesmo que a porta de saída também exija sala
+  limpa) como forma de evitar o risco real de morte — o sistema de
+  vidas garante que a ameaça de sofrer uma derrota tenha peso real.
+
+> **Nota de consolidação:** o jogo passa a ter três sistemas de
+> recurso com estrutura parecida (limite + regeneração por tempo +
+> vídeo/compra), mas propósitos distintos — vale manter essa distinção
+> clara ao implementar, para não confundir os três em uma única
+> variável:
+> - **Energia** — reduz a qualidade das skills enquanto baixa; não
+>   limita tentativas, apenas desempenho.
+> - **Reentradas** — limita quantas vezes o jogador pode revisitar uma
+>   sala já vencida.
+> - **Vidas** — limita quantas vezes o jogador pode continuar após
+>   morrer dentro de uma sessão de horda.
+
+### Saída Antecipada com Progresso Parcial (Ideia em Aberto)
+
+Questão ainda não decidida: se o jogador quiser sair de uma sala antes
+de completá-la (aceitando perder o progresso daquela sessão), ele
+deveria poder fazê-lo, ficando apenas com os itens já coletados até o
+momento da saída — em vez de ficar preso até vencer toda a horda.
+Depende da decisão de "ondas múltiplas por sala" (ver Progressão
+Espacial) e de como o progresso de sessão é definido — fica registrado
+como questão em aberto, a decidir junto da progressão de ondas.
 
 ## Visão de Longuíssimo Prazo: Narrativa Histórica e Área de Membros
 
@@ -494,6 +565,21 @@ ou onda. Esse detalhamento tem duplo propósito:
 ---
 
 # Histórico
+
+## v3.1
+- Adicionado Sistema de Vidas (continuar após morrer, 1 vez via vídeo,
+  limite regenerável por tempo, compra com dinheiro real) — evita que
+  o jogador escape pela porta como forma de negar risco de morte.
+- Adicionada nota de consolidação distinguindo os três sistemas de
+  recurso do jogo: Energia (qualidade de skills), Reentradas (limite
+  de revisitas), e Vidas (limite de continuar após morrer).
+
+## v3.0
+- Adicionadas: regra de Salas Trancadas nos Dois Sentidos (jogador
+  precisa limpar a sala para sair, não só para avançar), sistema de
+  Reentradas Limitadas (recurso regenerável por tempo, distinto da
+  Energia de skills, com confirmação antes de consumir), e questão em
+  aberto sobre Saída Antecipada com Progresso Parcial.
 
 ## v2.9
 - Revisado: percepção de inimigo e alcance de tiro passam a

@@ -15,6 +15,11 @@ class Room:
         # tipo Enemy, import evitado aqui p/ nao criar dependencia circular
         self.enemies: list = []
 
+        # quantas vezes esta sala ja foi totalmente limpa de inimigos
+        self.times_cleared: int = 0
+        # True quando a sala foi esvaziada neste ciclo, ate ser reaberta
+        self.cleared: bool = False
+
     def get_bounds(self) -> tuple[int, int, int, int]:
 
         return (self.rect.left + self.wall,

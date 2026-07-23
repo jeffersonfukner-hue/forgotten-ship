@@ -91,6 +91,30 @@ class GameScene(Scene):
         self.camera_x: float = 0.0
         self.camera_y: float = 0.0
 
+    def spawn_horde(self, room: Room) -> None:
+
+        from src.entities.enemy import Enemy
+        import random
+
+        # formula de escala: primeira horda ja comeca robusta, cresce a cada revisita
+        enemy_count = 12 + (room.times_cleared * 6)
+
+        left, top, right, bottom = room.get_bounds()
+
+        for _ in range(enemy_count):
+            edge = random.randint(0, 3)
+
+            if edge == 0:
+                x, y = random.randint(left, right), top
+            elif edge == 1:
+                x, y = random.randint(left, right), bottom
+            elif edge == 2:
+                x, y = left, random.randint(top, bottom)
+            else:
+                x, y = right, random.randint(top, bottom)
+
+            room.add_enemy(Enemy(x, y))
+
     def find_closest_enemy(self, enemies: list):
 
         closest = None
@@ -119,7 +143,18 @@ class GameScene(Scene):
     def create_room(self, room_id: int) -> Room:
 
         if room_id in self.rooms:
-            return self.rooms[room_id]
+            room = self.rooms[room_id]
+
+            # reentrando em sala ja limpa: nova horda mais dificil, e tranca as portas de novo
+            if room.cleared and not room.get_enemies():
+                self.spawn_horde(room)
+
+                for door in room.get_doors():
+                    door.lock()
+
+                room.cleared = False
+
+            return room
 
         width, height = self.ROOM_SIZES[room_id]
         room = Room(80, 60, width, height, room_id=room_id)
@@ -150,26 +185,7 @@ class GameScene(Scene):
                 ))
 
         if room_id == 1:
-
-            from src.entities.enemy import Enemy
-            import random
-
-            left, top, right, bottom = room.get_bounds()
-
-            for _ in range(3):
-                # escolhe uma borda aleatoria (0=topo, 1=baixo, 2=esquerda, 3=direita)
-                edge = random.randint(0, 3)
-
-                if edge == 0:
-                    x, y = random.randint(left, right), top
-                elif edge == 1:
-                    x, y = random.randint(left, right), bottom
-                elif edge == 2:
-                    x, y = left, random.randint(top, bottom)
-                else:
-                    x, y = right, random.randint(top, bottom)
-
-                room.add_enemy(Enemy(x, y))
+            self.spawn_horde(room)
         # tranca todas as portas da sala se ela tiver inimigos - destranca quando a sala for limpa
         if room.get_enemies():
             for door in room.get_doors():
@@ -186,10 +202,13 @@ class GameScene(Scene):
         # limpa inimigos derrotados antes de processar a sala
         self.room.remove_dead_enemies()
 
-        if not self.room.get_enemies():
-            # sala limpa: destranca todas as portas
+        if not self.room.get_enemies() and not self.room.cleared:
+            # sala limpa pela primeira vez neste ciclo: destranca portas e marca como limpa
             for door in self.room.get_doors():
                 door.unlock()
+
+            self.room.cleared = True
+            self.room.times_cleared += 1
 
         enemies = self.room.get_enemies()
 
