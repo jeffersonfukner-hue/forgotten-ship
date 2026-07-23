@@ -22,96 +22,60 @@ class GameScene(Scene):
         self.projectiles: list[Projectile] = []
 
         self.rooms: dict[int, Room] = {}
+
+        # Nivel 1: Area de Carga - sala inicial, uma porta ao sul leva ao Nivel 2
+        # Nivel 2: Corredor conectando a Area de Carga a Engenharia
         self.door_data = {
             1: {
                 "room": 1,
-                "x": 340,
-                "y": 60,
-                "width": 40,
-                "height": 20,
-                "side": TOP,
-                "target": 3,
-            },
-            2: {
-                "room": 1,
-                "x": 340,
-                "y": 520,
+                "x": 700,
+                "y": 1000,  # borda sul da Area de Carga (bottom - wall)
                 "width": 40,
                 "height": 20,
                 "side": BOTTOM,
-                "target": 4,
+                "target": 2,  # leva ao Corredor
+            },
+            2: {
+                "room": 2,
+                "x": 210,
+                "y": 60,  # borda norte do Corredor
+                "width": 40,
+                "height": 20,
+                "side": TOP,
+                "target": 1,  # volta a Area de Carga
             },
             3: {
                 "room": 2,
-                "x": 340,
-                "y": 520,
+                "x": 210,
+                "y": 1440,  # borda sul do Corredor
                 "width": 40,
                 "height": 20,
                 "side": BOTTOM,
-                "target": 1,
+                "target": 4,  # leva a Engenharia
             },
             4: {
                 "room": 3,
-                "x": 340,
-                "y": 60,
+                "x": 510,
+                "y": 60,  # borda norte da Engenharia
                 "width": 40,
                 "height": 20,
                 "side": TOP,
-                "target": 2,
-            },
-            5: {
-                "room": 3,
-                "x": 80,
-                "y": 260,
-                "width": 20,
-                "height": 40,
-                "side": LEFT,
-                "target": 6,
-            },
-            6: {
-                "room": 4,
-                "x": 700,
-                "y": 260,
-                "width": 20,
-                "height": 40,
-                "side": RIGHT,
-                "target": 5,
-            },
-            7: {
-                "room": 4,
-                "x": 340,
-                "y": 520,
-                "width": 40,
-                "height": 20,
-                "side": BOTTOM,
-                "target": 8,
-            },
-            8: {
-                "room": 5,
-                "x": 340,
-                "y": 60,
-                "width": 40,
-                "height": 20,
-                "side": TOP,
-                "target": 7,
+                "target": 3,  # volta ao Corredor
             },
         }
         self.room_data = {
             1: {
-                "doors": [1, 2],
-                "spawn": (384, 284),
+                "level": 1,
+                "doors": [1],
+                "spawn": (704, 524),  # centro da Area de Carga
             },
             2: {
-                "doors": [3],
+                "level": 2,
+                "doors": [2, 3],
             },
             3: {
-                "doors": [4, 5],
-            },
-            4: {
-                "doors": [6, 7],
-            },
-            5: {
-                "doors": [8],
+                "level": 2,
+                "doors": [4],
             },
         }
 
@@ -142,16 +106,20 @@ class GameScene(Scene):
 
         return closest
 
+   # dimensoes de cada sala: Area de Carga (grande), Corredor (longo e estreito), Engenharia
+    ROOM_SIZES = {
+        1: (1280, 960),
+        2: (300, 1400),
+        3: (900, 700),
+    }
+
     def create_room(self, room_id: int) -> Room:
 
         if room_id in self.rooms:
             return self.rooms[room_id]
 
-        if room_id == 1:
-            # sala 1 passa a ser maior que a tela, para testar a camera de verdade
-            room = Room(80, 60, 1280, 960, room_id=room_id)
-        else:
-            room = Room(80, 60, 640, 480, room_id=room_id)
+        width, height = self.ROOM_SIZES[room_id]
+        room = Room(80, 60, width, height, room_id=room_id)
 
         self.configure_room(room, room_id)
 
@@ -228,7 +196,6 @@ class GameScene(Scene):
                         self.player.x, self.player.y, direction))
 
                     self.player.confirm_shot()
-                    print(f"Projectile criado! Total: {len(self.projectiles)}")
 
         for projectile in self.projectiles:
             projectile.update(dt)

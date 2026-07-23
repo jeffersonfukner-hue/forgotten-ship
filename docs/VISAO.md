@@ -1,7 +1,7 @@
 # Forgotten Ship
 ## VISAO.md
 
-> **Versão:** 2.6
+> **Versão:** 2.7
 > **Status:** Em desenvolvimento — mudança de direção
 > **Projeto:** Jogo 01 da A1 Game Academy
 
@@ -367,6 +367,49 @@ mas por qualidade da estratégia escolhida (similar a rankings de nível
 em jogos como Angry Birds, baseados em performance dentro do nível, não
 apenas em conclusão).
 
+## Ranking por Qualidade de Escolha
+
+Builds diferentes de upgrade (ex: priorizar cadência de tiro vs.
+priorizar divisão de tiros) devem gerar resultados mensuravelmente
+diferentes — tempo para completar uma horde, pontos obtidos, inimigos
+eliminados — permitindo comparar jogadores não apenas por "quem venceu",
+mas por qualidade da estratégia escolhida (similar a rankings de nível
+em jogos como Angry Birds, baseados em performance dentro do nível, não
+apenas em conclusão).
+
+## Dois Tipos de Progressão: Vitalícia vs. de Partida
+
+- **Progressão vitalícia (permanente):** melhorias ganhas apenas ao
+  completar um nível **pela primeira vez**. Revisitar um nível já
+  concluído não concede mais essas melhorias — apenas a chance de
+  melhorar a pontuação/placar daquela sessão específica.
+- **Progressão de partida:** pontos obtidos por drops de inimigos
+  dentro de uma sessão de horda, usados para desbloquear upgrades
+  temporários (via barra de progresso) e alimentar o ranking daquele
+  nível/sala — não necessariamente permanentes.
+
+## Moeda do Jogo
+
+Ganha ao completar um nível pela primeira vez (não ao revisitar).
+Utilizada para comprar itens na loja (armadura, armas, etc.) de forma
+"honesta" — sem depender de vídeos simulados ou compras com dinheiro
+real.
+
+## Dois Rankings Distintos: Honesto vs. VIP
+
+- **Ranking Honesto:** apenas jogadores que não utilizaram o
+  mecanismo de "vídeo simulado" (considerado cheat para fins de
+  ranking) nem compras de pacotes de benefício. Missões específicas
+  podem recompensar essa consistência (ex: completar os 3 primeiros
+  níveis sem usar vídeo/compra concede moeda extra).
+- **Ranking VIP:** inclui jogadores que utilizam o recurso de vídeo ou
+  compram pacotes de benefício com dinheiro real.
+
+> Esta separação evita o problema comum em jogos com atalhos pagos: um
+> único ranking misturando os dois grupos desmotiva quem joga de forma
+> honesta. Mantê-los distintos preserva competitividade justa para
+> ambos os públicos.
+
 ## Estatísticas Detalhadas por Jogador
 
 Além do resultado agregado (pontos totais, tempo de conclusão), o jogo
@@ -407,6 +450,14 @@ ou onda. Esse detalhamento tem duplo propósito:
 ---
 
 # Histórico
+
+## v2.7
+- Adicionadas as seções: Dois Tipos de Progressão (vitalícia vs. de
+  partida), Moeda do Jogo, e Dois Rankings Distintos (Honesto vs.
+  VIP) — separando claramente progressão permanente (ganha só na
+  primeira conclusão de nível) de progressão de sessão, e evitando
+  misturar jogadores que usam atalhos pagos com os que não usam no
+  mesmo ranking.
 
 ## v2.6
 - Adicionada a seção "Re-arquitetura Espacial: Mapas Contínuos por
