@@ -17,6 +17,9 @@ class Room:
 
         # quantas vezes esta sala ja foi totalmente limpa de inimigos
         self.times_cleared: int = 0
+        self.horde_start_time: float = 0.0
+        self.horde_clear_time: float | None = None # None enquanto a horda esta ativa
+        
         # True quando a sala foi esvaziada neste ciclo, ate ser reaberta
         self.cleared: bool = False
 
@@ -118,16 +121,7 @@ class Room:
         pygame.draw.rect(screen, (145, 150, 165),
                          (rl, rt, self.rect.width, self.rect.height), width=2,)
 
-        font = pygame.font.Font(None, 32)
-
-        # texto de debug: nome da sala + total de vezes limpa (sera substituido pela UI final)
-        text = font.render(
-            f"Room {self.room_id}  (visitas: {self.times_cleared})", True, (255, 255, 255))
-
-        text_rect = text.get_rect()
-        text_rect.topleft = (rl + 12, rt + 12)
-
-        screen.blit(text, text_rect)
+        # texto de sala/visitas movido para a HUD fixa (GameScene.draw_ui), Sprint 016
 
         for door in self.doors:
             door.draw(screen, camera_x, camera_y)

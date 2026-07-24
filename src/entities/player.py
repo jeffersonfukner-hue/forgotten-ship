@@ -231,15 +231,30 @@ class Player(Entity):
         if self.alpha >= 255:
             pygame.draw.rect(
                 screen, (70, 150, 150), (*screen_pos, self.rect.width, self.rect.height),)
-            return
+        else:
+            surface = pygame.Surface(
+                (self.rect.width, self.rect.height), pygame.SRCALPHA)
 
-        surface = pygame.Surface(
-            (self.rect.width, self.rect.height), pygame.SRCALPHA)
+            pygame.draw.rect(
+                surface, (70, 150, 150, self.alpha), surface.get_rect(),)
 
-        pygame.draw.rect(
-            surface, (70, 150, 150, self.alpha), surface.get_rect(),)
+            screen.blit(surface, screen_pos)
 
-        screen.blit(surface, screen_pos)
+        self.draw_hp_bar(screen, screen_pos)
+
+    def draw_hp_bar(self, screen: pygame.Surface, screen_pos: tuple) -> None:
+
+        bar_width = self.rect.width
+        bar_height = 4
+        bar_x = screen_pos[0]
+        bar_y = screen_pos[1] - bar_height - 4  # um pouco acima do topo do player
+
+        hp_ratio = self.hp / self.max_hp
+
+        pygame.draw.rect(screen, (80, 30, 30),
+                          (bar_x, bar_y, bar_width, bar_height))
+        pygame.draw.rect(screen, (60, 180, 90),
+                          (bar_x, bar_y, bar_width * hp_ratio, bar_height))
 
     def draw_range_indicator(self, screen: pygame.Surface, camera_x: float, camera_y: float) -> None:
 

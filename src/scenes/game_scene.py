@@ -98,7 +98,11 @@ class GameScene(Scene):
 
         from src.entities.enemy import Enemy
         import random
+        import time
 
+        room.horde_start_time = time.time()
+        room.horde_clear_time = None  # reseta o tempo de horda limpa,
+        
         # formula de escala: primeira horda ja comeca robusta, cresce a cada revisita
         enemy_count = 12 + (room.times_cleared * 6)
 
@@ -226,6 +230,9 @@ class GameScene(Scene):
 
             self.room.cleared = True
             self.room.times_cleared += 1
+
+            import time
+            self.room.horde_clear_time = time.time() - self.room.horde_start_time
 
         enemies = self.room.get_enemies()
 
@@ -388,8 +395,39 @@ class GameScene(Scene):
     def draw_ui(self, screen: pygame.Surface) -> None:
 
         self.draw_hp_bar(screen)
+        self.draw_room_info(screen)
         self.draw_lives_counter(screen)
+        self.draw_wave_timer(screen)
 
+    def draw_room_info(self, screen: pygame.Surface) -> None:
+
+        font = pygame.font.Font(None, 28)
+        text = font.render(
+            f"Room {self.room.room_id}  (visitas: {self.room.times_cleared})",
+            True, (255, 255, 255))
+        text_rect = text.get_rect()
+        text_rect.topleft = (20, 52)
+        screen.blit(text, text_rect)
+
+    def draw_wave_timer(self, screen: pygame.Surface) -> None:
+
+        import time
+
+        if self.room.horde_clear_time is not None:
+            elapsed = self.room.horde_clear_time
+            label = "Onda concluida em"
+        elif self.room.get_enemies():
+            elapsed = time.time() - self.room.horde_start_time
+            label = "Tempo de onda"
+        else:
+            return  # sala sem horda ativa (ex: sala ja limpa e ainda nao reentrou)
+
+        font = pygame.font.Font(None, 28)
+        text = font.render(f"{label}: {elapsed:.1f}s", True, (255, 255, 255))
+        text_rect = text.get_rect()
+        text_rect.topleft = (20, 116)
+        screen.blit(text, text_rect)
+        
     def draw_hp_bar(self, screen: pygame.Surface) -> None:
 
         bar_x, bar_y = 20, 20
@@ -422,5 +460,5 @@ class GameScene(Scene):
         text = font.render(
             f"Vidas: {self.player.lives}/{self.player.max_lives}", True, (255, 255, 255))
         text_rect = text.get_rect()
-        text_rect.topleft = (20, 52)
+        text_rect.topleft = (20, 84)
         screen.blit(text, text_rect)
