@@ -120,7 +120,9 @@ class Room:
 
         font = pygame.font.Font(None, 32)
 
-        text = font.render(f"Room {self.room_id}", True, (255, 255, 255))
+        # texto de debug: nome da sala + total de vezes limpa (sera substituido pela UI final)
+        text = font.render(
+            f"Room {self.room_id}  (visitas: {self.times_cleared})", True, (255, 255, 255))
 
         text_rect = text.get_rect()
         text_rect.topleft = (rl + 12, rt + 12)

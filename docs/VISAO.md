@@ -1,7 +1,7 @@
 # Forgotten Ship
 ## VISAO.md
 
-> **Versão:** 3.1
+> **Versão:** 3.2
 > **Status:** Em desenvolvimento — mudança de direção
 > **Projeto:** Jogo 01 da A1 Game Academy
 
@@ -473,6 +473,16 @@ Elementos a exibir visualmente, conectando os sistemas acima:
 - Barra de progresso de drops (rumo à próxima escolha de skill).
 - Indicador de energia (afetando visualmente a qualidade das skills
   quando baixa).
+- **Contador de visitas por sala (fixo na versão final):** exibido ao
+  lado do nome da sala, mostrando o total de vezes que o jogador já a
+  visitou. Ao tocar/clicar nesse contador, expande uma lista com as
+  **5 melhores pontuações** obtidas naquela sala, uma por visita (ex:
+  "4.500 pontos", "8.568 pontos"), permitindo ao jogador comparar seu
+  próprio desempenho histórico naquele ambiente especificamente.
+
+> Esta versão final substitui o texto de debug atual ("Room X" +
+> contador simples), que serve por enquanto como validação técnica
+> antes da UI definitiva ser construída.
 
 Builds diferentes de upgrade (ex: priorizar cadência de tiro vs.
 priorizar divisão de tiros) devem gerar resultados mensuravelmente
@@ -565,6 +575,11 @@ ou onda. Esse detalhamento tem duplo propósito:
 ---
 
 # Histórico
+
+## v3.2
+- Adicionado à UI: contador de visitas por sala (fixo na versão
+  final), expansível ao toque para mostrar as 5 melhores pontuações
+  daquela sala.
 
 ## v3.1
 - Adicionado Sistema de Vidas (continuar após morrer, 1 vez via vídeo,
