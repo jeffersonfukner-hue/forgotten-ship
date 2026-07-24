@@ -381,4 +381,46 @@ class GameScene(Scene):
             projectile.draw(screen, self.camera_x, self.camera_y)
 
     def draw_ui(self, screen: pygame.Surface) -> None:
-        pass
+        
+        self.draw_hp_bar(screen)
+        self.draw_lives_counter(screen)
+
+    def draw_ui(self, screen: pygame.Surface) -> None:
+
+        self.draw_hp_bar(screen)
+        self.draw_lives_counter(screen)
+
+    def draw_hp_bar(self, screen: pygame.Surface) -> None:
+
+        bar_x, bar_y = 20, 20
+        bar_width, bar_height = 200, 24
+
+        hp_ratio = self.player.hp / self.player.max_hp
+
+        # fundo da barra (vermelho escuro, representa vida perdida)
+        pygame.draw.rect(screen, (80, 30, 30),
+                          (bar_x, bar_y, bar_width, bar_height))
+
+        # preenchimento atual (verde, proporcional ao HP restante)
+        pygame.draw.rect(screen, (60, 180, 90),
+                          (bar_x, bar_y, bar_width * hp_ratio, bar_height))
+
+        # contorno
+        pygame.draw.rect(screen, (255, 255, 255),
+                          (bar_x, bar_y, bar_width, bar_height), width=2)
+
+        font = pygame.font.Font(None, 24)
+        text = font.render(
+            f"HP: {self.player.hp}/{self.player.max_hp}", True, (255, 255, 255))
+        text_rect = text.get_rect()
+        text_rect.center = (bar_x + bar_width / 2, bar_y + bar_height / 2)
+        screen.blit(text, text_rect)
+
+    def draw_lives_counter(self, screen: pygame.Surface) -> None:
+
+        font = pygame.font.Font(None, 28)
+        text = font.render(
+            f"Vidas: {self.player.lives}/{self.player.max_lives}", True, (255, 255, 255))
+        text_rect = text.get_rect()
+        text_rect.topleft = (20, 52)
+        screen.blit(text, text_rect)
