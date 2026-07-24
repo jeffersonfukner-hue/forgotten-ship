@@ -20,7 +20,10 @@ class GameScene(Scene):
 
         from src.entities.projectile import Projectile
         self.projectiles: list[Projectile] = []
-
+        
+        from src.entities.floating_text import FloatingText
+        self.floating_texts: list[FloatingText] = []
+        
         self.rooms: dict[int, Room] = {}
 
         # Nivel 1: Area de Carga - sala inicial, uma porta ao sul leva ao Nivel 2
@@ -137,6 +140,12 @@ class GameScene(Scene):
 
             room.add_enemy(Enemy(x, y))
 
+    def spawn_damage_text(self, x: float, y: float, amount: int) -> None:
+
+        from src.entities.floating_text import FloatingText
+        self.floating_texts.append(
+            FloatingText(x, y - 20, f"-{amount}"))
+        
     def find_closest_enemy(self, enemies: list):
 
         closest = None
@@ -217,10 +226,11 @@ class GameScene(Scene):
 
     def update(self, dt: float) -> None:
 
+        # --- entidades e camera ---
         self.entity_manager.update(dt)
         self.update_camera()
 
-        # limpa inimigos derrotados antes de processar a sala
+        # --- limpeza e destravamento de sala ---
         self.room.remove_dead_enemies()
 
         if not self.room.get_enemies() and not self.room.cleared:
@@ -236,6 +246,7 @@ class GameScene(Scene):
 
         enemies = self.room.get_enemies()
 
+        # --- disparo automatico do player ---
         if self.player.ready_to_shoot() and enemies:
             target = self.find_closest_enemy(enemies)
 
@@ -254,6 +265,7 @@ class GameScene(Scene):
 
                     self.player.confirm_shot()
 
+        # --- projeteis: movimento e colisao com inimigos ---
         for projectile in self.projectiles:
             projectile.update(dt)
 
@@ -261,6 +273,10 @@ class GameScene(Scene):
                 if not enemy.is_dead and projectile.rect.colliderect(enemy.rect):
                     enemy.take_damage(projectile.damage)
                     projectile.register_hit()  # decrementa pierce; morre quando chega a 0
+
+                    self.spawn_damage_text(
+                        enemy.x, enemy.y, projectile.damage)
+
                     break
 
         left, top, right, bottom = self.room.get_bounds()
@@ -272,6 +288,13 @@ class GameScene(Scene):
 
         self.projectiles = [p for p in self.projectiles if not p.is_dead]
 
+        # --- textos flutuantes de dano ---
+        for text in self.floating_texts:
+            text.update(dt)
+
+        self.floating_texts = [t for t in self.floating_texts if not t.is_dead]
+
+        # --- inimigos: movimento e colisao com o player ---
         if not self.player.is_dead:  # inimigos param de agir assim que o jogador morre
 
             for enemy in enemies:
@@ -281,6 +304,10 @@ class GameScene(Scene):
                 if self.player.rect.colliderect(enemy.rect):
                     self.player.take_damage(10)
                     self.player.apply_knockback(enemy.x, enemy.y)
+
+                    self.spawn_damage_text(
+                        self.player.x, self.player.y, 10)
+
                     print(f"HP -> {self.player.hp}")
 
                     if self.player.is_dead:
@@ -288,12 +315,15 @@ class GameScene(Scene):
                         self.player.consume_life()
 
                         if self.player.has_lives_left():
-                            print(f"Continuando... Vidas restantes: {self.player.lives}")
+                            print(
+                                f"Continuando... Vidas restantes: {self.player.lives}")
                             self.player.revive()
                         else:
                             print("GAME OVER DEFINITIVO - sem vidas restantes")
 
                     break
+
+        # --- transicao de sala ---
         if self.player.consume_room_change():
 
             target_door_id = self.player.current_door.target_door
@@ -315,6 +345,7 @@ class GameScene(Scene):
 
             return
 
+        # --- deteccao e abertura de portas ---
         door: Door = self.room.get_colliding_door(self.player)
 
         for current_door in self.room.get_doors():
@@ -347,6 +378,9 @@ class GameScene(Scene):
                 print(f"Door -> {door.side} -> Room {target_room_id}")
 
         else:
+
+            if self.player.state == "walking":
+                self.player.current_door = None
 
             if self.player.state == "walking":
                 self.player.current_door = None
@@ -386,6 +420,9 @@ class GameScene(Scene):
 
         for projectile in self.projectiles:
             projectile.draw(screen, self.camera_x, self.camera_y)
+
+        for text in self.floating_texts:
+            text.draw(screen, self.camera_x, self.camera_y)
 
     def draw_ui(self, screen: pygame.Surface) -> None:
         

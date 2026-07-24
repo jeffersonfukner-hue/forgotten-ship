@@ -9,7 +9,8 @@ class Enemy(Entity):
         super().__init__(x=x, y=y, width=14, height=14)
 
         self.speed: int = 80
-        self.hp: int = 20
+        self.max_hp: int = 20
+        self.hp: int = self.max_hp
         self.is_dead: bool = False
 
     def take_damage(self, amount: int) -> None:
@@ -63,3 +64,19 @@ class Enemy(Entity):
         screen_rect.y -= camera_y
 
         pygame.draw.rect(screen, (180, 60, 60), screen_rect,)
+
+        self.draw_hp_bar(screen, screen_rect)
+
+    def draw_hp_bar(self, screen: pygame.Surface, screen_rect: pygame.Rect) -> None:
+
+        bar_width = screen_rect.width
+        bar_height = 3
+        bar_x = screen_rect.x
+        bar_y = screen_rect.y - bar_height - 2  # um pouco acima do topo do inimigo
+
+        hp_ratio = self.hp / self.max_hp
+
+        pygame.draw.rect(screen, (80, 30, 30),
+                          (bar_x, bar_y, bar_width, bar_height))
+        pygame.draw.rect(screen, (60, 180, 90),
+                          (bar_x, bar_y, bar_width * hp_ratio, bar_height))
