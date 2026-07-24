@@ -1,7 +1,7 @@
 # Forgotten Ship
 ## VISAO.md
 
-> **Versão:** 3.2
+> **Versão:** 3.3
 > **Status:** Em desenvolvimento — mudança de direção
 > **Projeto:** Jogo 01 da A1 Game Academy
 
@@ -293,6 +293,18 @@ tem a opção de continuar de onde parou:
   limpa) como forma de evitar o risco real de morte — o sistema de
   vidas garante que a ameaça de sofrer uma derrota tenha peso real.
 
+> **Status de implementação (Sprint 014):** o núcleo funcional está
+> implementado — `Player` possui `lives`/`max_lives`, consome uma vida
+> por morte, e revive automaticamente (HP restaurado) enquanto houver
+> vidas disponíveis, travando de vez ("game over definitivo") ao
+> esgotá-las. **Ainda não implementado:** a distinção entre "vídeo
+> simulado, 1 vez por sessão de morte" e "vida como recurso
+> persistente" — hoje toda morte simplesmente consome uma vida e
+> reviva, sem diferenciar a primeira tentativa (via vídeo) das
+> seguintes. Também pendentes: regeneração por tempo real, compra com
+> dinheiro real, e qualquer interface de confirmação — dependem de uma
+> tela de UI ainda não construída.
+
 > **Nota de consolidação:** o jogo passa a ter três sistemas de
 > recurso com estrutura parecida (limite + regeneração por tempo +
 > vídeo/compra), mas propósitos distintos — vale manter essa distinção
@@ -575,6 +587,12 @@ ou onda. Esse detalhamento tem duplo propósito:
 ---
 
 # Histórico
+
+## v3.3
+- Adicionado status de implementação ao Sistema de Vidas: núcleo
+  funcional implementado (Sprint 014), com nota explícita do que
+  ainda falta (distinção vídeo-1x vs. vida persistente, regeneração
+  por tempo, compra, UI de confirmação).
 
 ## v3.2
 - Adicionado à UI: contador de visitas por sala (fixo na versão

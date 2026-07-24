@@ -277,7 +277,15 @@ class GameScene(Scene):
                     print(f"HP -> {self.player.hp}")
 
                     if self.player.is_dead:
-                        print("GAME OVER")
+
+                        self.player.consume_life()
+
+                        if self.player.has_lives_left():
+                            print(f"Continuando... Vidas restantes: {self.player.lives}")
+                            self.player.revive()
+                        else:
+                            print("GAME OVER DEFINITIVO - sem vidas restantes")
+
                     break
         if self.player.consume_room_change():
 

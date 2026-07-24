@@ -28,6 +28,8 @@ class Player(Entity):
 
         self.max_hp: int = 100
         self.hp: int = self.max_hp
+        self.max_lives: int = 5
+        self.lives: int = self.max_lives
         self.is_dead: bool = False
 
         self.damage_cooldown: float = 0.0
@@ -41,6 +43,19 @@ class Player(Entity):
         # raio unico: percepcao de inimigos e alcance do tiro
         self.range_radius: float = 100
 
+    def revive(self) -> None:
+
+        # usado ao continuar apos morrer: restaura HP e volta ao estado normal
+        self.hp = self.max_hp
+        self.is_dead = False
+
+    def has_lives_left(self) -> bool:
+
+        return self.lives > 0
+
+    def consume_life(self) -> None:
+
+        self.lives -= 1
     def apply_knockback(self, from_x: float, from_y: float) -> None:
 
         direction = pygame.Vector2(self.x - from_x, self.y - from_y)
