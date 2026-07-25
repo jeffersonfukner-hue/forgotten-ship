@@ -1,8 +1,14 @@
 import pygame
 
+from typing import TYPE_CHECKING
+
 from src import settings
 from src.entities.entity import Entity
 
+if TYPE_CHECKING:
+    # imports usados apenas para checagem de tipos (Pylance), evitando import circular real
+    from src.systems.room import Room
+    from src.systems.door import Door
 
 class Player(Entity):
 
@@ -39,6 +45,12 @@ class Player(Entity):
         self.shoot_cooldown: float = 0.0
         self.shoot_interval: float = settings.PLAYER_SHOOT_INTERVAL
         self.range_radius: float = settings.PLAYER_RANGE_RADIUS
+        self.shoot_damage: int = settings.PLAYER_SHOOT_DAMAGE  # pode aumentar com upgrades
+
+        # --- progressao: pontos de drop e upgrades automaticos ---
+        self.level: int = 0  # quantidade de upgrades ja conquistados
+        self.drop_points: float = 0.0
+        self.points_to_upgrade: float = settings.POINTS_PER_UPGRADE
 
     # ==================================================================
     # VIDA, MORTE E CONTINUAR
@@ -101,6 +113,29 @@ class Player(Entity):
     def confirm_shot(self) -> None:
 
         self.shoot_cooldown = self.shoot_interval
+
+    # ==================================================================
+    # PROGRESSAO (DROPS E UPGRADES)
+    # ==================================================================
+
+    def add_drop_point(self, amount: float = 1) -> None:
+
+        self.drop_points += amount
+
+        if self.drop_points >= self.points_to_upgrade:
+            self.drop_points -= self.points_to_upgrade
+            self.level += 1
+
+            # cada novo level exige mais pontos, na mesma proporcao de crescimento das ondas
+            self.points_to_upgrade *= settings.UPGRADE_THRESHOLD_GROWTH
+
+            self.apply_automatic_upgrade()
+
+    def apply_automatic_upgrade(self) -> None:
+
+        # upgrade minimo para provar o ciclo drop -> progresso -> mais forte
+        # sera substituido por escolha de 3 opcoes em Sprint futura
+        self.shoot_damage += settings.UPGRADE_DAMAGE_INCREMENT
 
     # ==================================================================
     # ATUALIZACAO POR FRAME

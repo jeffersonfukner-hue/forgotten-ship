@@ -1,7 +1,7 @@
 # Forgotten Ship
 ## VISAO.md
 
-> **Versão:** 3.6
+> **Versão:** 3.7
 > **Status:** Em desenvolvimento — mudança de direção
 > **Projeto:** Jogo 01 da A1 Game Academy
 
@@ -256,6 +256,38 @@ quanto os upgrades que o jogador já teria adquirido até aquele ponto
 introdução de múltiplos tipos de inimigo (ver "Tipos de Inimigo" mais
 abaixo neste documento) — não implementada nesta fase, que ainda usa
 um único tipo de inimigo com HP fixo.
+
+#### Continuidade de Ondas Entre Visitas e Teto de Volume (Refinamento Futuro)
+
+Ao reentrar em uma sala, a numeração de ondas não deveria "reiniciar"
+do zero — a sequência de ondas é contínua ao longo da vida da sala:
+a primeira visita usa as ondas 1 e 2, a segunda visita (reentrada) usa
+as ondas 3 e 4, e assim por diante. Cada número de onda é mais difícil
+que o anterior, mas a dificuldade crescente **não deve vir
+principalmente de mais inimigos** — crescimento geométrico de
+quantidade rapidamente torna o jogo inviável (partidas muito longas ou
+efetivamente impossíveis).
+
+- **Quantidade de inimigos tem um teto** (ex: ~18-20 por onda), a
+  partir do qual para de crescer em volume.
+- **Dificuldade continua subindo via composição**: a proporção de
+  inimigos fortes (e, no futuro, outros tipos mais perigosos) aumenta
+  a cada onda, mesmo com o total de inimigos estabilizado. Exemplo
+  ilustrativo: onda 3 com 15 inimigos (12 fracos + 3 fortes); onda 4
+  com 18 inimigos (12 fracos + 6 fortes); onda 5 substituindo parte
+  dos fracos por um tipo ainda mais perigoso (ex: os que atiram).
+- **Contrapeso reconhecido:** a introdução de múltiplas armas (espada
+  giratória, campo de força) deve aumentar a velocidade de eliminação
+  do jogador ao longo do tempo — a curva de dificuldade de composição
+  precisa ser calibrada considerando esse ganho de poder, não apenas a
+  força bruta dos inimigos.
+
+> Esta funcionalidade exige uma mudança de arquitetura: um contador de
+> onda contínuo por sala (não reiniciado a cada `spawn_horde()`), e uma
+> fórmula de composição que decida a mistura de tipos a partir desse
+> número absoluto de onda, com teto de volume. Registrada para
+> implementação cuidadosa em Sprint dedicada, não encaixada de forma
+> apressada.
 
 ### Primeira Vez vs. Revisita
 
@@ -651,6 +683,13 @@ ou onda. Esse detalhamento tem duplo propósito:
 ---
 
 # Histórico
+
+## v3.7
+- Adicionado refinamento futuro: continuidade de numeração de ondas
+  entre visitas de uma sala (não reiniciar a cada reentrada), com teto
+  de volume de inimigos e dificuldade crescente via composição de
+  tipos, não via crescimento geométrico de quantidade. Registrado
+  como Sprint dedicada, não implementado ainda.
 
 ## v3.6
 - Adicionada a Taxonomia de Tipos de Inimigo: Terrestres (dano de

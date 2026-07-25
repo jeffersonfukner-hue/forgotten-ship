@@ -16,8 +16,14 @@ class Enemy(Entity):
         self.enemy_type: str = enemy_type
         self.max_hp: int = config["hp"]
         self.hp: int = self.max_hp
-        self.is_dead: bool = False
+        self.damage: int = config["damage"]  # dano causado ao player por contato
 
+        # pontos de drop proporcionais ao poder do inimigo (hp + dano), nao fixos por tipo
+        self.drop_value: float = (self.max_hp + self.damage) / \
+            settings.ENEMY_POINTS_DIVISOR
+
+        self.is_dead: bool = False
+         
         # --- movimento ---
         self.speed: int = config["speed"]
 

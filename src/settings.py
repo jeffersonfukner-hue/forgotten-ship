@@ -19,6 +19,9 @@ PLAYER_SHOOT_INTERVAL: float = 0.8  # segundos entre disparos automaticos
 PLAYER_RANGE_RADIUS: float = 300  # raio unico: percepcao de inimigos e alcance do tiro
 PLAYER_KNOCKBACK_FORCE: int = 220
 PLAYER_SHOOT_DAMAGE: int = 10  # dano de cada projetil disparado automaticamente
+POINTS_PER_UPGRADE: int = 10  # pontos de drop necessarios para o proximo upgrade automatico
+UPGRADE_DAMAGE_INCREMENT: int = 5  # quanto o dano do tiro aumenta a cada upgrade
+UPGRADE_THRESHOLD_GROWTH: float = 1.5  # limiar de pontos cresce 50% a cada upgrade conquistado
 
 # --- Horda: geracao de inimigos ---
 HORDE_BASE_ENEMIES: int = 12  # quantidade de inimigos na primeira horda de uma sala
@@ -37,6 +40,7 @@ ENEMY_TYPES: dict = {
         "width": 14,
         "height": 14,
         "color": (180, 60, 60),  # vermelho
+        "damage": 10,  # dano causado ao player por contato
     },
     "strong": {
         "hp": 40,
@@ -44,5 +48,7 @@ ENEMY_TYPES: dict = {
         "width": 18,
         "height": 18,
         "color": (120, 40, 90),  # roxo escuro, visualmente distinto
+        "damage": 20,  # mais forte, condizente com o tamanho e HP maiores
     },
 }
+ENEMY_POINTS_DIVISOR: float = 30  # (hp + damage) / este valor = pontos de drop do inimigo

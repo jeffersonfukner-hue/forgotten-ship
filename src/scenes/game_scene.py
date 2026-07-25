@@ -114,6 +114,11 @@ class GameScene(Scene):
         self.camera_x: float = 0.0
         self.camera_y: float = 0.0
 
+        # --- progressao: pontos de drop e upgrades ---
+        self.drop_points: int = 0
+        self.points_to_upgrade: int = settings.POINTS_PER_UPGRADE
+        self.shoot_damage: int = settings.PLAYER_SHOOT_DAMAGE  # pode subir com upgrades
+
     # ==================================================================
     # CRIACAO E CONFIGURACAO DE SALAS
     # ==================================================================
@@ -299,11 +304,15 @@ class GameScene(Scene):
         # --- limpeza de inimigos mortos ---
         self.room.remove_dead_enemies()
 
-        # --- ondas: dispara a proxima onda por pressao de tempo, mesmo com inimigos vivos ---
-        if (self.room.next_wave_time is not None
-                and time.time() >= self.room.next_wave_time
-                and self.room.current_wave < self.room.total_waves):
+        # --- ondas: dispara a proxima onda pelo tempo OU pela onda atual ja ter sido limpa ---
+        wave_time_expired = (self.room.next_wave_time is not None
+                              and time.time() >= self.room.next_wave_time)
 
+        wave_cleared_early = (self.room.current_wave < self.room.total_waves
+                               and not self.room.get_enemies())
+
+        if (wave_time_expired or wave_cleared_early) and self.room.current_wave < self.room.total_waves:
+            
             self.room.current_wave += 1
 
             next_wave_count = int(self.room.horde_total_enemies * 1.5)
@@ -311,7 +320,7 @@ class GameScene(Scene):
 
             # onda 2 em diante usa o tipo forte, provando a diferenciacao visual/de HP
             self._spawn_wave_enemies(self.room, next_wave_count, enemy_type="strong")
-            
+
             if self.room.current_wave < self.room.total_waves:
                 self.room.next_wave_time = time.time() + \
                     self.calculate_wave_time(next_wave_count)
@@ -348,7 +357,8 @@ class GameScene(Scene):
                     from src.entities.projectile import Projectile
                     self.projectiles.append(Projectile(
                         self.player.x, self.player.y, direction,
-                        max_range=self.player.range_radius))
+                        max_range=self.player.range_radius,
+                        damage=self.player.shoot_damage))
 
                     self.player.confirm_shot()
 
@@ -363,6 +373,9 @@ class GameScene(Scene):
 
                     self.spawn_damage_text(
                         enemy.x, enemy.y, projectile.damage)
+
+                    if enemy.is_dead:
+                        self.player.add_drop_point(enemy.drop_value)
 
                     break
 
@@ -389,11 +402,11 @@ class GameScene(Scene):
 
             for enemy in enemies:
                 if self.player.rect.colliderect(enemy.rect):
-                    self.player.take_damage(10)
+                    self.player.take_damage(enemy.damage)
                     self.player.apply_knockback(enemy.x, enemy.y)
 
                     self.spawn_damage_text(
-                        self.player.x, self.player.y, 10)
+                        self.player.x, self.player.y, enemy.damage)
 
                     print(f"HP -> {self.player.hp}")
 
@@ -541,6 +554,7 @@ class GameScene(Scene):
 
         # --- elementos essenciais, sempre visiveis ---
         self.draw_hp_bar(screen)
+        self.draw_progress_bar(screen)
         self.draw_room_and_lives(screen)
 
         # --- painel de debug, compacto e translucido ---
@@ -572,6 +586,32 @@ class GameScene(Scene):
         text_rect.center = (bar_x + bar_width / 2, bar_y + bar_height / 2)
         screen.blit(text, text_rect)
 
+    def draw_progress_bar(self, screen: pygame.Surface) -> None:
+
+        bar_x, bar_y = 20, 46  # logo abaixo da barra de HP
+        bar_width, bar_height = 200, 10
+
+        ratio = self.player.drop_points / self.player.points_to_upgrade
+        ratio = min(1.0, ratio)  # protege contra qualquer excesso momentaneo
+
+        # fundo (roxo escuro, representa progresso faltante)
+        pygame.draw.rect(screen, (50, 30, 70),
+                          (bar_x, bar_y, bar_width, bar_height))
+
+        # preenchimento (dourado, progresso atual rumo ao proximo upgrade)
+        pygame.draw.rect(screen, (200, 170, 60),
+                          (bar_x, bar_y, bar_width * ratio, bar_height))
+
+        # contorno
+        pygame.draw.rect(screen, (255, 255, 255),
+                          (bar_x, bar_y, bar_width, bar_height), width=1)
+
+        font = pygame.font.Font(None, 22)
+        text = font.render(f"Level {self.player.level}", True, (255, 255, 255))
+        text_rect = text.get_rect()
+        text_rect.midleft = (bar_x + bar_width + 10, bar_y + bar_height / 2)
+        screen.blit(text, text_rect)
+
     def draw_room_and_lives(self, screen: pygame.Surface) -> None:
 
         # linha compacta e essencial: "Room X | Vidas: Y/Z"
@@ -580,7 +620,7 @@ class GameScene(Scene):
             f"Room {self.room.room_id}  |  Vidas: {self.player.lives}/{self.player.max_lives}",
             True, (255, 255, 255))
         text_rect = text.get_rect()
-        text_rect.topleft = (20, 52)
+        text_rect.topleft = (20, 62)
         screen.blit(text, text_rect)
 
     # ==================================================================
@@ -624,6 +664,7 @@ class GameScene(Scene):
         lines.append(self._build_wave_timer_line())
         lines.append(self._build_enemy_counter_line())
         lines.append(self._build_next_wave_line())
+        lines.append(self._build_progress_line())
 
         lines.append("")  # linha em branco separando o resumo da lista de salas
         lines.append("Salas:")
@@ -640,6 +681,11 @@ class GameScene(Scene):
 
         return lines
 
+    def _build_progress_line(self) -> str:
+
+        # barra de progresso ja aparece na HUD fixa; aqui so o poder atual, para debug
+        return f"Dano do tiro: {self.player.shoot_damage}"
+    
     def _build_wave_timer_line(self) -> str:
 
         if self.room.horde_clear_time is not None:
