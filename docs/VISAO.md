@@ -1,7 +1,7 @@
 # Forgotten Ship
 ## VISAO.md
 
-> **Versão:** 4.1
+> **Versão:** 4.4
 > **Status:** Em desenvolvimento — mudança de direção
 > **Projeto:** Jogo 01 da A1 Game Academy
 
@@ -581,13 +581,74 @@ ver o indicador visual, sem surpresas.
   - Área do campo (raio)
   - Dano causado
 
-## Espada Giratória (Arma 3)
+## Sabre Giratório (Arma 3 — Tema Espacial)
 
-- Uma ou mais espadas orbitando o jogador.
+- Uma ou mais lâminas orbitando o jogador (renomeado de "Espada
+  Giratória" para manter coerência temática de nave espacial — sem
+  espadas medievais; inspirado em sabres de luz).
 - Três upgrades independentes, até 5 níveis cada:
-  - Quantidade de espadas
+  - Quantidade de lâminas
   - Velocidade de giro
-  - Dano por espada
+  - Dano por lâmina
+
+## Arma Vampírica ("Fang")
+
+Arma nova, ainda a definir em detalhe: dano vinculado a roubo de vida
+— parte do dano causado ao inimigo é convertida em cura para o
+jogador. Upgrades aumentam tanto o dano causado quanto a fração de
+vida roubada (dois eixos independentes).
+
+## Sistema de Armas de Fogo com Munição e Recarga
+
+Diferente do tiro automático de munição infinita já implementado,
+armas de fogo temáticas teriam capacidade de pente limitada e tempo de
+recarga:
+
+- **Revólver:** poucos tiros por carregamento (5 ou 6 — número exato
+  ainda a decidir), reload rápido.
+- **Arma pesada:** carregamento maior (ex: 12 tiros), dano por tiro
+  mais alto, reload mais lento.
+- **Metralhadora:** cadência de disparo muito alta, carregamento
+  intermediário.
+- Armas mais lentas/pesadas seriam especialmente úteis contra
+  chefões (dano concentrado), enquanto armas rápidas seriam melhores
+  contra hordas numerosas — diferenciação tática por tipo de ameaça.
+
+## Padrões de Tiro Múltiplo (Escolha do Jogador)
+
+Diferente do disparo automático simples atual (sempre mira o inimigo
+mais próximo em linha reta), upgrades futuros permitiriam escolher um
+padrão de disparo:
+
+- Diagonal (múltiplos tiros se abrindo em ângulo)
+- Linha reta (múltiplos tiros na mesma direção, um atrás do outro ou
+  em paralelo)
+- Quatro cantos (tiros simultâneos em direções ortogonais)
+
+## Escudo
+
+Item de defesa a detalhar — registrado como conceito, sem mecânica
+definida ainda (ex: pode ser um bloqueio de dano temporário, uma
+barreira com HP próprio, ou redução percentual de dano recebido).
+
+## Padronização de Eixos de Upgrade (Decisão de Arquitetura Pendente)
+
+Cada arma/skill deveria seguir um conjunto padronizado de eixos de
+upgrade possíveis (não necessariamente todos aplicáveis a toda arma),
+para manter consistência de dados e reduzir a necessidade de inventar
+uma estrutura nova a cada arma:
+
+- Quantidade (de projéteis, lâminas, etc.)
+- Força/Dano
+- Velocidade (de disparo, de movimento do projétil/lâmina, ou de giro)
+- Raio/Alcance
+- Eixos específicos de uma arma (ex: fração de roubo de vida do Fang,
+  capacidade de pente e tempo de reload das armas de fogo)
+
+> Definir essa padronização antes de implementar o sistema de escolha
+> de skills evita retrabalho — cada arma nova poderia reaproveitar a
+> mesma estrutura de dados de upgrade, preenchendo apenas os eixos que
+> fizerem sentido para ela.
 
 ## Tipos de Inimigo (Taxonomia)
 
@@ -613,6 +674,17 @@ vulnerabilidade a armas e/ou comportamento de ataque:
 > conforme os sistemas de armas (espada, campo de força) e de dano ao
 > longo do tempo forem implementados.
 
+> **Nota sobre nomenclatura:** hoje os tipos usam chaves técnicas
+> (`"weak"`, `"strong"`) como identificador em `settings.ENEMY_TYPES` —
+> um placeholder deliberado. Nomear os inimigos de verdade (ex: um
+> nome próprio para cada criatura) é uma tarefa futura de identidade
+> visual/narrativa, não uma mudança de arquitetura: como o tipo já é
+> uma chave de dicionário, trocar `"weak"` por um nome próprio no
+> futuro não exige alterar nenhuma lógica de código, apenas a
+> configuração — as estatísticas, o histórico por visita, e todo o
+> resto já registram e exibem por essa chave, prontos para a
+> nomenclatura definitiva quando ela existir.
+
 ## Penalidade por Dano Recebido
 
 Ao ser atingido, o jogador perde uma pequena porcentagem dos pontos
@@ -629,6 +701,20 @@ com o tempo. Enquanto a energia está baixa, a qualidade/potência das
 skills é proporcionalmente reduzida, voltando ao normal conforme a
 energia regenera. Isso introduz um ritmo de "gerenciamento de recurso"
 à jogabilidade, além do combate direto.
+
+## Power-ups Passivos
+
+Upgrades que não afetam diretamente o dano ou alcance de ataque, mas
+melhoram a experiência/eficiência geral do jogador:
+
+- **Ímã:** atrai drops coletáveis dentro de um raio próprio, distinto
+  do raio de percepção/alcance de tiro já existente — reduz a
+  necessidade de andar até cada drop individualmente. Upgradável em
+  níveis, aumentando o raio de atração.
+- **Regeneração de vida:** recupera uma pequena quantidade de HP ao
+  longo do tempo, de forma passiva, sem depender de itens ou fontes de
+  cura específicas. Upgradável em níveis, aumentando a taxa de
+  regeneração.
 
 ## Interface de Usuário (UI) — Visão Geral
 
@@ -817,6 +903,26 @@ design (Sprints 024-026), com fontes reais do gênero:
 ---
 
 # Histórico
+
+## v4.4
+- Renomeada "Espada Giratória" para "Sabre Giratório", mantendo tema
+  espacial (sem espadas medievais). Adicionadas: arma vampírica
+  ("Fang", roubo de vida), sistema de armas de fogo com munição/reload
+  (revólver, pesada, metralhadora), padrões de tiro múltiplo
+  escolhíveis (diagonal, linha reta, quatro cantos), conceito de
+  escudo, e nota de padronização de eixos de upgrade entre armas.
+
+## v4.3
+- Adicionada seção de Power-ups Passivos: ímã (raio de atração
+  próprio, distinto do raio de percepção/tiro) e regeneração de vida
+  passiva, ambos upgradáveis em níveis.
+
+## v4.2
+- Adicionada nota sobre nomenclatura de inimigos: chaves técnicas
+  atuais ("weak"/"strong") são placeholder deliberado; nomear os
+  inimigos de verdade no futuro é apenas mudança de configuração, não
+  de arquitetura, já que todo o sistema de estatísticas já opera por
+  chave de dicionário.
 
 ## v4.1
 - Adicionada Estrutura de Boss Rush: ~5 minutos de combate com

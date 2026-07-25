@@ -23,7 +23,7 @@ class Enemy(Entity):
             settings.ENEMY_POINTS_DIVISOR
 
         self.is_dead: bool = False
-         
+
         # --- movimento ---
         self.speed: int = config["speed"]
 
@@ -49,7 +49,7 @@ class Enemy(Entity):
     # ATUALIZACAO POR FRAME
     # ==================================================================
 
-    def update(self, dt: float, target_x: float, target_y: float, others: list) -> None:
+    def update(self, dt: float, target_x: float, target_y: float, others: list, bounds: tuple) -> None:
 
         direction = pygame.Vector2(
             target_x - self.x, target_y - self.y)
@@ -80,9 +80,14 @@ class Enemy(Entity):
         self.x += direction.x * self.speed * dt
         self.y += direction.y * self.speed * dt
 
+        # respeita os limites da sala, mesmo apos empurrao de separacao
+        left, top, right, bottom = bounds
+        self.x = max(left, min(self.x, right - self.width))
+        self.y = max(top, min(self.y, bottom - self.height))
+
         self.rect.x = self.x
         self.rect.y = self.y
-
+        
     # ==================================================================
     # DESENHO
     # ==================================================================

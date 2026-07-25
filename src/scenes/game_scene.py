@@ -14,6 +14,8 @@ from src import settings
 
 import time
 
+import random
+
 class GameScene(Scene):
 
     # --- tabelas de configuracao (candidatas a settings.py numa proxima Sprint) ---
@@ -132,18 +134,32 @@ class GameScene(Scene):
         room.survival_start_time = time.time()
         room.time_expired = False
 
+        # zera estatisticas da visita anterior - o historico ja foi preservado em visit_history
+        room.kills_by_type = {}
+        room.points_by_type = {}
+
         enemy_count = settings.HORDE_BASE_ENEMIES
+
         room.horde_total_enemies = enemy_count
 
         self._spawn_wave_enemies(room, enemy_count)
+    
+    def _pick_enemy_type(self, room: Room) -> str:
+        elapsed = time.time() - room.survival_start_time
 
-    def _spawn_wave_enemies(self, room: Room, enemy_count: int, enemy_type: str = "weak") -> None:
+        # chance de spawnar inimigo forte cresce linearmente ate o teto configurado
+        progress = min(1.0, elapsed / settings.STRONG_ENEMY_RAMP_TIME)
+        chance = progress * settings.STRONG_ENEMY_MAX_CHANCE    
+    
+        return "strong" if random.random() < chance else "weak"
+    
+    def _spawn_wave_enemies(self, room: Room, enemy_count: int) -> None:
         """Sorteia posicoes nas bordas da sala para uma leva de inimigos,
-        respeitando distancia minima das portas. Reutilizado tanto pela
-        primeira onda (spawn_horde) quanto pelas ondas seguintes."""
+        respeitando distancia minima das portas. O tipo de cada inimigo e
+        escolhido individualmente, com chance de ser forte crescendo ao
+        longo do tempo de permanencia na sala (ver _pick_enemy_type)."""
 
         from src.entities.enemy import Enemy
-        import random
 
         left, top, right, bottom = room.get_bounds()
 
@@ -174,6 +190,7 @@ class GameScene(Scene):
                 if far_enough or not door_positions:
                     break
 
+            enemy_type = self._pick_enemy_type(room)
             room.add_enemy(Enemy(x, y, enemy_type=enemy_type))
 
     def calculate_wave_time(self, enemy_count: int) -> float:
@@ -291,15 +308,21 @@ class GameScene(Scene):
         # --- limpeza de inimigos mortos ---
         self.room.remove_dead_enemies()
 
-        # --- piso continuo: reabastece inimigos ate manter o minimo vivo, so enquanto o tempo nao esgotou ---
+        # --- piso continuo: reabastece inimigos ate manter o minimo vivo, so enquanto o jogo estiver ativo ---
+        game_over = self.player.is_dead and not self.player.has_lives_left()
+
         current_count = len(self.room.get_enemies())
         missing = self.room.horde_total_enemies - current_count
 
-        if missing > 0 and not self.room.cleared and not self.room.time_expired:
+        if missing > 0 and not self.room.cleared and not self.room.time_expired and not game_over:
             self._spawn_wave_enemies(self.room, missing)
 
         # --- condicao de vitoria: sobreviver por tempo determinado (versao simples) ---
-        survival_elapsed = time.time() - self.room.survival_start_time
+        # jogador definitivamente morto (sem vidas) nao conta mais tempo de sobrevivencia
+        if self.player.is_dead and not self.player.has_lives_left():
+            survival_elapsed = self.room.horde_clear_time or 0.0
+        else:
+            survival_elapsed = time.time() - self.room.survival_start_time
 
         # ao esgotar o tempo, para de reabastecer - mas so destranca a porta quando nao houver mais inimigos vivos
         if survival_elapsed >= self.room.survival_duration:
@@ -313,6 +336,15 @@ class GameScene(Scene):
             self.room.cleared = True
             self.room.times_cleared += 1
             self.room.horde_clear_time = survival_elapsed
+
+            # registra esta visita no historico, antes que as estatisticas da sala sejam zeradas na proxima
+            self.room.visit_history.append({
+                "visit_number": self.room.times_cleared,
+                "clear_time": survival_elapsed,
+                "kills_by_type": dict(self.room.kills_by_type),
+                "points_by_type": dict(self.room.points_by_type),
+                "total_points": sum(self.room.points_by_type.values()),
+            })
 
         enemies = self.room.get_enemies()
 
@@ -372,9 +404,11 @@ class GameScene(Scene):
 
         # --- inimigos: movimento e colisao com o player ---
         if not self.player.is_dead:  # inimigos param de agir assim que o jogador morre
+            
+            room_bounds = self.room.get_bounds()
 
             for enemy in enemies:
-                enemy.update(dt, self.player.x, self.player.y, enemies)
+                enemy.update(dt, self.player.x, self.player.y, enemies, room_bounds)
 
             for enemy in enemies:
                 if self.player.rect.colliderect(enemy.rect):
@@ -657,26 +691,41 @@ class GameScene(Scene):
             lines.append(
                 f"  Room {room_id}: {room.reentries}/{room.max_reentries} ({timer_text})")
 
-            # estatisticas desta sala, aninhadas logo abaixo dela
+            # estatisticas da visita atual (ainda em andamento), aninhadas logo abaixo
             for enemy_type in sorted(room.kills_by_type.keys()):
                 kills = room.kills_by_type[enemy_type]
                 points = room.points_by_type[enemy_type]
                 lines.append(
                     f"    {enemy_type}: {kills} mortos, {points:.1f} pts")
 
-        return lines
+            # historico de visitas ja concluidas, mais recente primeiro
+            for entry in reversed(room.visit_history):
+                lines.append(
+                    f"    Visita {entry['visit_number']}: "
+                    f"{entry['clear_time']:.1f}s, {entry['total_points']:.1f} pts")
 
+                # quebra por tipo de inimigo, indentada sob a visita
+                for enemy_type in sorted(entry['kills_by_type'].keys()):
+                    kills = entry['kills_by_type'][enemy_type]
+                    lines.append(f"      {enemy_type}: {kills}")
+
+        return lines
+    
     def _build_survival_line(self) -> str:
 
         # piso continuo: mostra tempo sobrevivido, ou o tempo final se a sala ja foi vencida
         if self.room.cleared:
             return f"Sala vencida em: {self.room.horde_clear_time:.1f}s"
 
+        # jogador definitivamente morto: congela o cronometro no valor exato do momento da morte
+        if self.player.is_dead and not self.player.has_lives_left():
+            return "Sobrevivendo: -- (GAME OVER)"
+
         elapsed = time.time() - self.room.survival_start_time
         remaining = max(0.0, self.room.survival_duration - elapsed)
 
         return f"Sobrevivendo: {elapsed:.1f}s (faltam {remaining:.1f}s)"
-
+    
     def _build_enemy_counter_line(self) -> str:
 
         total = self.room.horde_total_enemies
@@ -707,11 +756,3 @@ class GameScene(Scene):
         lines.append(f"  Total: {total_kills} mortos, {total_points:.1f} pts")
 
         return lines
-    
-        if self.room.next_wave_time is not None:
-            remaining = max(0.0, self.room.next_wave_time - time.time())
-            status = f"Nova onda: {remaining:.1f}s"
-        else:
-            status = "Ultima onda"
-
-        return f"{status} (onda {self.room.current_wave}/{self.room.total_waves})"

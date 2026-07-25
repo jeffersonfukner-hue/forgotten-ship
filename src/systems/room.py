@@ -42,6 +42,9 @@ class Room:
         self.kills_by_type: dict = {}
         self.points_by_type: dict = {}
 
+        # --- historico por visita: cada entrada e um registro de uma sessao concluida ---
+        self.visit_history: list[dict] = []
+
     # ==================================================================
     # REENTRADAS (limite de revisitas por sala)
     # ==================================================================
