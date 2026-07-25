@@ -132,6 +132,8 @@ class GameScene(Scene):
         # Formula real (Sprint 012): 12 + (room.times_cleared * 6)
         enemy_count = (settings.HORDE_BASE_ENEMIES
                        + room.times_cleared * settings.HORDE_ENEMIES_PER_VISIT)
+        
+        room.horde_total_enemies = enemy_count
 
         left, top, right, bottom = room.get_bounds()
 
@@ -492,6 +494,8 @@ class GameScene(Scene):
         self.draw_room_info(screen)
         self.draw_lives_counter(screen)
         self.draw_wave_timer(screen)
+        self.draw_enemy_counter(screen)
+        self.draw_all_rooms_debug(screen)
 
     def draw_hp_bar(self, screen: pygame.Surface) -> None:
 
@@ -521,6 +525,8 @@ class GameScene(Scene):
 
     def draw_room_info(self, screen: pygame.Surface) -> None:
 
+        self.room.regen_reentries()  # forca o calculo de regeneracao a cada frame, para a HUD refletir o tempo real
+
         font = pygame.font.Font(None, 28)
         text = font.render(
             f"Room {self.room.room_id}  (visitas: {self.room.times_cleared}, "
@@ -529,6 +535,27 @@ class GameScene(Scene):
         text_rect = text.get_rect()
         text_rect.topleft = (20, 52)
         screen.blit(text, text_rect)
+
+    def draw_all_rooms_debug(self, screen: pygame.Surface) -> None:
+
+        font = pygame.font.Font(None, 24)
+
+        y = 180  # abaixo do contador de inimigos
+
+        for room_id in sorted(self.rooms.keys()):
+            room = self.rooms[room_id]
+            room.regen_reentries()  # forca atualizacao antes de exibir
+
+            timer_text = f"{room.time_until_next_regen():.0f}s" if room.reentries < room.max_reentries else "cheio"
+
+            text = font.render(
+                f"Room {room_id}: {room.reentries}/{room.max_reentries} ({timer_text})",
+                True, (200, 200, 200))
+            text_rect = text.get_rect()
+            text_rect.topleft = (20, y)
+            screen.blit(text, text_rect)
+
+            y += 24
 
     def draw_lives_counter(self, screen: pygame.Surface) -> None:
 
@@ -556,4 +583,20 @@ class GameScene(Scene):
         text = font.render(f"{label}: {elapsed:.1f}s", True, (255, 255, 255))
         text_rect = text.get_rect()
         text_rect.topleft = (20, 116)
+        screen.blit(text, text_rect)
+
+    def draw_enemy_counter(self, screen: pygame.Surface) -> None:
+
+        total = self.room.horde_total_enemies
+
+        if total == 0:
+            return  # sala sem horda gerada ainda (ex: sala vazia por design)
+
+        remaining = len(self.room.get_enemies())
+
+        font = pygame.font.Font(None, 28)
+        text = font.render(
+            f"Inimigos: {remaining}/{total}", True, (255, 255, 255))
+        text_rect = text.get_rect()
+        text_rect.topleft = (20, 148)
         screen.blit(text, text_rect)

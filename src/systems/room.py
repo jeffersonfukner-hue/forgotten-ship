@@ -21,7 +21,8 @@ class Room:
         # --- rejogabilidade: contagem de visitas e ciclo de limpeza ---
         self.times_cleared: int = 0  # quantas vezes esta sala ja foi totalmente limpa
         self.cleared: bool = False  # True quando a sala foi esvaziada neste ciclo, ate ser reaberta
-
+        self.horde_total_enemies: int = 0  # tamanho da horda ao ser gerada, para exibir X/Y na HUD
+        
         # --- reentradas: limite de revisitas, regenera com o tempo ---
         self.max_reentries: int = settings.ROOM_MAX_REENTRIES
         self.reentries: int = self.max_reentries
@@ -62,6 +63,20 @@ class Room:
                 self.max_reentries, self.reentries + regenerated)
             self.last_regen_time = self._now()
 
+    def time_until_next_regen(self) -> float:
+
+        # quanto tempo falta para a proxima reentrada regenerar, em segundos (0 se ja no maximo)
+        if self.reentries >= self.max_reentries:
+            return 0.0
+
+        if self.last_regen_time == 0.0:
+            return 0.0
+
+        elapsed = self._now() - self.last_regen_time
+        remaining = self.regen_interval - (elapsed % self.regen_interval)
+
+        return remaining
+    
     def _now(self) -> float:
 
         import time
