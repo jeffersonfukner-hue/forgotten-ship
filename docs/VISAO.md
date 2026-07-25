@@ -1,7 +1,7 @@
 # Forgotten Ship
 ## VISAO.md
 
-> **Versão:** 3.5
+> **Versão:** 3.6
 > **Status:** Em desenvolvimento — mudança de direção
 > **Projeto:** Jogo 01 da A1 Game Academy
 
@@ -499,6 +499,30 @@ ver o indicador visual, sem surpresas.
   - Velocidade de giro
   - Dano por espada
 
+## Tipos de Inimigo (Taxonomia)
+
+Categorias de inimigo planejadas, cada uma com regras próprias de
+vulnerabilidade a armas e/ou comportamento de ataque:
+
+- **Terrestres** — o tipo padrão atual. Recebem dano de qualquer arma
+  (tiro, espada giratória, campo de força).
+- **Aéreos** — vulneráveis apenas a projétil ou campo de força; imunes
+  a armas de contato/melee (ex: espada giratória não os afeta).
+- **Ativos** — atacam à distância. Um padrão de ataque específico é o
+  "cuspe venenoso": um projétil que, ao atingir o jogador, gruda nele e
+  causa dano contínuo (não instantâneo) por alguns segundos.
+- **Residual (morto-vivo)** — causa dano por contato normalmente
+  enquanto vivo (como um Terrestre comum); ao ser derrotado, deixa uma
+  poça de gosma no chão que também causa dano por contato — o perigo
+  não termina com a morte do inimigo, apenas muda de forma.
+
+> Esta taxonomia é maior que o escopo de qualquer Sprint isolada.
+> Implementação planejada de forma incremental: primeiro dois tipos
+> simples dentro da categoria Terrestre (fraco/forte, diferindo apenas
+> em HP/tamanho/cor), depois expandindo para as demais categorias
+> conforme os sistemas de armas (espada, campo de força) e de dano ao
+> longo do tempo forem implementados.
+
 ## Penalidade por Dano Recebido
 
 Ao ser atingido, o jogador perde uma pequena porcentagem dos pontos
@@ -627,6 +651,14 @@ ou onda. Esse detalhamento tem duplo propósito:
 ---
 
 # Histórico
+
+## v3.6
+- Adicionada a Taxonomia de Tipos de Inimigo: Terrestres (dano de
+  qualquer arma), Aéreos (só projétil/campo de força, imunes a
+  melee), Ativos (ataque a distância, incluindo cuspe venenoso com
+  dano contínuo), e Residual (poça de gosma pós-morte, dano por
+  contato). Registrada implementação incremental, começando por dois
+  tipos simples de Terrestre.
 
 ## v3.5
 - Registrada observação de gameplay emergente: tamanho da sala afeta

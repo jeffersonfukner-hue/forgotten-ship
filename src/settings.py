@@ -28,3 +28,21 @@ SAFE_SPAWN_DISTANCE: float = 120  # distancia minima entre um inimigo e qualquer
 # --- Reentradas: limite de revisitas por sala ---
 ROOM_MAX_REENTRIES: int = 5
 ROOM_REGEN_INTERVAL: float = 60.0  # segundos para regenerar 1 reentrada
+
+# --- Inimigos: configuracao por tipo (Terrestre fraco/forte, por enquanto) ---
+ENEMY_TYPES: dict = {
+    "weak": {
+        "hp": 20,
+        "speed": 80,
+        "width": 14,
+        "height": 14,
+        "color": (180, 60, 60),  # vermelho
+    },
+    "strong": {
+        "hp": 40,
+        "speed": 70,  # um pouco mais lento, compensando o HP maior
+        "width": 18,
+        "height": 18,
+        "color": (120, 40, 90),  # roxo escuro, visualmente distinto
+    },
+}

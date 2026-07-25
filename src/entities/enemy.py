@@ -1,19 +1,35 @@
 import pygame
 
+from src import settings
 from src.entities.entity import Entity
 
 
 class Enemy(Entity):
 
-    def __init__(self, x: float, y: float) -> None:
-        super().__init__(x=x, y=y, width=14, height=14)
+    def __init__(self, x: float, y: float, enemy_type: str = "weak") -> None:
 
-        self.speed: int = 80
-        self.max_hp: int = 20
+        config = settings.ENEMY_TYPES[enemy_type]
+
+        super().__init__(x=x, y=y, width=config["width"], height=config["height"])
+
+        # --- combate ---
+        self.enemy_type: str = enemy_type
+        self.max_hp: int = config["hp"]
         self.hp: int = self.max_hp
         self.is_dead: bool = False
 
+        # --- movimento ---
+        self.speed: int = config["speed"]
+
+        # --- visual ---
+        self.color: tuple = config["color"]
+
+    # ==================================================================
+    # COMBATE
+    # ==================================================================
+
     def take_damage(self, amount: int) -> None:
+
         if self.is_dead:
             return
 
@@ -22,6 +38,10 @@ class Enemy(Entity):
         if self.hp <= 0:
             self.hp = 0
             self.is_dead = True  # sinaliza para GameScene remover da lista de inimigos
+
+    # ==================================================================
+    # ATUALIZACAO POR FRAME
+    # ==================================================================
 
     def update(self, dt: float, target_x: float, target_y: float, others: list) -> None:
 
@@ -57,13 +77,17 @@ class Enemy(Entity):
         self.rect.x = self.x
         self.rect.y = self.y
 
+    # ==================================================================
+    # DESENHO
+    # ==================================================================
+
     def draw(self, screen: pygame.Surface, camera_x: float = 0, camera_y: float = 0) -> None:
 
         screen_rect = self.rect.copy()
         screen_rect.x -= camera_x
         screen_rect.y -= camera_y
 
-        pygame.draw.rect(screen, (180, 60, 60), screen_rect,)
+        pygame.draw.rect(screen, self.color, screen_rect,)
 
         self.draw_hp_bar(screen, screen_rect)
 

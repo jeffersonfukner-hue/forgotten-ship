@@ -145,7 +145,7 @@ class GameScene(Scene):
         else:
             room.next_wave_time = None
 
-    def _spawn_wave_enemies(self, room: Room, enemy_count: int) -> None:
+    def _spawn_wave_enemies(self, room: Room, enemy_count: int, enemy_type: str = "weak") -> None:
         """Sorteia posicoes nas bordas da sala para uma leva de inimigos,
         respeitando distancia minima das portas. Reutilizado tanto pela
         primeira onda (spawn_horde) quanto pelas ondas seguintes."""
@@ -182,8 +182,8 @@ class GameScene(Scene):
                 if far_enough or not door_positions:
                     break
 
-            room.add_enemy(Enemy(x, y))
-    
+            room.add_enemy(Enemy(x, y, enemy_type=enemy_type))
+
     def calculate_wave_time(self, enemy_count: int) -> float:
 
         import math
@@ -309,8 +309,9 @@ class GameScene(Scene):
             next_wave_count = int(self.room.horde_total_enemies * 1.5)
             self.room.horde_total_enemies += next_wave_count
 
-            self._spawn_wave_enemies(self.room, next_wave_count)
-
+            # onda 2 em diante usa o tipo forte, provando a diferenciacao visual/de HP
+            self._spawn_wave_enemies(self.room, next_wave_count, enemy_type="strong")
+            
             if self.room.current_wave < self.room.total_waves:
                 self.room.next_wave_time = time.time() + \
                     self.calculate_wave_time(next_wave_count)
