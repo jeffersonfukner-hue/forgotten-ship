@@ -18,9 +18,10 @@ PLAYER_MAX_LIVES: int = 5
 PLAYER_SHOOT_INTERVAL: float = 0.8  # segundos entre disparos automaticos
 PLAYER_RANGE_RADIUS: float = 300  # raio unico: percepcao de inimigos e alcance do tiro
 PLAYER_KNOCKBACK_FORCE: int = 220
+PLAYER_SHOOT_DAMAGE: int = 10  # dano de cada projetil disparado automaticamente
 
 # --- Horda: geracao de inimigos ---
-HORDE_BASE_ENEMIES: int = 1  # quantidade de inimigos na primeira horda de uma sala
+HORDE_BASE_ENEMIES: int = 12  # quantidade de inimigos na primeira horda de uma sala
 HORDE_ENEMIES_PER_VISIT: int = 6  # incremento de inimigos a cada revisita (rejogabilidade)
 SAFE_SPAWN_DISTANCE: float = 120  # distancia minima entre um inimigo e qualquer porta ao nascer
 

@@ -1,7 +1,7 @@
 # Forgotten Ship
 ## VISAO.md
 
-> **Versão:** 3.3
+> **Versão:** 3.5
 > **Status:** Em desenvolvimento — mudança de direção
 > **Projeto:** Jogo 01 da A1 Game Academy
 
@@ -216,6 +216,46 @@ sua porta, não apenas uma horda única:
 - Isso pode exigir, inclusive, retornar a salas já visitadas para obter
   material adicional faltante, reforçando a mecânica de idas e vindas
   já prevista no conceito de Reparo em Cadeia.
+
+#### Ondas por Pressão de Tempo, não por Conclusão
+
+A transição entre ondas não espera o jogador eliminar todos os
+inimigos da onda atual — ela ocorre em um tempo calculado, e a nova
+onda se soma aos inimigos remanescentes da anterior, criando pressão
+real para não procrastinar o combate.
+
+- **Cálculo do tempo por onda:** baseado na quantidade de tiros
+  necessários para eliminar cada inimigo da onda (HP do inimigo /
+  dano do tiro do jogador), multiplicado pelo intervalo entre
+  disparos — não um valor fixo arbitrário. Isso faz o tempo de onda
+  se ajustar automaticamente conforme o jogador evolui (mais dano,
+  mais velocidade de tiro), sem exigir uma fórmula nova a cada
+  upgrade implementado.
+- **Feedback visual obrigatório:** contagem regressiva na UI
+  ("Próxima onda em: Xs"), para que o jogador sinta a urgência e não
+  fuja do combate.
+
+> **Observação de gameplay emergente (validada em teste):** o tamanho
+> físico da sala afeta naturalmente a dificuldade da pressão de tempo,
+> mesmo sem nenhum ajuste manual — em salas grandes (ex: Área de
+> Carga), inimigos levam mais tempo para alcançar o jogador, então a
+> onda seguinte tende a se acumular com sobras da anterior; em salas
+> pequenas (Corredor, Engenharia), o jogador consegue eliminar toda a
+> onda antes da próxima começar. Esse efeito não foi projetado
+> deliberadamente — surgiu da combinação entre o cálculo de tempo por
+> onda e a geometria de cada sala, e vale ser considerado (e talvez
+> aproveitado de propósito) ao desenhar futuras salas.
+
+#### Ondas Mistas (dependência: tipos de inimigo)
+
+Ondas posteriores devem misturar inimigos de diferentes níveis de
+resistência (ex: onda 1 com inimigos de HP 20-30; onda 2 combinando
+HP 30 e 40), refletindo tanto a evolução natural de dificuldade
+quanto os upgrades que o jogador já teria adquirido até aquele ponto
+(mais dano, velocidade, escudo, campo de força). Esta parte depende da
+introdução de múltiplos tipos de inimigo (ver "Tipos de Inimigo" mais
+abaixo neste documento) — não implementada nesta fase, que ainda usa
+um único tipo de inimigo com HP fixo.
 
 ### Primeira Vez vs. Revisita
 
@@ -587,6 +627,20 @@ ou onda. Esse detalhamento tem duplo propósito:
 ---
 
 # Histórico
+
+## v3.5
+- Registrada observação de gameplay emergente: tamanho da sala afeta
+  a dificuldade da pressão de tempo entre ondas (salas grandes
+  acumulam sobras da onda anterior; salas pequenas permitem limpar
+  antes da próxima começar) — não projetado deliberadamente, validado
+  em teste real.
+
+## v3.4
+- Detalhado o mecanismo de Ondas por Pressão de Tempo: transição
+  ocorre em tempo calculado (tiros necessários × intervalo de disparo),
+  não por conclusão da onda atual — inimigos se acumulam se o jogador
+  demorar. Registrada dependência de Ondas Mistas em múltiplos tipos
+  de inimigo (ainda não implementados).
 
 ## v3.3
 - Adicionado status de implementação ao Sistema de Vidas: núcleo

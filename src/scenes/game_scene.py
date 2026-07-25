@@ -12,6 +12,7 @@ from src.systems.door import Door, TOP, BOTTOM, LEFT, RIGHT
 
 from src import settings
 
+import time
 
 class GameScene(Scene):
 
@@ -118,22 +119,39 @@ class GameScene(Scene):
     # ==================================================================
 
     def spawn_horde(self, room: Room) -> None:
-        """Gera uma nova horda de inimigos na sala, espalhados nas bordas,
-        respeitando distancia minima das portas. Reinicia o cronometro de onda."""
+        """Gera a primeira onda de uma nova horda na sala, espalhados nas
+        bordas, respeitando distancia minima das portas. Reinicia o
+        cronometro de onda e agenda a proxima onda por pressao de tempo."""
 
-        from src.entities.enemy import Enemy
-        import random
         import time
 
         room.horde_start_time = time.time()
         room.horde_clear_time = None  # None enquanto a horda estiver ativa
 
+        room.current_wave = 1
+
         # TESTE: valor reduzido para agilizar testes de reentrada/regeneracao.
         # Formula real (Sprint 012): 12 + (room.times_cleared * 6)
         enemy_count = (settings.HORDE_BASE_ENEMIES
                        + room.times_cleared * settings.HORDE_ENEMIES_PER_VISIT)
-        
+
         room.horde_total_enemies = enemy_count
+
+        self._spawn_wave_enemies(room, enemy_count)
+
+        # agenda a proxima onda pelo tempo calculado, nao pela conclusao da onda atual
+        if room.total_waves > 1:
+            room.next_wave_time = time.time() + self.calculate_wave_time(enemy_count)
+        else:
+            room.next_wave_time = None
+
+    def _spawn_wave_enemies(self, room: Room, enemy_count: int) -> None:
+        """Sorteia posicoes nas bordas da sala para uma leva de inimigos,
+        respeitando distancia minima das portas. Reutilizado tanto pela
+        primeira onda (spawn_horde) quanto pelas ondas seguintes."""
+
+        from src.entities.enemy import Enemy
+        import random
 
         left, top, right, bottom = room.get_bounds()
 
@@ -165,7 +183,18 @@ class GameScene(Scene):
                     break
 
             room.add_enemy(Enemy(x, y))
+    
+    def calculate_wave_time(self, enemy_count: int) -> float:
 
+        import math
+
+        # tempo estimado para o player limpar a onda no ritmo atual de dano/cadencia
+        enemy_hp = 20  # HP atual do Enemy (Sprint 013) - fixo por enquanto, sem tipos variados
+        shots_per_enemy = math.ceil(enemy_hp / settings.PLAYER_SHOOT_DAMAGE)
+        time_per_enemy = shots_per_enemy * settings.PLAYER_SHOOT_INTERVAL
+
+        return enemy_count * time_per_enemy
+    
     def create_room(self, room_id: int) -> Room:
         """Retorna a sala do cache, gerando uma nova horda se ela ja tiver sido
         limpa (respeitando reentradas), ou cria a sala do zero na primeira visita."""
@@ -267,18 +296,38 @@ class GameScene(Scene):
         self.entity_manager.update(dt)
         self.update_camera()
 
-        # --- limpeza e destravamento de sala ---
+        # --- limpeza de inimigos mortos ---
         self.room.remove_dead_enemies()
 
-        if not self.room.get_enemies() and not self.room.cleared:
+        # --- ondas: dispara a proxima onda por pressao de tempo, mesmo com inimigos vivos ---
+        if (self.room.next_wave_time is not None
+                and time.time() >= self.room.next_wave_time
+                and self.room.current_wave < self.room.total_waves):
+
+            self.room.current_wave += 1
+
+            next_wave_count = int(self.room.horde_total_enemies * 1.5)
+            self.room.horde_total_enemies += next_wave_count
+
+            self._spawn_wave_enemies(self.room, next_wave_count)
+
+            if self.room.current_wave < self.room.total_waves:
+                self.room.next_wave_time = time.time() + \
+                    self.calculate_wave_time(next_wave_count)
+            else:
+                self.room.next_wave_time = None  # ultima onda, nao agenda mais nenhuma
+
+        # --- sala limpa: exige lista vazia E ja estar na ultima onda ---
+        if (not self.room.get_enemies()
+                and self.room.current_wave >= self.room.total_waves
+                and not self.room.cleared):
+
             # sala limpa pela primeira vez neste ciclo: destranca portas e marca como limpa
             for door in self.room.get_doors():
                 door.unlock()
 
             self.room.cleared = True
             self.room.times_cleared += 1
-
-            import time
             self.room.horde_clear_time = time.time() - self.room.horde_start_time
 
         enemies = self.room.get_enemies()
@@ -489,13 +538,12 @@ class GameScene(Scene):
 
     def draw_ui(self, screen: pygame.Surface) -> None:
 
-        # --- elementos fixos de HUD, na ordem de leitura ---
+        # --- elementos essenciais, sempre visiveis ---
         self.draw_hp_bar(screen)
-        self.draw_room_info(screen)
-        self.draw_lives_counter(screen)
-        self.draw_wave_timer(screen)
-        self.draw_enemy_counter(screen)
-        self.draw_all_rooms_debug(screen)
+        self.draw_room_and_lives(screen)
+
+        # --- painel de debug, compacto e translucido ---
+        self.draw_debug_panel(screen)
 
     def draw_hp_bar(self, screen: pygame.Surface) -> None:
 
@@ -523,80 +571,102 @@ class GameScene(Scene):
         text_rect.center = (bar_x + bar_width / 2, bar_y + bar_height / 2)
         screen.blit(text, text_rect)
 
-    def draw_room_info(self, screen: pygame.Surface) -> None:
+    def draw_room_and_lives(self, screen: pygame.Surface) -> None:
 
-        self.room.regen_reentries()  # forca o calculo de regeneracao a cada frame, para a HUD refletir o tempo real
-
-        font = pygame.font.Font(None, 28)
+        # linha compacta e essencial: "Room X | Vidas: Y/Z"
+        font = pygame.font.Font(None, 26)
         text = font.render(
-            f"Room {self.room.room_id}  (visitas: {self.room.times_cleared}, "
-            f"reentradas: {self.room.reentries}/{self.room.max_reentries})",
+            f"Room {self.room.room_id}  |  Vidas: {self.player.lives}/{self.player.max_lives}",
             True, (255, 255, 255))
         text_rect = text.get_rect()
         text_rect.topleft = (20, 52)
         screen.blit(text, text_rect)
 
-    def draw_all_rooms_debug(self, screen: pygame.Surface) -> None:
+    # ==================================================================
+    # PAINEL DE DEBUG (tela de desenvolvimento, sera revisado depois)
+    # ==================================================================
 
-        font = pygame.font.Font(None, 24)
+    def draw_debug_panel(self, screen: pygame.Surface) -> None:
 
-        y = 180  # abaixo do contador de inimigos
+        font = pygame.font.Font(None, 20)
+        line_height = 18
+        padding = 8
+
+        lines = self._build_debug_lines()
+
+        panel_width = 260
+        panel_height = padding * 2 + line_height * len(lines)
+        panel_x, panel_y = 20, 82
+
+        # fundo translucido, sem borda
+        panel_surface = pygame.Surface(
+            (panel_width, panel_height), pygame.SRCALPHA)
+        panel_surface.fill((20, 20, 30, 140))
+        screen.blit(panel_surface, (panel_x, panel_y))
+
+        y = panel_y + padding
+        for line in lines:
+            text = font.render(line, True, (220, 220, 220))
+            screen.blit(text, (panel_x + padding, y))
+            y += line_height
+
+    def _build_debug_lines(self) -> list[str]:
+
+        self.room.regen_reentries()  # forca o calculo de regeneracao a cada frame, para refletir o tempo real
+
+        lines = []
+
+        lines.append(
+            f"Visitas: {self.room.times_cleared}  |  "
+            f"Reentradas: {self.room.reentries}/{self.room.max_reentries}")
+
+        lines.append(self._build_wave_timer_line())
+        lines.append(self._build_enemy_counter_line())
+        lines.append(self._build_next_wave_line())
+
+        lines.append("")  # linha em branco separando o resumo da lista de salas
+        lines.append("Salas:")
 
         for room_id in sorted(self.rooms.keys()):
             room = self.rooms[room_id]
             room.regen_reentries()  # forca atualizacao antes de exibir
 
-            timer_text = f"{room.time_until_next_regen():.0f}s" if room.reentries < room.max_reentries else "cheio"
+            timer_text = (f"{room.time_until_next_regen():.0f}s"
+                          if room.reentries < room.max_reentries else "cheio")
 
-            text = font.render(
-                f"Room {room_id}: {room.reentries}/{room.max_reentries} ({timer_text})",
-                True, (200, 200, 200))
-            text_rect = text.get_rect()
-            text_rect.topleft = (20, y)
-            screen.blit(text, text_rect)
+            lines.append(
+                f"  Room {room_id}: {room.reentries}/{room.max_reentries} ({timer_text})")
 
-            y += 24
+        return lines
 
-    def draw_lives_counter(self, screen: pygame.Surface) -> None:
-
-        font = pygame.font.Font(None, 28)
-        text = font.render(
-            f"Vidas: {self.player.lives}/{self.player.max_lives}", True, (255, 255, 255))
-        text_rect = text.get_rect()
-        text_rect.topleft = (20, 84)
-        screen.blit(text, text_rect)
-
-    def draw_wave_timer(self, screen: pygame.Surface) -> None:
-
-        import time
+    def _build_wave_timer_line(self) -> str:
 
         if self.room.horde_clear_time is not None:
-            elapsed = self.room.horde_clear_time
-            label = "Onda concluida em"
-        elif self.room.get_enemies():
+            return f"Onda concluida em: {self.room.horde_clear_time:.1f}s"
+
+        if self.room.get_enemies():
             elapsed = time.time() - self.room.horde_start_time
-            label = "Tempo de onda"
-        else:
-            return  # sala sem horda ativa (ex: sala ja limpa e ainda nao reentrou)
+            return f"Tempo de onda: {elapsed:.1f}s"
 
-        font = pygame.font.Font(None, 28)
-        text = font.render(f"{label}: {elapsed:.1f}s", True, (255, 255, 255))
-        text_rect = text.get_rect()
-        text_rect.topleft = (20, 116)
-        screen.blit(text, text_rect)
+        return "Tempo de onda: --"  # sala sem horda ativa
 
-    def draw_enemy_counter(self, screen: pygame.Surface) -> None:
+    def _build_enemy_counter_line(self) -> str:
 
         total = self.room.horde_total_enemies
 
         if total == 0:
-            return  # sala sem horda gerada ainda (ex: sala vazia por design)
+            return "Inimigos: --"  # sala sem horda gerada ainda
 
         remaining = len(self.room.get_enemies())
 
-        font = pygame.font.Font(None, 28)
-        text = font.render(
-            f"Inimigos: {remaining}/{total}", True, (255, 255, 255))
-        text_rect = text.get_rect()
-        text_rect.topleft = (20, 148)
-        screen.blit(text, text_rect)
+        return f"Inimigos: {remaining}/{total}"
+
+    def _build_next_wave_line(self) -> str:
+
+        if self.room.next_wave_time is not None:
+            remaining = max(0.0, self.room.next_wave_time - time.time())
+            status = f"Nova onda: {remaining:.1f}s"
+        else:
+            status = "Ultima onda"
+
+        return f"{status} (onda {self.room.current_wave}/{self.room.total_waves})"

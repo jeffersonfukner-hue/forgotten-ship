@@ -33,6 +33,11 @@ class Room:
         self.horde_start_time: float = 0.0
         self.horde_clear_time: float | None = None  # None enquanto a horda esta ativa
 
+        # --- ondas: sala pode ter mais de uma leva de inimigos, empilhando por pressao de tempo ---
+        self.current_wave: int = 0  # 0 = nenhuma onda gerada ainda
+        self.total_waves: int = 2  # quantidade fixa de ondas por ciclo de horda, por enquanto
+        self.next_wave_time: float | None = None  # timestamp de quando a proxima onda deve nascer
+
     # ==================================================================
     # REENTRADAS (limite de revisitas por sala)
     # ==================================================================
