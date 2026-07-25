@@ -124,31 +124,18 @@ class GameScene(Scene):
     # ==================================================================
 
     def spawn_horde(self, room: Room) -> None:
-        """Gera a primeira onda de uma nova horda na sala, espalhados nas
-        bordas, respeitando distancia minima das portas. Reinicia o
-        cronometro de onda e agenda a proxima onda por pressao de tempo."""
+        """Preenche a sala com o piso minimo de inimigos e inicia o
+        cronometro de sobrevivencia. Diferente do modelo antigo de ondas
+        discretas (Sprint 021-023), a sala mantem uma quantidade minima
+        de inimigos vivos o tempo todo, reabastecida continuamente."""
 
-        import time
+        room.survival_start_time = time.time()
+        room.time_expired = False
 
-        room.horde_start_time = time.time()
-        room.horde_clear_time = None  # None enquanto a horda estiver ativa
-
-        room.current_wave = 1
-
-        # TESTE: valor reduzido para agilizar testes de reentrada/regeneracao.
-        # Formula real (Sprint 012): 12 + (room.times_cleared * 6)
-        enemy_count = (settings.HORDE_BASE_ENEMIES
-                       + room.times_cleared * settings.HORDE_ENEMIES_PER_VISIT)
-
+        enemy_count = settings.HORDE_BASE_ENEMIES
         room.horde_total_enemies = enemy_count
 
         self._spawn_wave_enemies(room, enemy_count)
-
-        # agenda a proxima onda pelo tempo calculado, nao pela conclusao da onda atual
-        if room.total_waves > 1:
-            room.next_wave_time = time.time() + self.calculate_wave_time(enemy_count)
-        else:
-            room.next_wave_time = None
 
     def _spawn_wave_enemies(self, room: Room, enemy_count: int, enemy_type: str = "weak") -> None:
         """Sorteia posicoes nas bordas da sala para uma leva de inimigos,
@@ -304,41 +291,28 @@ class GameScene(Scene):
         # --- limpeza de inimigos mortos ---
         self.room.remove_dead_enemies()
 
-        # --- ondas: dispara a proxima onda pelo tempo OU pela onda atual ja ter sido limpa ---
-        wave_time_expired = (self.room.next_wave_time is not None
-                              and time.time() >= self.room.next_wave_time)
+        # --- piso continuo: reabastece inimigos ate manter o minimo vivo, so enquanto o tempo nao esgotou ---
+        current_count = len(self.room.get_enemies())
+        missing = self.room.horde_total_enemies - current_count
 
-        wave_cleared_early = (self.room.current_wave < self.room.total_waves
-                               and not self.room.get_enemies())
+        if missing > 0 and not self.room.cleared and not self.room.time_expired:
+            self._spawn_wave_enemies(self.room, missing)
 
-        if (wave_time_expired or wave_cleared_early) and self.room.current_wave < self.room.total_waves:
-            
-            self.room.current_wave += 1
+        # --- condicao de vitoria: sobreviver por tempo determinado (versao simples) ---
+        survival_elapsed = time.time() - self.room.survival_start_time
 
-            next_wave_count = int(self.room.horde_total_enemies * 1.5)
-            self.room.horde_total_enemies += next_wave_count
+        # ao esgotar o tempo, para de reabastecer - mas so destranca a porta quando nao houver mais inimigos vivos
+        if survival_elapsed >= self.room.survival_duration:
+            self.room.time_expired = True
 
-            # onda 2 em diante usa o tipo forte, provando a diferenciacao visual/de HP
-            self._spawn_wave_enemies(self.room, next_wave_count, enemy_type="strong")
+        if self.room.time_expired and not self.room.get_enemies() and not self.room.cleared:
 
-            if self.room.current_wave < self.room.total_waves:
-                self.room.next_wave_time = time.time() + \
-                    self.calculate_wave_time(next_wave_count)
-            else:
-                self.room.next_wave_time = None  # ultima onda, nao agenda mais nenhuma
-
-        # --- sala limpa: exige lista vazia E ja estar na ultima onda ---
-        if (not self.room.get_enemies()
-                and self.room.current_wave >= self.room.total_waves
-                and not self.room.cleared):
-
-            # sala limpa pela primeira vez neste ciclo: destranca portas e marca como limpa
             for door in self.room.get_doors():
                 door.unlock()
 
             self.room.cleared = True
             self.room.times_cleared += 1
-            self.room.horde_clear_time = time.time() - self.room.horde_start_time
+            self.room.horde_clear_time = survival_elapsed
 
         enemies = self.room.get_enemies()
 
@@ -376,6 +350,8 @@ class GameScene(Scene):
 
                     if enemy.is_dead:
                         self.player.add_drop_point(enemy.drop_value)
+                        self.player.register_kill(enemy.enemy_type, enemy.drop_value)
+                        self.room.register_kill(enemy.enemy_type, enemy.drop_value) 
 
                     break
 
@@ -659,10 +635,14 @@ class GameScene(Scene):
             f"Visitas: {self.room.times_cleared}  |  "
             f"Reentradas: {self.room.reentries}/{self.room.max_reentries}")
 
-        lines.append(self._build_wave_timer_line())
+        lines.append(self._build_survival_line())
         lines.append(self._build_enemy_counter_line())
-        lines.append(self._build_next_wave_line())
         lines.append(self._build_progress_line())
+
+        lines.append("")
+        lines.append("Estatisticas totais (mortos / pontos):")
+        lines.extend(self._build_kill_stat_lines(
+            self.player.kills_by_type, self.player.points_by_type))
 
         lines.append("")  # linha em branco separando o resumo da lista de salas
         lines.append("Salas:")
@@ -677,23 +657,25 @@ class GameScene(Scene):
             lines.append(
                 f"  Room {room_id}: {room.reentries}/{room.max_reentries} ({timer_text})")
 
+            # estatisticas desta sala, aninhadas logo abaixo dela
+            for enemy_type in sorted(room.kills_by_type.keys()):
+                kills = room.kills_by_type[enemy_type]
+                points = room.points_by_type[enemy_type]
+                lines.append(
+                    f"    {enemy_type}: {kills} mortos, {points:.1f} pts")
+
         return lines
 
-    def _build_progress_line(self) -> str:
+    def _build_survival_line(self) -> str:
 
-        # barra de progresso ja aparece na HUD fixa; aqui so o poder atual, para debug
-        return f"Dano do tiro: {self.player.shoot_damage}"
-    
-    def _build_wave_timer_line(self) -> str:
+        # piso continuo: mostra tempo sobrevivido, ou o tempo final se a sala ja foi vencida
+        if self.room.cleared:
+            return f"Sala vencida em: {self.room.horde_clear_time:.1f}s"
 
-        if self.room.horde_clear_time is not None:
-            return f"Onda concluida em: {self.room.horde_clear_time:.1f}s"
+        elapsed = time.time() - self.room.survival_start_time
+        remaining = max(0.0, self.room.survival_duration - elapsed)
 
-        if self.room.get_enemies():
-            elapsed = time.time() - self.room.horde_start_time
-            return f"Tempo de onda: {elapsed:.1f}s"
-
-        return "Tempo de onda: --"  # sala sem horda ativa
+        return f"Sobrevivendo: {elapsed:.1f}s (faltam {remaining:.1f}s)"
 
     def _build_enemy_counter_line(self) -> str:
 
@@ -702,12 +684,30 @@ class GameScene(Scene):
         if total == 0:
             return "Inimigos: --"  # sala sem horda gerada ainda
 
-        remaining = len(self.room.get_enemies())
+        current = len(self.room.get_enemies())
 
-        return f"Inimigos: {remaining}/{total}"
+        return f"Inimigos vivos: {current} (piso: {total})"
 
-    def _build_next_wave_line(self) -> str:
+    def _build_progress_line(self) -> str:
 
+        # barra de progresso ja aparece na HUD fixa; aqui so o poder atual, para debug
+        return f"Dano do tiro: {self.player.shoot_damage}"
+
+    def _build_kill_stat_lines(self, kills_by_type: dict, points_by_type: dict) -> list[str]:
+
+        lines = []
+
+        for enemy_type in sorted(kills_by_type.keys()):
+            kills = kills_by_type[enemy_type]
+            points = points_by_type[enemy_type]
+            lines.append(f"  {enemy_type}: {kills} mortos, {points:.1f} pts")
+
+        total_kills = sum(kills_by_type.values())
+        total_points = sum(points_by_type.values())
+        lines.append(f"  Total: {total_kills} mortos, {total_points:.1f} pts")
+
+        return lines
+    
         if self.room.next_wave_time is not None:
             remaining = max(0.0, self.room.next_wave_time - time.time())
             status = f"Nova onda: {remaining:.1f}s"

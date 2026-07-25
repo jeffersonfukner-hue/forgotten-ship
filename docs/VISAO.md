@@ -1,7 +1,7 @@
 # Forgotten Ship
 ## VISAO.md
 
-> **Versão:** 3.9
+> **Versão:** 4.1
 > **Status:** Em desenvolvimento — mudança de direção
 > **Projeto:** Jogo 01 da A1 Game Academy
 
@@ -202,6 +202,64 @@ Este conceito depende de:
   livremente, sem essa condição.
 - Vínculo entre o material dropado e **qual** porta/sala ele repara ou
   reforça — provavelmente um dado adicional em `door_data`.
+
+### Estrutura de Boss Rush (Refinamento da Condição de Vitória)
+
+Baseado em estruturas clássicas e validadas do gênero Horde: a sala
+não é vencida por "sobreviver a um timer" isoladamente, mas por
+**derrotar o chefão** que chega ao final de uma sequência de combate
+de aproximadamente 5 minutos, dividida em ondas com mini-chefes:
+
+- **Onda 1 (normal):** inimigos comuns, com um **mini-chefe** ao
+  final. Ao ser derrotado, dropa diretamente cerca de 3 skills, **sem
+  exigir vídeo simulado** — recompensa garantida por progresso, não
+  por monetização.
+- **Onda 2:** repete o padrão (inimigos comuns + mini-chefe), mas com
+  um mini-chefe mais forte que o da onda 1, dropando algo
+  especialmente valioso ao ser derrotado.
+- **Onda final (mais curta que as anteriores):** o chefão surge, com
+  uma **barra de vida grande no topo da tela**.
+  - A barra muda de cor conforme o dano é recebido (ex: começa
+    vermelha).
+  - Ao esvaziar, o chefão fica **atordoado**, abrindo uma janela para
+    o jogador maximizar dano.
+  - **Progressão de dificuldade do chefão (entre visitas/reentradas):**
+    o chefão da revisita seguinte começa com uma barra de cor
+    diferente (ex: marrom em vez de vermelha), indicando um chefão
+    mais resistente/poderoso que o anterior — cada barra derrotada
+    dá lugar a uma nova barra de cor distinta, até o chefão cair de
+    vez.
+
+> Esta estrutura é a evolução natural da condição de vitória simples
+> ("sobreviver X segundos") implementada como primeiro passo na
+> Sprint 024. O timer de sobrevivência inicial é, na prática, o
+> precursor da contagem regressiva até a chegada do chefão — a versão
+> completa substitui "aguentar o tempo" por "aguentar até o chefão
+> chegar, e então derrotá-lo". Depende de: sistema de mini-chefes (um
+> novo tipo de inimigo, mais forte que "strong" mas mais fraco que o
+> chefão), UI de barra de vida de chefe com múltiplas fases coloridas,
+> e mecânica de atordoamento (stagger).
+
+### Minigames de Reparo (Ideia Registrada, Escopo Distante)
+
+O ato de reparar um sistema da nave (porta, torreta, sistema de
+suporte) não precisa ser instantâneo ao coletar o material — pode se
+manifestar como um minigame de puzzle específico para aquele sistema,
+dando variedade e um "respiro" mecânico diferente do combate. Lista
+inicial de referências conhecidas para inspirar tipos de puzzle (não
+fechada, apenas ponto de partida):
+
+- Sudoku
+- Match 3
+- Pac-Man (labirinto simples)
+- Tetris / encaixe de blocos
+- Outros a definir conforme o desenvolvimento avançar
+
+> Esta ideia pertence a um horizonte de desenvolvimento distante —
+> depende de toda a base de combate, drops e Progressão Espacial já
+> estarem maduras antes de fazer sentido investir em minigames de
+> puzzle. Registrada aqui para não se perder, sem nenhum compromisso
+> de implementação em Sprints próximas.
 
 ### Ondas Múltiplas e Material Composto (Refinamento)
 
@@ -666,6 +724,13 @@ ou onda. Esse detalhamento tem duplo propósito:
 > mesmo que a implementação completa (ranking, dashboards de análise)
 > só aconteça na Fase 2B do `ROADMAP.md`.
 
+> **Primeira implementação concreta (Sprint 024):** contador fixo, por
+> tipo de inimigo, de quantos foram eliminados e quantos pontos cada
+> tipo gerou (ex: "Fracos: 10 mortos, 15 pts | Fortes: 3 mortos, 12
+> pts"), exibido inicialmente no painel de debug — futuramente
+> migrando para uma tela dedicada de estatísticas, à medida que mais
+> dados forem acumulados.
+
 ## Ordem de Implementação Sugerida
 
 1. Ataque automático mirando o inimigo mais próximo + inimigos podendo
@@ -752,6 +817,19 @@ design (Sprints 024-026), com fontes reais do gênero:
 ---
 
 # Histórico
+
+## v4.1
+- Adicionada Estrutura de Boss Rush: ~5 minutos de combate com
+  mini-chefes ao final da onda 1 e 2 (drops garantidos, sem vídeo),
+  culminando em chefão com barra de fases coloridas e mecânica de
+  atordoamento. Registrado como evolução natural do timer de
+  sobrevivência simples implementado na Sprint 024.
+
+## v4.0
+- Adicionada ideia de Minigames de Reparo: cada sistema restaurado
+  poderia se manifestar como um puzzle específico (Sudoku, Match 3,
+  Pac-Man, Tetris, etc.), lista inicial não fechada. Registrado como
+  horizonte distante, sem compromisso de implementação próxima.
 
 ## v3.9
 - Adicionado padrão de formação de grupo (meia-lua) para inimigos à

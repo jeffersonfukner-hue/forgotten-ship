@@ -27,6 +27,9 @@ UPGRADE_THRESHOLD_GROWTH: float = 1.5  # limiar de pontos cresce 50% a cada upgr
 HORDE_BASE_ENEMIES: int = 12  # quantidade de inimigos na primeira horda de uma sala
 HORDE_ENEMIES_PER_VISIT: int = 6  # incremento de inimigos a cada revisita (rejogabilidade)
 SAFE_SPAWN_DISTANCE: float = 120  # distancia minima entre um inimigo e qualquer porta ao nascer
+ROOM_SURVIVAL_DURATION: float = 30.0  # segundos que o jogador precisa sobreviver para limpar a sala
+STRONG_ENEMY_RAMP_TIME: float = 20.0  # tempo (s) para a chance de inimigo forte atingir o maximo
+STRONG_ENEMY_MAX_CHANCE: float = 0.5  # chance maxima (50%) de spawnar um inimigo forte no reabastecimento
 
 # --- Reentradas: limite de revisitas por sala ---
 ROOM_MAX_REENTRIES: int = 5

@@ -33,10 +33,14 @@ class Room:
         self.horde_start_time: float = 0.0
         self.horde_clear_time: float | None = None  # None enquanto a horda esta ativa
 
-        # --- ondas: sala pode ter mais de uma leva de inimigos, empilhando por pressao de tempo ---
-        self.current_wave: int = 0  # 0 = nenhuma onda gerada ainda
-        self.total_waves: int = 2  # quantidade fixa de ondas por ciclo de horda, por enquanto
-        self.next_wave_time: float | None = None  # timestamp de quando a proxima onda deve nascer
+        # --- piso continuo de inimigos: sala mantem uma quantidade minima viva, reabastecendo sempre ---
+        self.survival_start_time: float = 0.0  # quando a sala atual (desta visita) comecou
+        self.survival_duration: float = settings.ROOM_SURVIVAL_DURATION  # segundos para "vencer" a sala
+        self.time_expired: bool = False  # True quando o tempo esgota - para o reabastecimento, mas exige eliminar quem restou
+
+        # --- estatisticas desta sala: mortos e pontos gerados, por tipo de inimigo ---
+        self.kills_by_type: dict = {}
+        self.points_by_type: dict = {}
 
     # ==================================================================
     # REENTRADAS (limite de revisitas por sala)
@@ -143,6 +147,12 @@ class Room:
 
         self.enemies = [e for e in self.enemies if not e.is_dead]
 
+    def register_kill(self, enemy_type: str, points: float) -> None:
+        
+        self.kills_by_type[enemy_type] = self.kills_by_type.get(enemy_type, 0) + 1
+        self.points_by_type[enemy_type] = self.points_by_type.get(
+            enemy_type, 0.0) + points
+        
     # ==================================================================
     # DESENHO
     # ==================================================================

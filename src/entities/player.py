@@ -51,6 +51,10 @@ class Player(Entity):
         self.level: int = 0  # quantidade de upgrades ja conquistados
         self.drop_points: float = 0.0
         self.points_to_upgrade: float = settings.POINTS_PER_UPGRADE
+        
+        # --- estatisticas: mortos e pontos gerados, por tipo de inimigo ---
+        self.kills_by_type: dict = {}
+        self.points_by_type: dict = {}
 
     # ==================================================================
     # VIDA, MORTE E CONTINUAR
@@ -131,6 +135,12 @@ class Player(Entity):
 
             self.apply_automatic_upgrade()
 
+    def register_kill(self, enemy_type: str, points: float) -> None:
+
+        self.kills_by_type[enemy_type] = self.kills_by_type.get(enemy_type, 0) + 1
+        self.points_by_type[enemy_type] = self.points_by_type.get(
+            enemy_type, 0.0) + points
+        
     def apply_automatic_upgrade(self) -> None:
 
         # upgrade minimo para provar o ciclo drop -> progresso -> mais forte
