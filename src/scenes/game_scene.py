@@ -408,8 +408,6 @@ class GameScene(Scene):
                     self.spawn_damage_text(
                         self.player.x, self.player.y, enemy.damage)
 
-                    print(f"HP -> {self.player.hp}")
-
                     if self.player.is_dead:
 
                         self.player.consume_life()
@@ -486,7 +484,7 @@ class GameScene(Scene):
                                   and not target_room.get_enemies())
 
                     if is_reentry and not target_room.has_reentries_left():
-                        print("Sem reentradas disponiveis - aguarde regenerar")
+                        pass  # feedback ja visivel na cor roxa da porta (reentry_blocked)
                     else:
                         alignment_point = door.get_alignment_point(
                             self.player.x, self.player.y, self.player.width, self.player.height)

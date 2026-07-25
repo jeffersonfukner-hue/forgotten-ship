@@ -1,7 +1,7 @@
 # Forgotten Ship
 ## VISAO.md
 
-> **Versão:** 3.7
+> **Versão:** 3.9
 > **Status:** Em desenvolvimento — mudança de direção
 > **Projeto:** Jogo 01 da A1 Game Academy
 
@@ -680,9 +680,93 @@ ou onda. Esse detalhamento tem duplo propósito:
 7. Diferenciação de inimigos (fraco/forte/especial).
 8. Inimigos à distância (fase avançada).
 
+## Pesquisa de Referência: Gênero Horde Survivor / Bullet Heaven
+
+Pesquisa de mercado conduzida para embasar as próximas decisões de
+design (Sprints 024-026), com fontes reais do gênero:
+
+- **Piso contínuo de inimigos, não ondas discretas com vazio entre
+  elas:** Vampire Survivors define uma quantidade mínima de inimigos
+  vivos por onda; se cair abaixo do mínimo, novos inimigos são
+  gerados até repor a cota — garantindo que sempre haja ação, sem
+  momentos "mortos". Adotado como base da Sprint 024, substituindo o
+  modelo de 2 ondas discretas por um piso mantido continuamente, com
+  dificuldade crescendo pela composição de tipos, não pela quantidade.
+- **Risco real de crescimento descontrolado:** desenvolvedores
+  relataram publicamente o mesmo problema já intuído pelo criador
+  deste jogo — escalonar dificuldade apenas por quantidade cria um
+  ponto de ruptura ("massa crítica") após o qual o jogo vira fácil
+  demais ou impossível cedo demais. Confirma a decisão de já
+  registrada de nunca escalar dificuldade só por volume.
+- **Dificuldade adaptativa por desempenho real:** sistemas de wave
+  design mais sofisticados ajustam quantidade, HP, velocidade e dano
+  dos inimigos com base na taxa de sobrevivência do próprio jogador
+  (ex: sobrevivência acima de 80% aumenta a dificuldade; abaixo de
+  30% reduz), usando curvas configuráveis (linear, exponencial, ou em
+  degraus). Planejado para a Sprint 026.
+- **Progressão de upgrades como motor real do jogo:** análises do
+  gênero apontam que o sucesso do jogador depende mais de quais
+  upgrades ele escolheu e como os combinou do que de habilidade
+  mecânica (reflexo, precisão) — reforçando a importância do sistema
+  de drops e escolha de skills já em desenvolvimento.
+- **XP/pontos como objeto físico coletável, não instantâneo:** a
+  mecânica mais definidora do gênero é o inimigo derrotado soltar um
+  objeto no mundo (gema, pedra brilhante) que o jogador precisa
+  encostar para coletar — diferente do sistema atual (pontos vão
+  direto ao contador). Planejado para a Sprint 025, junto de um
+  power-up de ímã (raio de atração de itens, independente do raio de
+  percepção/tiro já existente).
+- **Comportamento de movimento como eixo pouco explorado:** inspirado
+  nos fantasmas de Pac-Man — cada um com uma regra de perseguição
+  diferente (Blinky: perseguição direta; Pinky: emboscada, mirando à
+  frente da direção do jogador; Inky: usa a posição de outro inimigo
+  combinada à do jogador; Clyde: persegue de longe, foge de perto) —
+  planejado como diferenciação de comportamento por tipo de inimigo
+  na Sprint 026, além da diferenciação por atributos já existente.
+- **Formação de grupo para inimigos à distância:** inimigos do tipo
+  Ativo (os que atiram) não avançam até o contato — ao atingir uma
+  distância-alvo do jogador, param e se organizam em uma formação
+  (ex: meia-lua), mantendo essa posição enquanto disparam. Isso
+  distingue mecanicamente inimigos de contato (que avançam sempre) de
+  inimigos à distância (que buscam manter alcance ideal), e cria
+  variedade tática real no combate. Planejado para a Sprint 026, junto
+  dos demais comportamentos de perseguição diferenciados.
+
+### Plano Consolidado — Próximas Três Sprints
+
+- **Sprint 024:** substituir o modelo de 2 ondas discretas por um piso
+  contínuo de inimigos por sala, com dificuldade crescendo via
+  composição de tipos ao longo do tempo de permanência na sala, não
+  por quantidade total (resolve a pendência de continuidade entre
+  visitas registrada anteriormente).
+- **Sprint 025:** drops físicos coletáveis (gemas/pontos visíveis no
+  mundo) substituindo a pontuação instantânea atual; power-up de ímã
+  com raio de atração próprio, distinto do raio de percepção/tiro do
+  jogador.
+- **Sprint 026:** dificuldade adaptativa por desempenho real do
+  jogador (não apenas por tempo ou visitas); comportamentos de
+  perseguição diferenciados por tipo de inimigo, inspirados nos
+  padrões clássicos de Pac-Man; formação de grupo (meia-lua) para
+  inimigos à distância.
+
 ---
 
 # Histórico
+
+## v3.9
+- Adicionado padrão de formação de grupo (meia-lua) para inimigos à
+  distância: param a uma distância-alvo e se organizam em formação
+  enquanto atacam, em vez de avançar até o contato. Planejado para a
+  Sprint 026, junto dos demais comportamentos de perseguição.
+
+## v3.8
+- Adicionada pesquisa de referência do gênero Horde Survivor/Bullet
+  Heaven (Vampire Survivors e outros), validando decisões já tomadas
+  (evitar crescimento por quantidade) e trazendo novos conceitos:
+  piso contínuo de inimigos, drops físicos coletáveis, ímã como
+  power-up, dificuldade adaptativa por desempenho, e comportamentos
+  de perseguição diferenciados por tipo (inspirados em Pac-Man).
+  Consolidado plano das Sprints 024-026.
 
 ## v3.7
 - Adicionado refinamento futuro: continuidade de numeração de ondas
