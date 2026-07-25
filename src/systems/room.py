@@ -1,32 +1,40 @@
 import pygame
 
+from src import settings
 from src.systems.door import Door
-
 from src.entities.player import Player
 
 
 class Room:
 
     def __init__(self, x: int, y: int, width: int, height: int, room_id: int, wall: int = 20) -> None:
+
+        # --- geometria basica ---
         self.rect: pygame.Rect = pygame.Rect(x, y, width, height)
         self.wall: int = wall
         self.room_id: int = room_id
         self.doors: list[Door] = []
+
         # tipo Enemy, import evitado aqui p/ nao criar dependencia circular
         self.enemies: list = []
 
-        # quantas vezes esta sala ja foi totalmente limpa de inimigos
-        self.times_cleared: int = 0
-        self.max_reentries: int = 5
+        # --- rejogabilidade: contagem de visitas e ciclo de limpeza ---
+        self.times_cleared: int = 0  # quantas vezes esta sala ja foi totalmente limpa
+        self.cleared: bool = False  # True quando a sala foi esvaziada neste ciclo, ate ser reaberta
+
+        # --- reentradas: limite de revisitas, regenera com o tempo ---
+        self.max_reentries: int = settings.ROOM_MAX_REENTRIES
         self.reentries: int = self.max_reentries
-        self.regen_interval: float = 600.0  # segundos para regenerar 1 reentrada (ajustar depois)
+        self.regen_interval: float = settings.ROOM_REGEN_INTERVAL
         self.last_regen_time: float = 0.0
 
+        # --- cronometro de duracao da horda atual ---
         self.horde_start_time: float = 0.0
-        self.horde_clear_time: float | None = None # None enquanto a horda esta ativa
-        
-        # True quando a sala foi esvaziada neste ciclo, ate ser reaberta
-        self.cleared: bool = False
+        self.horde_clear_time: float | None = None  # None enquanto a horda esta ativa
+
+    # ==================================================================
+    # REENTRADAS (limite de revisitas por sala)
+    # ==================================================================
 
     def has_reentries_left(self) -> bool:
 
@@ -35,15 +43,10 @@ class Room:
 
     def consume_reentry(self) -> None:
 
-        import time
-
         self.reentries -= 1
-
-        self.last_regen_time = time.time()
+        self.last_regen_time = self._now()  # reinicia o cronometro a cada consumo
 
     def regen_reentries(self) -> None:
-
-        import time
 
         if self.reentries >= self.max_reentries:
             return
@@ -51,13 +54,22 @@ class Room:
         if self.last_regen_time == 0.0:
             return
 
-        elapsed = time.time() - self.last_regen_time
+        elapsed = self._now() - self.last_regen_time
         regenerated = int(elapsed // self.regen_interval)
 
         if regenerated > 0:
             self.reentries = min(
                 self.max_reentries, self.reentries + regenerated)
-            self.last_regen_time = time.time()
+            self.last_regen_time = self._now()
+
+    def _now(self) -> float:
+
+        import time
+        return time.time()
+
+    # ==================================================================
+    # LIMITES E GEOMETRIA
+    # ==================================================================
 
     def get_bounds(self) -> tuple[int, int, int, int]:
 
@@ -67,6 +79,10 @@ class Room:
                 self.rect.bottom - self.wall,
                 )
 
+    # ==================================================================
+    # PORTAS
+    # ==================================================================
+
     def add_door(self, door: Door) -> None:
 
         self.doors.append(door)
@@ -74,18 +90,6 @@ class Room:
     def get_doors(self) -> list[Door]:
 
         return self.doors
-
-    def add_enemy(self, enemy) -> None:
-
-        self.enemies.append(enemy)
-
-    def get_enemies(self) -> list:
-
-        return self.enemies
-
-    def remove_dead_enemies(self) -> None:
-
-        self.enemies = [e for e in self.enemies if not e.is_dead]
 
     def get_colliding_door(self, player: Player) -> Door | None:
 
@@ -103,12 +107,31 @@ class Room:
 
         return None
 
+    # ==================================================================
+    # INIMIGOS
+    # ==================================================================
+
+    def add_enemy(self, enemy) -> None:
+
+        self.enemies.append(enemy)
+
+    def get_enemies(self) -> list:
+
+        return self.enemies
+
+    def remove_dead_enemies(self) -> None:
+
+        self.enemies = [e for e in self.enemies if not e.is_dead]
+
+    # ==================================================================
+    # DESENHO
+    # ==================================================================
+
     def draw_floor_grid(self, screen: pygame.Surface, rl: float, rt: float) -> None:
 
         # grade sutil no piso, para dar referencia visual de movimento
         grid_size = 64
-        # levemente mais claro que o piso (55, 60, 70)
-        grid_color = (60, 66, 78)
+        grid_color = (60, 66, 78)  # levemente mais claro que o piso (55, 60, 70)
 
         # linhas verticais
         x = self.wall
@@ -131,7 +154,7 @@ class Room:
         # todas as coordenadas da sala sao deslocadas pela camera antes de desenhar
         rl, rt = self.rect.left - camera_x, self.rect.top - camera_y
 
-       # Piso
+        # Piso
         pygame.draw.rect(
             screen, (55, 60, 70), (rl, rt, self.rect.width, self.rect.height),)
 
@@ -139,25 +162,25 @@ class Room:
 
         # Parede Superior
         pygame.draw.rect(screen, (95, 100, 115),
-                         (rl, rt, self.rect.width, self.wall),)
+                          (rl, rt, self.rect.width, self.wall),)
 
         # Parede Inferior
         pygame.draw.rect(screen, (95, 100, 115), (rl,
-                                                  rt + self.rect.height - self.wall, self.rect.width, self.wall),)
+                         rt + self.rect.height - self.wall, self.rect.width, self.wall),)
 
         # Parede Esquerda
         pygame.draw.rect(screen, (95, 100, 115),
-                         (rl, rt, self.wall, self.rect.height),)
+                          (rl, rt, self.wall, self.rect.height),)
 
-        # Parde Direita
+        # Parede Direita
         pygame.draw.rect(screen, (95, 100, 115), (rl + self.rect.width -
-                                                  self.wall, rt, self.wall, self.rect.height),)
+                         self.wall, rt, self.wall, self.rect.height),)
 
         # Contorno
         pygame.draw.rect(screen, (145, 150, 165),
-                         (rl, rt, self.rect.width, self.rect.height), width=2,)
+                          (rl, rt, self.rect.width, self.rect.height), width=2,)
 
-        # texto de sala/visitas movido para a HUD fixa (GameScene.draw_ui), Sprint 016
+        # texto de sala/visitas vive na HUD fixa (GameScene.draw_ui), Sprint 016
 
         for door in self.doors:
             door.draw(screen, camera_x, camera_y)

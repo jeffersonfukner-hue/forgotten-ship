@@ -25,7 +25,7 @@ class GameScene(Scene):
     }
 
     # inimigos nao nascem mais perto que isso de qualquer porta da sala
-    SAFE_DISTANCE_FROM_DOOR = 120
+    SAFE_DISTANCE_FROM_DOOR = settings.SAFE_SPAWN_DISTANCE
 
     def __init__(self) -> None:
 
@@ -130,7 +130,8 @@ class GameScene(Scene):
 
         # TESTE: valor reduzido para agilizar testes de reentrada/regeneracao.
         # Formula real (Sprint 012): 12 + (room.times_cleared * 6)
-        enemy_count = 2 + (room.times_cleared * 6)
+        enemy_count = (settings.HORDE_BASE_ENEMIES
+                       + room.times_cleared * settings.HORDE_ENEMIES_PER_VISIT)
 
         left, top, right, bottom = room.get_bounds()
 

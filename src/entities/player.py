@@ -1,5 +1,6 @@
 import pygame
 
+from src import settings
 from src.entities.entity import Entity
 
 
@@ -8,40 +9,52 @@ class Player(Entity):
     def __init__(self, x: float, y: float) -> None:
         super().__init__(x=x, y=y, width=32, height=32,)
 
+        # --- movimento e navegacao entre salas ---
         self.state: str = "walking"
-
         self.speed: int = 250
-
         self.room: "Room | None" = None
-
         self.target_position: pygame.Vector2 | None = None
-
         self.current_door: "Door | None" = None
-
         self.room_change_requested: bool = False
-
         self.path: list[pygame.Vector2] = []
 
+        # --- fade ao atravessar portas ---
         self.alpha: int = 255
         self.door_leg_start: pygame.Vector2 | None = None
         self.door_thickness: float = 0.0
 
-        self.max_hp: int = 100
+        # --- vida e vidas (sistema de continuar apos morrer) ---
+        self.max_hp: int = settings.PLAYER_MAX_HP
         self.hp: int = self.max_hp
-        self.max_lives: int = 5
+        self.max_lives: int = settings.PLAYER_MAX_LIVES
         self.lives: int = self.max_lives
         self.is_dead: bool = False
 
+        # --- cooldowns de dano e knockback ---
         self.damage_cooldown: float = 0.0
-        self.damage_cooldown_time: float = 1.0  # 1s de invencibilidade após levar dano
+        self.damage_cooldown_time: float = 1.0  # 1s de invencibilidade apos levar dano
+        self.knockback_force: int = settings.PLAYER_KNOCKBACK_FORCE
 
-        self.knockback_force: int = 220
-
+        # --- combate: disparo automatico e alcance ---
         self.shoot_cooldown: float = 0.0
-        self.shoot_interval: float = 0.8  # segundos entre disparos automaticos
+        self.shoot_interval: float = settings.PLAYER_SHOOT_INTERVAL
+        self.range_radius: float = settings.PLAYER_RANGE_RADIUS
 
-        # raio unico: percepcao de inimigos e alcance do tiro
-        self.range_radius: float = 100
+    # ==================================================================
+    # VIDA, MORTE E CONTINUAR
+    # ==================================================================
+
+    def take_damage(self, amount: int) -> None:
+
+        if self.is_dead or self.damage_cooldown > 0:
+            return  # ainda invencivel, ignora o dano
+
+        self.hp -= amount
+        self.damage_cooldown = self.damage_cooldown_time
+
+        if self.hp <= 0:
+            self.hp = 0
+            self.is_dead = True
 
     def revive(self) -> None:
 
@@ -56,6 +69,7 @@ class Player(Entity):
     def consume_life(self) -> None:
 
         self.lives -= 1
+
     def apply_knockback(self, from_x: float, from_y: float) -> None:
 
         direction = pygame.Vector2(self.x - from_x, self.y - from_y)
@@ -76,12 +90,21 @@ class Player(Entity):
         self.rect.x = self.x
         self.rect.y = self.y
 
+    # ==================================================================
+    # COMBATE: DISPARO AUTOMATICO
+    # ==================================================================
+
     def ready_to_shoot(self) -> bool:
 
         return self.shoot_cooldown <= 0
 
     def confirm_shot(self) -> None:
+
         self.shoot_cooldown = self.shoot_interval
+
+    # ==================================================================
+    # ATUALIZACAO POR FRAME
+    # ==================================================================
 
     def update(self, dt: float) -> None:
 
@@ -101,6 +124,7 @@ class Player(Entity):
             self.update_entering_door(dt)
 
     def update_walking(self, dt: float) -> None:
+
         keys = pygame.key.get_pressed()
 
         direction = pygame.Vector2()
@@ -177,6 +201,10 @@ class Player(Entity):
         if self.door_leg_start is not None:
             self._update_fade()
 
+    # ==================================================================
+    # NAVEGACAO ENTRE SALAS (transicao por portas)
+    # ==================================================================
+
     def consume_room_change(self) -> bool:
 
         if self.room_change_requested:
@@ -209,17 +237,9 @@ class Player(Entity):
 
         self.alpha = int(255 * (1 - progress))
 
-    def take_damage(self, amount: int) -> None:
-
-        if self.is_dead or self.damage_cooldown > 0:
-            return  # ainda invencivel, ignora o dano
-
-        self.hp -= amount
-        self.damage_cooldown = self.damage_cooldown_time
-
-        if self.hp <= 0:
-            self.hp = 0
-            self.is_dead = True
+    # ==================================================================
+    # DESENHO
+    # ==================================================================
 
     def draw(self, screen: pygame.Surface, camera_x: float = 0, camera_y: float = 0) -> None:
 
