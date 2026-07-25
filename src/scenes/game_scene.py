@@ -14,18 +14,33 @@ from src import settings
 
 
 class GameScene(Scene):
+
+    # --- tabelas de configuracao (candidatas a settings.py numa proxima Sprint) ---
+
+    # dimensoes de cada sala: Area de Carga (grande), Corredor (longo e estreito), Engenharia
+    ROOM_SIZES = {
+        1: (1280, 960),
+        2: (300, 1400),
+        3: (900, 700),
+    }
+
+    # inimigos nao nascem mais perto que isso de qualquer porta da sala
+    SAFE_DISTANCE_FROM_DOOR = 120
+
     def __init__(self) -> None:
 
+        # --- entidades e listas de objetos temporarios ---
         self.entity_manager: EntityManager = EntityManager()
 
         from src.entities.projectile import Projectile
         self.projectiles: list[Projectile] = []
-        
+
         from src.entities.floating_text import FloatingText
         self.floating_texts: list[FloatingText] = []
-        
+
         self.rooms: dict[int, Room] = {}
 
+        # --- dados de portas: cada porta conhece sua sala, posicao e porta destino ---
         # Nivel 1: Area de Carga - sala inicial, uma porta ao sul leva ao Nivel 2
         # Nivel 2: Corredor conectando a Area de Carga a Engenharia
         self.door_data = {
@@ -66,6 +81,8 @@ class GameScene(Scene):
                 "target": 3,  # volta ao Corredor
             },
         }
+
+        # --- dados de sala: cada sala conhece seu nivel e quais portas possui ---
         self.room_data = {
             1: {
                 "level": 1,
@@ -82,6 +99,7 @@ class GameScene(Scene):
             },
         }
 
+        # --- sala inicial e jogador ---
         self.current_room_id: int = 1
         self.room: Room = self.create_room(self.current_room_id)
 
@@ -90,24 +108,29 @@ class GameScene(Scene):
         self.player.room = self.room
         self.entity_manager.add(self.player)
 
+        # --- estado auxiliar de log e camera ---
         self.last_state: str | None = None
         self.camera_x: float = 0.0
         self.camera_y: float = 0.0
 
-    # inimigos nao nascem mais perto que isso de qualquer porta da sala
-    SAFE_DISTANCE_FROM_DOOR = 120
+    # ==================================================================
+    # CRIACAO E CONFIGURACAO DE SALAS
+    # ==================================================================
 
     def spawn_horde(self, room: Room) -> None:
+        """Gera uma nova horda de inimigos na sala, espalhados nas bordas,
+        respeitando distancia minima das portas. Reinicia o cronometro de onda."""
 
         from src.entities.enemy import Enemy
         import random
         import time
 
         room.horde_start_time = time.time()
-        room.horde_clear_time = None  # reseta o tempo de horda limpa,
-        
-        # formula de escala: primeira horda ja comeca robusta, cresce a cada revisita
-        enemy_count = 12 + (room.times_cleared * 6)
+        room.horde_clear_time = None  # None enquanto a horda estiver ativa
+
+        # TESTE: valor reduzido para agilizar testes de reentrada/regeneracao.
+        # Formula real (Sprint 012): 12 + (room.times_cleared * 6)
+        enemy_count = 2 + (room.times_cleared * 6)
 
         left, top, right, bottom = room.get_bounds()
 
@@ -140,44 +163,17 @@ class GameScene(Scene):
 
             room.add_enemy(Enemy(x, y))
 
-    def spawn_damage_text(self, x: float, y: float, amount: int) -> None:
-
-        from src.entities.floating_text import FloatingText
-        self.floating_texts.append(
-            FloatingText(x, y - 20, f"-{amount}"))
-        
-    def find_closest_enemy(self, enemies: list):
-
-        closest = None
-        closest_distance = None
-
-        for enemy in enemies:
-            distance = pygame.Vector2(
-                enemy.x - self.player.x, enemy.y - self.player.y).length()
-
-            if distance > self.player.range_radius:
-                continue  # fora do alcance de percepcao, ignora
-
-            if closest_distance is None or distance < closest_distance:
-                closest = enemy
-                closest_distance = distance
-
-        return closest
-
-   # dimensoes de cada sala: Area de Carga (grande), Corredor (longo e estreito), Engenharia
-    ROOM_SIZES = {
-        1: (1280, 960),
-        2: (300, 1400),
-        3: (900, 700),
-    }
-
     def create_room(self, room_id: int) -> Room:
+        """Retorna a sala do cache, gerando uma nova horda se ela ja tiver sido
+        limpa (respeitando reentradas), ou cria a sala do zero na primeira visita."""
 
         if room_id in self.rooms:
             room = self.rooms[room_id]
 
-            # reentrando em sala ja limpa: nova horda mais dificil, e tranca as portas de novo
+            # reentrando em sala ja limpa: consome reentrada, gera nova horda, tranca portas
             if room.cleared and not room.get_enemies():
+                room.consume_reentry()
+
                 self.spawn_horde(room)
 
                 for door in room.get_doors():
@@ -197,6 +193,8 @@ class GameScene(Scene):
         return room
 
     def configure_room(self, room: Room, room_id: int) -> None:
+        """Monta as portas da sala a partir de room_data/door_data,
+        e gera a primeira horda (trancando as portas se houver inimigos)."""
 
         room_info = self.room_data[room_id]
 
@@ -216,10 +214,46 @@ class GameScene(Scene):
                 ))
 
         self.spawn_horde(room)
+
         # tranca todas as portas da sala se ela tiver inimigos - destranca quando a sala for limpa
         if room.get_enemies():
             for door in room.get_doors():
                 door.lock()
+
+    # ==================================================================
+    # COMBATE
+    # ==================================================================
+
+    def spawn_damage_text(self, x: float, y: float, amount: int) -> None:
+        """Cria um texto flutuante de dano na posicao informada."""
+
+        from src.entities.floating_text import FloatingText
+        self.floating_texts.append(
+            FloatingText(x, y - 20, f"-{amount}"))
+
+    def find_closest_enemy(self, enemies: list):
+        """Retorna o inimigo vivo mais proximo do player, dentro do raio de
+        percepcao (player.range_radius), ou None se nenhum estiver ao alcance."""
+
+        closest = None
+        closest_distance = None
+
+        for enemy in enemies:
+            distance = pygame.Vector2(
+                enemy.x - self.player.x, enemy.y - self.player.y).length()
+
+            if distance > self.player.range_radius:
+                continue  # fora do alcance de percepcao, ignora
+
+            if closest_distance is None or distance < closest_distance:
+                closest = enemy
+                closest_distance = distance
+
+        return closest
+
+    # ==================================================================
+    # LOOP PRINCIPAL
+    # ==================================================================
 
     def handle_event(self, event: pygame.event.Event) -> None:
         pass
@@ -346,6 +380,19 @@ class GameScene(Scene):
             return
 
         # --- deteccao e abertura de portas ---
+
+        # atualiza o feedback visual de bloqueio de reentrada, para toda porta da sala atual
+        for current_door in self.room.get_doors():
+            dest_room_id = self.door_data[current_door.target_door]["room"]
+            dest_room = self.rooms.get(dest_room_id)
+
+            current_door.reentry_blocked = (
+                dest_room is not None
+                and dest_room.cleared
+                and not dest_room.get_enemies()
+                and not dest_room.has_reentries_left()
+            )
+
         door: Door = self.room.get_colliding_door(self.player)
 
         for current_door in self.room.get_doors():
@@ -364,33 +411,41 @@ class GameScene(Scene):
 
                 if self.player.state == "walking":
 
-                    alignment_point = door.get_alignment_point(
-                        self.player.x, self.player.y, self.player.width, self.player.height)
-                    entry_point = door.get_entry_target(
-                        self.player.width, self.player.height)
+                    target_room_id = self.door_data[door.target_door]["room"]
+                    target_room = self.rooms.get(target_room_id)
 
-                    self.player.start_door_sequence(
-                        [alignment_point, entry_point], door.get_thickness())
+                    # reentrada: sala ja visitada, ja vencida, e sem inimigos no momento
+                    is_reentry = (target_room is not None
+                                  and target_room.cleared
+                                  and not target_room.get_enemies())
 
-                    self.player.state = "entering_door"
+                    if is_reentry and not target_room.has_reentries_left():
+                        print("Sem reentradas disponiveis - aguarde regenerar")
+                    else:
+                        alignment_point = door.get_alignment_point(
+                            self.player.x, self.player.y, self.player.width, self.player.height)
+                        entry_point = door.get_entry_target(
+                            self.player.width, self.player.height)
 
-                target_room_id = self.door_data[door.target_door]["room"]
-                print(f"Door -> {door.side} -> Room {target_room_id}")
+                        self.player.start_door_sequence(
+                            [alignment_point, entry_point], door.get_thickness())
+
+                        self.player.state = "entering_door"
+
+                        print(f"Door -> {door.side} -> Room {target_room_id}")
 
         else:
 
             if self.player.state == "walking":
                 self.player.current_door = None
 
-            if self.player.state == "walking":
-                self.player.current_door = None
-
     def update_camera(self) -> None:
+        """Centraliza a sala se ela couber na janela; segue o player, com
+        limites, se a sala for maior que a janela em qualquer eixo."""
 
         room_rect = self.room.rect
 
         if room_rect.width <= settings.WINDOW_WIDTH:
-            # sala menor que a tela nesse eixo: centraliza a sala, nao segue o player
             self.camera_x = room_rect.centerx - settings.WINDOW_WIDTH / 2
         else:
             target_x = self.player.rect.centerx - settings.WINDOW_WIDTH / 2
@@ -404,6 +459,10 @@ class GameScene(Scene):
             max_camera_y = room_rect.bottom - settings.WINDOW_HEIGHT
             self.camera_y = max(room_rect.top, min(target_y, max_camera_y))
 
+    # ==================================================================
+    # DESENHO
+    # ==================================================================
+
     def draw(self, screen: pygame.Surface) -> None:
         self.draw_background(screen)
         self.draw_world(screen)
@@ -416,6 +475,7 @@ class GameScene(Scene):
         self.room.draw(screen, self.camera_x, self.camera_y)
 
     def draw_world(self, screen: pygame.Surface) -> None:
+
         self.entity_manager.draw(screen, self.camera_x, self.camera_y)
 
         for projectile in self.projectiles:
@@ -425,46 +485,13 @@ class GameScene(Scene):
             text.draw(screen, self.camera_x, self.camera_y)
 
     def draw_ui(self, screen: pygame.Surface) -> None:
-        
-        self.draw_hp_bar(screen)
-        self.draw_lives_counter(screen)
 
-    def draw_ui(self, screen: pygame.Surface) -> None:
-
+        # --- elementos fixos de HUD, na ordem de leitura ---
         self.draw_hp_bar(screen)
         self.draw_room_info(screen)
         self.draw_lives_counter(screen)
         self.draw_wave_timer(screen)
 
-    def draw_room_info(self, screen: pygame.Surface) -> None:
-
-        font = pygame.font.Font(None, 28)
-        text = font.render(
-            f"Room {self.room.room_id}  (visitas: {self.room.times_cleared})",
-            True, (255, 255, 255))
-        text_rect = text.get_rect()
-        text_rect.topleft = (20, 52)
-        screen.blit(text, text_rect)
-
-    def draw_wave_timer(self, screen: pygame.Surface) -> None:
-
-        import time
-
-        if self.room.horde_clear_time is not None:
-            elapsed = self.room.horde_clear_time
-            label = "Onda concluida em"
-        elif self.room.get_enemies():
-            elapsed = time.time() - self.room.horde_start_time
-            label = "Tempo de onda"
-        else:
-            return  # sala sem horda ativa (ex: sala ja limpa e ainda nao reentrou)
-
-        font = pygame.font.Font(None, 28)
-        text = font.render(f"{label}: {elapsed:.1f}s", True, (255, 255, 255))
-        text_rect = text.get_rect()
-        text_rect.topleft = (20, 116)
-        screen.blit(text, text_rect)
-        
     def draw_hp_bar(self, screen: pygame.Surface) -> None:
 
         bar_x, bar_y = 20, 20
@@ -491,6 +518,17 @@ class GameScene(Scene):
         text_rect.center = (bar_x + bar_width / 2, bar_y + bar_height / 2)
         screen.blit(text, text_rect)
 
+    def draw_room_info(self, screen: pygame.Surface) -> None:
+
+        font = pygame.font.Font(None, 28)
+        text = font.render(
+            f"Room {self.room.room_id}  (visitas: {self.room.times_cleared}, "
+            f"reentradas: {self.room.reentries}/{self.room.max_reentries})",
+            True, (255, 255, 255))
+        text_rect = text.get_rect()
+        text_rect.topleft = (20, 52)
+        screen.blit(text, text_rect)
+
     def draw_lives_counter(self, screen: pygame.Surface) -> None:
 
         font = pygame.font.Font(None, 28)
@@ -498,4 +536,23 @@ class GameScene(Scene):
             f"Vidas: {self.player.lives}/{self.player.max_lives}", True, (255, 255, 255))
         text_rect = text.get_rect()
         text_rect.topleft = (20, 84)
+        screen.blit(text, text_rect)
+
+    def draw_wave_timer(self, screen: pygame.Surface) -> None:
+
+        import time
+
+        if self.room.horde_clear_time is not None:
+            elapsed = self.room.horde_clear_time
+            label = "Onda concluida em"
+        elif self.room.get_enemies():
+            elapsed = time.time() - self.room.horde_start_time
+            label = "Tempo de onda"
+        else:
+            return  # sala sem horda ativa (ex: sala ja limpa e ainda nao reentrou)
+
+        font = pygame.font.Font(None, 28)
+        text = font.render(f"{label}: {elapsed:.1f}s", True, (255, 255, 255))
+        text_rect = text.get_rect()
+        text_rect.topleft = (20, 116)
         screen.blit(text, text_rect)

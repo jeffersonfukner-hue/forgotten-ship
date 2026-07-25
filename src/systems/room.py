@@ -17,11 +17,47 @@ class Room:
 
         # quantas vezes esta sala ja foi totalmente limpa de inimigos
         self.times_cleared: int = 0
+        self.max_reentries: int = 5
+        self.reentries: int = self.max_reentries
+        self.regen_interval: float = 600.0  # segundos para regenerar 1 reentrada (ajustar depois)
+        self.last_regen_time: float = 0.0
+
         self.horde_start_time: float = 0.0
         self.horde_clear_time: float | None = None # None enquanto a horda esta ativa
         
         # True quando a sala foi esvaziada neste ciclo, ate ser reaberta
         self.cleared: bool = False
+
+    def has_reentries_left(self) -> bool:
+
+        self.regen_reentries()
+        return self.reentries > 0
+
+    def consume_reentry(self) -> None:
+
+        import time
+
+        self.reentries -= 1
+
+        self.last_regen_time = time.time()
+
+    def regen_reentries(self) -> None:
+
+        import time
+
+        if self.reentries >= self.max_reentries:
+            return
+
+        if self.last_regen_time == 0.0:
+            return
+
+        elapsed = time.time() - self.last_regen_time
+        regenerated = int(elapsed // self.regen_interval)
+
+        if regenerated > 0:
+            self.reentries = min(
+                self.max_reentries, self.reentries + regenerated)
+            self.last_regen_time = time.time()
 
     def get_bounds(self) -> tuple[int, int, int, int]:
 

@@ -6,7 +6,7 @@ from src.entities.entity import Entity
 class Projectile(Entity):
 
     def __init__(self, x: float, y: float, direction: pygame.Vector2,
-                 damage: int = 10, max_range: float = 100, pierce: int = 1) -> None:
+                 damage: int = 100, max_range: float = 100, pierce: int = 1) -> None:
         super().__init__(x=x, y=y, width=8, height=8,)
 
         self.speed: int = 400

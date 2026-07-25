@@ -13,6 +13,7 @@ class Door:
 
     def __init__(self, id: int, x: int, y: int, width: int, height: int, side: str, target_door: int | None = None,):
 
+        # --- identidade e geometria basica ---
         self.id: int = id
         self.trigger_height: int = 12
 
@@ -25,8 +26,14 @@ class Door:
 
         self.target_door: int | None = target_door
 
+        # --- estado visual de transicao (aberta/fechada) ---
         self.state: str = "closed"
+
+        # --- estados de bloqueio (afetam colisao e feedback visual) ---
         self.locked: bool = False  # quando True, a porta nao reage ao trigger do player
+        self.reentry_blocked: bool = False  # True quando a sala de destino esta sem reentradas
+
+    # --- controle de bloqueio por horda ativa ---
 
     def lock(self) -> None:
 
@@ -35,6 +42,8 @@ class Door:
     def unlock(self) -> None:
 
         self.locked = False
+
+    # --- geometria derivada (trigger e retangulo de desenho) ---
 
     def build_trigger(self) -> pygame.Rect:
 
@@ -74,10 +83,13 @@ class Door:
 
     def get_thickness(self) -> float:
 
+        # profundidade real da porta, usada para calcular o fade de travessia do player
         if self.side in (TOP, BOTTOM):
             return self.rect.height
 
-        return self. rect.width
+        return self.rect.width
+
+    # --- pontos de navegacao (entrada, alinhamento, spawn) ---
 
     def get_entry_target(self, player_width: int, player_height: int) -> pygame.Vector2:
 
@@ -94,6 +106,29 @@ class Door:
 
         return pygame.Vector2(self.rect.centerx + offset, self.rect.centery - player_height / 2,)
 
+    def get_alignment_point(self, current_x: float, current_y: float, player_width: int, player_height: int) -> pygame.Vector2:
+
+        # alinha o eixo perpendicular ao movimento antes de entrar reto na porta
+        if self.side in (TOP, BOTTOM):
+            return pygame.Vector2(self.rect.centerx - player_width / 2, current_y)
+
+        return pygame.Vector2(current_x, self.rect.centery - player_height / 2)
+
+    def get_spawn_position(self) -> pygame.Vector2:
+
+        if self.side == TOP:
+            return pygame.Vector2(self.rect.centerx, self.rect.centery + SPAWN_OFFSET,)
+
+        if self.side == BOTTOM:
+            return pygame.Vector2(self.rect.centerx, self.rect.centery - SPAWN_OFFSET,)
+
+        if self.side == LEFT:
+            return pygame.Vector2(self.rect.centerx + SPAWN_OFFSET, self.rect.centery,)
+
+        return pygame.Vector2(self.rect.centerx - SPAWN_OFFSET, self.rect.centery,)
+
+    # --- colisao e estado de transicao ---
+
     def collides(self, player: Player) -> bool:
 
         if self.locked:
@@ -109,31 +144,15 @@ class Door:
 
         self.state = "closed"
 
-    def get_spawn_position(self) -> pygame.Vector2:
-
-        if self.side == TOP:
-            return pygame.Vector2(self.rect.centerx, self.rect.centery + SPAWN_OFFSET,)
-
-        if self.side == BOTTOM:
-            return pygame.Vector2(self.rect.centerx, self.rect.centery - SPAWN_OFFSET,)
-
-        if self.side == LEFT:
-            return pygame.Vector2(self.rect.centerx + SPAWN_OFFSET, self.rect.centery,)
-
-        return pygame.Vector2(self.rect.centerx - SPAWN_OFFSET, self.rect.centery,)
-
-    def get_alignment_point(self, current_x: float, current_y: float, player_width: int, player_height: int) -> pygame.Vector2:
-
-        if self.side in (TOP, BOTTOM):
-            return pygame.Vector2(self.rect.centerx - player_width / 2, current_y)
-
-        return pygame.Vector2(current_x, self.rect.centery - player_height / 2)
+    # --- desenho ---
 
     def draw(self, screen: pygame.Surface, camera_x: float = 0, camera_y: float = 0) -> None:
 
-        if self.locked:
-            # vermelho escuro: porta trancada, precisa limpar a sala
-            color = (140, 40, 40)
+        # cor reflete o estado de bloqueio, com prioridade: reentrada > trancada > aberta/fechada
+        if self.reentry_blocked:
+            color = (100, 40, 130)  # roxo escuro: sala de destino sem reentradas
+        elif self.locked:
+            color = (140, 40, 40)  # vermelho escuro: porta trancada, precisa limpar a sala
         elif self.state == "open":
             color = (70, 180, 70)
         else:
