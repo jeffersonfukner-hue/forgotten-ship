@@ -1,7 +1,7 @@
 # Forgotten Ship
 ## VISAO.md
 
-> **Versão:** 4.4
+> **Versão:** 4.5
 > **Status:** Em desenvolvimento — mudança de direção
 > **Projeto:** Jogo 01 da A1 Game Academy
 
@@ -716,6 +716,26 @@ melhoram a experiência/eficiência geral do jogador:
   cura específicas. Upgradável em níveis, aumentando a taxa de
   regeneração.
 
+## Coleta Automática de Gemas Remanescentes
+
+Duas ideias complementares para lidar com gemas de pontos não
+coletadas durante o combate:
+
+- **Ao vencer a sala sem morrer:** todas as gemas ainda não coletadas
+  são puxadas automaticamente até o jogador no momento da vitória —
+  uma recompensa por sobreviver de forma limpa, sem deixar valor
+  "perdido" no chão.
+- **Mini-ímã esporádico:** um item raro que aparece ocasionalmente
+  pela sala durante o combate; se o jogador passar por cima dele,
+  todas as gemas próximas são recolhidas de uma vez — uma variação de
+  curto prazo do power-up de ímã permanente, sem exigir upgrade.
+
+> Ambas as ideias dependem da existência de drops físicos coletáveis
+> no mundo (Sprint 026) — a versão inicial desta Sprint entrega apenas
+> a gema básica (círculo proporcional ao valor, coleta por
+> proximidade, permanece na tela até ser coletada). As duas mecânicas
+> de coleta automática ficam registradas para uma Sprint futura.
+
 ## Interface de Usuário (UI) — Visão Geral
 
 Elementos a exibir visualmente, conectando os sistemas acima:
@@ -903,6 +923,12 @@ design (Sprints 024-026), com fontes reais do gênero:
 ---
 
 # Histórico
+
+## v4.5
+- Adicionada seção de Coleta Automática de Gemas Remanescentes: auto-
+  ímã ao vencer sala sem morrer, e mini-ímã esporádico durante o
+  combate. Registrado como dependente da versão básica de drops
+  físicos (Sprint 026).
 
 ## v4.4
 - Renomeada "Espada Giratória" para "Sabre Giratório", mantendo tema

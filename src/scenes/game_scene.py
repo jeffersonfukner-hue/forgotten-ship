@@ -41,6 +41,9 @@ class GameScene(Scene):
         from src.entities.floating_text import FloatingText
         self.floating_texts: list[FloatingText] = []
 
+        from src.entities.gem import Gem
+        self.gems: list[Gem] = []
+
         self.rooms: dict[int, Room] = {}
 
         # --- dados de portas: cada porta conhece sua sala, posicao e porta destino ---
@@ -381,10 +384,11 @@ class GameScene(Scene):
                         enemy.x, enemy.y, projectile.damage)
 
                     if enemy.is_dead:
-                        self.player.add_drop_point(enemy.drop_value)
                         self.player.register_kill(enemy.enemy_type, enemy.drop_value)
                         self.room.register_kill(enemy.enemy_type, enemy.drop_value) 
 
+                        from src.entities.gem import Gem
+                        self.gems.append(Gem(enemy.x, enemy.y, enemy.drop_value))
                     break
 
         left, top, right, bottom = self.room.get_bounds()
@@ -402,6 +406,30 @@ class GameScene(Scene):
 
         self.floating_texts = [t for t in self.floating_texts if not t.is_dead]
 
+        # --- gemas: inicia o arrasto ao entrar no raio, move, coleta ao chegar perto o suficiente ---
+        for gem in self.gems:
+            if gem.is_dead:
+                continue
+
+            distance = pygame.Vector2(
+                gem.rect.centerx - self.player.rect.centerx,
+                gem.rect.centery - self.player.rect.centery
+            ).length()
+
+            if not gem.being_pulled and distance <= settings.GEM_PICKUP_RADIUS:
+                gem.start_pull()
+
+            if gem.being_pulled:
+                gem.update_pull(
+                    dt, self.player.rect.centerx, self.player.rect.centery,
+                    settings.GEM_PULL_ACCELERATION, settings.GEM_PULL_MAX_SPEED)
+
+                if distance <= settings.GEM_COLLECT_DISTANCE:
+                    self.player.add_drop_point(gem.value)
+                    gem.is_dead = True
+
+        self.gems = [g for g in self.gems if not g.is_dead]
+        
         # --- inimigos: movimento e colisao com o player ---
         if not self.player.is_dead:  # inimigos param de agir assim que o jogador morre
             
@@ -554,6 +582,9 @@ class GameScene(Scene):
 
         for projectile in self.projectiles:
             projectile.draw(screen, self.camera_x, self.camera_y)
+
+        for gem in self.gems:
+            gem.draw(screen, self.camera_x, self.camera_y)
 
         for text in self.floating_texts:
             text.draw(screen, self.camera_x, self.camera_y)

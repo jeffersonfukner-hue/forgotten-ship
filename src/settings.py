@@ -22,6 +22,10 @@ PLAYER_SHOOT_DAMAGE: int = 10  # dano de cada projetil disparado automaticamente
 POINTS_PER_UPGRADE: int = 10  # pontos de drop necessarios para o proximo upgrade automatico
 UPGRADE_DAMAGE_INCREMENT: int = 5  # quanto o dano do tiro aumenta a cada upgrade
 UPGRADE_THRESHOLD_GROWTH: float = 1.5  # limiar de pontos cresce 50% a cada upgrade conquistado
+GEM_PICKUP_RADIUS: float = 60  # distancia (entre centros) para a gema comecar a ser puxada
+GEM_COLLECT_DISTANCE: float = 6  # distancia minima para considerar a gema efetivamente coletada
+GEM_PULL_ACCELERATION: float = 400  # aceleracao da gema enquanto e puxada (pixels/s por segundo)
+GEM_PULL_MAX_SPEED: float = 500  # velocidade maxima que a gema pode atingir sendo puxada
 
 # --- Horda: geracao de inimigos ---
 HORDE_BASE_ENEMIES: int = 12  # quantidade de inimigos na primeira horda de uma sala
