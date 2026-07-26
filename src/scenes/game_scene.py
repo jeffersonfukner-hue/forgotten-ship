@@ -220,7 +220,8 @@ class GameScene(Scene):
                 candidate_rect = pygame.Rect(x, y, size, size)
 
                 too_close_to_center = (
-                    pygame.Vector2(candidate_rect.centerx, candidate_rect.centery)
+                    pygame.Vector2(candidate_rect.centerx,
+                                   candidate_rect.centery)
                     .distance_to(avoid_center) < avoid_radius
                 )
 
@@ -463,11 +464,14 @@ class GameScene(Scene):
                         enemy.x, enemy.y, projectile.damage)
 
                     if enemy.is_dead:
-                        self.player.register_kill(enemy.enemy_type, enemy.drop_value)
-                        self.room.register_kill(enemy.enemy_type, enemy.drop_value)
+                        self.player.register_kill(
+                            enemy.enemy_type, enemy.drop_value)
+                        self.room.register_kill(
+                            enemy.enemy_type, enemy.drop_value)
 
                         from src.entities.gem import Gem
-                        self.gems.append(Gem(enemy.x, enemy.y, enemy.drop_value))
+                        self.gems.append(
+                            Gem(enemy.x, enemy.y, enemy.drop_value))
                     break
 
         left, top, right, bottom = self.room.get_bounds()
@@ -485,7 +489,10 @@ class GameScene(Scene):
 
         self.floating_texts = [t for t in self.floating_texts if not t.is_dead]
 
-        # --- gemas: inicia o arrasto ao entrar no raio, move, coleta ao chegar perto o suficiente ---
+        # --- gemas: inicia o arrasto ao entrar no raio (pickup normal OU ima), move, coleta ao chegar perto o suficiente ---
+        magnet_radius = self.player.get_passive_value("magnet")
+        pull_trigger_radius = max(settings.GEM_PICKUP_RADIUS, magnet_radius)
+
         for gem in self.gems:
             if gem.is_dead:
                 continue
@@ -495,7 +502,7 @@ class GameScene(Scene):
                 gem.rect.centery - self.player.rect.centery
             ).length()
 
-            if not gem.being_pulled and distance <= settings.GEM_PICKUP_RADIUS:
+            if not gem.being_pulled and distance <= pull_trigger_radius:
                 gem.start_pull()
 
             if gem.being_pulled:
@@ -516,7 +523,8 @@ class GameScene(Scene):
             room_obstacles = self.room.get_obstacles()
 
             for enemy in enemies:
-                enemy.update(dt, self.player.x, self.player.y, enemies, room_bounds, room_obstacles)
+                enemy.update(dt, self.player.x, self.player.y,
+                             enemies, room_bounds, room_obstacles)
 
             # inimigo corroi obstaculo destrutivel por proximidade (nao apenas sobreposicao exata)
             # usa uma area "inflada" para deteccao, ja que o bloqueio de movimento impede sobreposicao real
@@ -529,8 +537,9 @@ class GameScene(Scene):
                             attack_reach * 2, attack_reach * 2)
 
                         if enemy.rect.colliderect(inflated_rect):
-                            obstacle.take_damage(settings.ENEMY_OBSTACLE_DAMAGE)
-            
+                            obstacle.take_damage(
+                                settings.ENEMY_OBSTACLE_DAMAGE)
+
             for enemy in enemies:
                 if self.player.rect.colliderect(enemy.rect):
                     self.player.take_damage(enemy.damage)
@@ -615,7 +624,8 @@ class GameScene(Scene):
                                   and not target_room.get_enemies())
 
                     if is_reentry and not target_room.has_reentries_left():
-                        pass  # feedback ja visivel na cor roxa da porta (reentry_blocked)
+                        # feedback ja visivel na cor roxa da porta (reentry_blocked)
+                        pass
                     else:
                         alignment_point = door.get_alignment_point(
                             self.player.x, self.player.y, self.player.width, self.player.height)
@@ -700,13 +710,13 @@ class GameScene(Scene):
         hp_ratio = self.player.hp / self.player.max_hp
 
         pygame.draw.rect(screen, (80, 30, 30),
-                          (bar_x, bar_y, bar_width, bar_height))
+                         (bar_x, bar_y, bar_width, bar_height))
 
         pygame.draw.rect(screen, (60, 180, 90),
-                          (bar_x, bar_y, bar_width * hp_ratio, bar_height))
+                         (bar_x, bar_y, bar_width * hp_ratio, bar_height))
 
         pygame.draw.rect(screen, (255, 255, 255),
-                          (bar_x, bar_y, bar_width, bar_height), width=2)
+                         (bar_x, bar_y, bar_width, bar_height), width=2)
 
         font = pygame.font.Font(None, 24)
         text = font.render(
@@ -724,13 +734,13 @@ class GameScene(Scene):
         ratio = min(1.0, ratio)
 
         pygame.draw.rect(screen, (50, 30, 70),
-                          (bar_x, bar_y, bar_width, bar_height))
+                         (bar_x, bar_y, bar_width, bar_height))
 
         pygame.draw.rect(screen, (200, 170, 60),
-                          (bar_x, bar_y, bar_width * ratio, bar_height))
+                         (bar_x, bar_y, bar_width * ratio, bar_height))
 
         pygame.draw.rect(screen, (255, 255, 255),
-                          (bar_x, bar_y, bar_width, bar_height), width=1)
+                         (bar_x, bar_y, bar_width, bar_height), width=1)
 
         font = pygame.font.Font(None, 22)
         text = font.render(f"Level {self.player.level}", True, (255, 255, 255))
@@ -788,6 +798,7 @@ class GameScene(Scene):
         lines.append(self._build_survival_line())
         lines.append(self._build_enemy_counter_line())
         lines.append(self._build_progress_line())
+        lines.append(self._build_magnet_line())
 
         lines.append("")
         lines.append("Estatisticas totais (mortos / pontos):")
@@ -851,6 +862,13 @@ class GameScene(Scene):
     def _build_progress_line(self) -> str:
 
         return f"Dano do tiro: {self.player.shoot_damage}"
+
+    def _build_magnet_line(self) -> str:
+
+        level = self.player.passive_levels["magnet"]
+        radius = self.player.get_passive_value("magnet")
+
+        return f"Ima: nivel {level} (raio {radius:.0f}px)"
 
     def _build_kill_stat_lines(self, kills_by_type: dict, points_by_type: dict) -> list[str]:
 

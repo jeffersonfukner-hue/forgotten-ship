@@ -16,28 +16,51 @@ FPS: int = 60
 PLAYER_MAX_HP: int = 100
 PLAYER_MAX_LIVES: int = 5
 PLAYER_SHOOT_INTERVAL: float = 0.8  # segundos entre disparos automaticos
-PLAYER_RANGE_RADIUS: float = 300  # raio unico: percepcao de inimigos e alcance do tiro
+# raio unico: percepcao de inimigos e alcance do tiro
+PLAYER_RANGE_RADIUS: float = 300
 PLAYER_KNOCKBACK_FORCE: int = 220
 PLAYER_SHOOT_DAMAGE: int = 10  # dano de cada projetil disparado automaticamente
 
 # --- Player: progressao (drops e upgrades automaticos) ---
-POINTS_PER_UPGRADE: int = 10  # pontos de drop necessarios para o proximo upgrade automatico
+# pontos de drop necessarios para o proximo upgrade automatico
+POINTS_PER_UPGRADE: int = 10
 UPGRADE_DAMAGE_INCREMENT: int = 5  # quanto o dano do tiro aumenta a cada upgrade
-UPGRADE_THRESHOLD_GROWTH: float = 1.5  # limiar de pontos cresce 50% a cada upgrade conquistado
+# limiar de pontos cresce 50% a cada upgrade conquistado
+UPGRADE_THRESHOLD_GROWTH: float = 1.5
+
+# --- Power-ups passivos: configuracao generica por chave ---
+# Cada entrada = um power-up passivo. Adicionar novo power-up aqui,
+# sem precisar mexer na logica do Player (mesmo padrao de ENEMY_TYPES).
+PASSIVE_POWERUPS: dict = {
+    "magnet": {
+        "base_value": 60,   # raio inicial de atracao, em pixels
+        "increment": 20,    # ganho de raio por nivel
+        "max_level": 5,
+    },
+}
 
 # --- Gemas: coleta e efeito de arrasto ---
-GEM_PICKUP_RADIUS: float = 60  # distancia (entre centros) para a gema comecar a ser puxada
-GEM_COLLECT_DISTANCE: float = 6  # distancia minima para considerar a gema efetivamente coletada
-GEM_PULL_ACCELERATION: float = 400  # aceleracao da gema enquanto e puxada (pixels/s por segundo)
-GEM_PULL_MAX_SPEED: float = 500  # velocidade maxima que a gema pode atingir sendo puxada
+# distancia (entre centros) para a gema comecar a ser puxada
+GEM_PICKUP_RADIUS: float = 60
+# distancia minima para considerar a gema efetivamente coletada
+GEM_COLLECT_DISTANCE: float = 6
+# aceleracao da gema enquanto e puxada (pixels/s por segundo)
+GEM_PULL_ACCELERATION: float = 400
+# velocidade maxima que a gema pode atingir sendo puxada
+GEM_PULL_MAX_SPEED: float = 500
 
 # --- Horda: geracao de inimigos ---
 HORDE_BASE_ENEMIES: int = 12  # quantidade de inimigos na primeira horda de uma sala
-HORDE_ENEMIES_PER_VISIT: int = 6  # incremento de inimigos a cada revisita (rejogabilidade)
-SAFE_SPAWN_DISTANCE: float = 120  # distancia minima entre um inimigo e qualquer porta ao nascer
-ROOM_SURVIVAL_DURATION: float = 30.0  # segundos que o jogador precisa sobreviver para limpar a sala
-STRONG_ENEMY_RAMP_TIME: float = 20.0  # tempo (s) para a chance de inimigo forte atingir o maximo
-STRONG_ENEMY_MAX_CHANCE: float = 0.5  # chance maxima (50%) de spawnar um inimigo forte no reabastecimento
+# incremento de inimigos a cada revisita (rejogabilidade)
+HORDE_ENEMIES_PER_VISIT: int = 6
+# distancia minima entre um inimigo e qualquer porta ao nascer
+SAFE_SPAWN_DISTANCE: float = 120
+# segundos que o jogador precisa sobreviver para limpar a sala
+ROOM_SURVIVAL_DURATION: float = 30.0
+# tempo (s) para a chance de inimigo forte atingir o maximo
+STRONG_ENEMY_RAMP_TIME: float = 20.0
+# chance maxima (50%) de spawnar um inimigo forte no reabastecimento
+STRONG_ENEMY_MAX_CHANCE: float = 0.5
 
 # --- Reentradas: limite de revisitas por sala ---
 ROOM_MAX_REENTRIES: int = 5
@@ -62,11 +85,15 @@ ENEMY_TYPES: dict = {
         "damage": 20,  # mais forte, condizente com o tamanho e HP maiores
     },
 }
-ENEMY_POINTS_DIVISOR: float = 30  # (hp + damage) / este valor = pontos de drop do inimigo
+# (hp + damage) / este valor = pontos de drop do inimigo
+ENEMY_POINTS_DIVISOR: float = 30
 
 # --- Obstaculos: fixos (indestrutiveis) e destrutiveis (corroidos por inimigos, nao pelo player) ---
 DESTRUCTIBLE_OBSTACLE_HP: int = 20
-DESTRUCTIBLE_OBSTACLES_PER_ROOM: int = 4  # quantidade gerada aleatoriamente por sala
+# quantidade gerada aleatoriamente por sala
+DESTRUCTIBLE_OBSTACLES_PER_ROOM: int = 4
 DESTRUCTIBLE_OBSTACLE_SIZE: int = 40  # largura/altura do obstaculo destrutivel
-OBSTACLE_DAMAGE_COOLDOWN: float = 0.5  # segundos entre "mordidas" do inimigo no obstaculo (corrosao lenta)
-ENEMY_OBSTACLE_DAMAGE: int = 2  # dano causado pelo inimigo ao obstaculo destrutivel por contato
+# segundos entre "mordidas" do inimigo no obstaculo (corrosao lenta)
+OBSTACLE_DAMAGE_COOLDOWN: float = 0.5
+# dano causado pelo inimigo ao obstaculo destrutivel por contato
+ENEMY_OBSTACLE_DAMAGE: int = 2

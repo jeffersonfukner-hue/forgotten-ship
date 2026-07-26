@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from src.systems.room import Room
     from src.systems.door import Door
 
+
 class Player(Entity):
 
     def __init__(self, x: float, y: float) -> None:
@@ -51,7 +52,11 @@ class Player(Entity):
         self.level: int = 0  # quantidade de upgrades ja conquistados
         self.drop_points: float = 0.0
         self.points_to_upgrade: float = settings.POINTS_PER_UPGRADE
-        
+
+        # --- power-ups passivos: nivel atual de cada um (0 = nao adquirido) ---
+        self.passive_levels: dict = {
+            key: 0 for key in settings.PASSIVE_POWERUPS}
+
         # --- estatisticas: mortos e pontos gerados, por tipo de inimigo ---
         self.kills_by_type: dict = {}
         self.points_by_type: dict = {}
@@ -119,7 +124,7 @@ class Player(Entity):
                     if self.rect.colliderect(obstacle.rect):
                         self.y = previous_y
                         self.rect.y = self.y
-                        
+
     # ==================================================================
     # COMBATE: DISPARO AUTOMATICO
     # ==================================================================
@@ -151,15 +156,34 @@ class Player(Entity):
 
     def register_kill(self, enemy_type: str, points: float) -> None:
 
-        self.kills_by_type[enemy_type] = self.kills_by_type.get(enemy_type, 0) + 1
+        self.kills_by_type[enemy_type] = self.kills_by_type.get(
+            enemy_type, 0) + 1
         self.points_by_type[enemy_type] = self.points_by_type.get(
             enemy_type, 0.0) + points
-        
+
     def apply_automatic_upgrade(self) -> None:
 
         # upgrade minimo para provar o ciclo drop -> progresso -> mais forte
         # sera substituido por escolha de 3 opcoes em Sprint futura
         self.shoot_damage += settings.UPGRADE_DAMAGE_INCREMENT
+
+        # power-ups passivos sobem junto, no mesmo gatilho, ate a escolha das opcoes existir
+        self.upgrade_passive("magnet")
+
+    def upgrade_passive(self, key: str) -> None:
+
+        # aumenta o nivel de um power-up passivo, respeitando o teto configurado
+        config = settings.PASSIVE_POWERUPS[key]
+
+        if self.passive_levels[key] < config["max_level"]:
+            self.passive_levels[key] += 1
+
+    def get_passive_value(self, key: str) -> float:
+
+        # calcula o valor atual de um power-up passivo a partir do nivel
+        config = settings.PASSIVE_POWERUPS[key]
+
+        return config["base_value"] + config["increment"] * self.passive_levels[key]
 
     # ==================================================================
     # ATUALIZACAO POR FRAME
@@ -339,14 +363,15 @@ class Player(Entity):
         bar_width = self.rect.width
         bar_height = 4
         bar_x = screen_pos[0]
-        bar_y = screen_pos[1] - bar_height - 4  # um pouco acima do topo do player
+        # um pouco acima do topo do player
+        bar_y = screen_pos[1] - bar_height - 4
 
         hp_ratio = self.hp / self.max_hp
 
         pygame.draw.rect(screen, (80, 30, 30),
-                          (bar_x, bar_y, bar_width, bar_height))
+                         (bar_x, bar_y, bar_width, bar_height))
         pygame.draw.rect(screen, (60, 180, 90),
-                          (bar_x, bar_y, bar_width * hp_ratio, bar_height))
+                         (bar_x, bar_y, bar_width * hp_ratio, bar_height))
 
     def draw_range_indicator(self, screen: pygame.Surface, camera_x: float, camera_y: float) -> None:
 
