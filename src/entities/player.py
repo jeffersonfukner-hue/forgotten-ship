@@ -95,6 +95,9 @@ class Player(Entity):
         else:
             direction = direction.normalize()
 
+        # guarda a posicao antes do empurrao, para poder reverter por eixo se colidir com obstaculo
+        previous_x, previous_y = self.x, self.y
+
         self.x += direction.x * self.knockback_force / 10
         self.y += direction.y * self.knockback_force / 10
 
@@ -106,6 +109,17 @@ class Player(Entity):
         self.rect.x = self.x
         self.rect.y = self.y
 
+        # bloqueia o empurrao por obstaculo fixo, revertendo eixo por eixo
+        if self.room:
+            for obstacle in self.room.get_obstacles():
+                if self.rect.colliderect(obstacle.rect):
+                    self.x = previous_x
+                    self.rect.x = self.x
+
+                    if self.rect.colliderect(obstacle.rect):
+                        self.y = previous_y
+                        self.rect.y = self.y
+                        
     # ==================================================================
     # COMBATE: DISPARO AUTOMATICO
     # ==================================================================
@@ -189,6 +203,9 @@ class Player(Entity):
         if direction.length_squared() > 0:
             direction = direction.normalize()
 
+        # guarda a posicao antes de mover, para poder reverter por eixo se colidir com obstaculo
+        previous_x, previous_y = self.x, self.y
+
         self.x += direction.x * self.speed * dt
         self.y += direction.y * self.speed * dt
 
@@ -201,6 +218,16 @@ class Player(Entity):
 
             self.rect.x = self.x
             self.rect.y = self.y
+
+            # bloqueia movimento por obstaculo fixo, revertendo eixo por eixo (permite "deslizar" na parede)
+            for obstacle in self.room.get_obstacles():
+                if self.rect.colliderect(obstacle.rect):
+                    self.x = previous_x
+                    self.rect.x = self.x
+
+                    if self.rect.colliderect(obstacle.rect):
+                        self.y = previous_y
+                        self.rect.y = self.y
 
     def update_entering_door(self, dt: float) -> None:
 

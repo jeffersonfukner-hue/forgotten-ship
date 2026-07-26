@@ -1,9 +1,113 @@
 # Forgotten Ship
 ## VISAO.md
 
-> **Versão:** 4.5
+> **Versão:** 4.8
 > **Status:** Em desenvolvimento — mudança de direção
 > **Projeto:** Jogo 01 da A1 Game Academy
+
+---
+
+# Índice
+
+- [Propósito](#propósito)
+- [Conceito](#conceito)
+- [Experiência](#experiência)
+- [Protagonista](#protagonista)
+- [Mecânica Principal](#mecânica-principal)
+- [Objetivo do MVP](#objetivo-do-mvp)
+- [Fora do Escopo do MVP Atual](#fora-do-escopo-do-mvp-atual)
+- [Impacto na Arquitetura Existente](#impacto-na-arquitetura-existente)
+- [Estado Atual](#estado-atual)
+- [🆕 Pendências por Tema (Índice Rápido)](#pendências-por-tema-índice-rápido)
+- [Backlog Detalhado — Modo 1](#backlog-detalhado--modo-1-horde-interna)
+  - [Ataque](#ataque)
+  - [Drops e Progressão](#drops-e-progressão)
+  - [Progressão Espacial: Portas e Reparo em Cadeia](#progressão-espacial-portas-danificadas-e-reparo-em-cadeia)
+  - [Rejogabilidade](#rejogabilidade-hordas-mais-desafiadoras-a-cada-retorno)
+  - [Visão de Longuíssimo Prazo](#visão-de-longuíssimo-prazo-narrativa-histórica-e-área-de-membros)
+  - [Re-arquitetura Espacial: Mapas Contínuos por Nível](#re-arquitetura-espacial-mapas-contínuos-por-nível)
+  - [Percepção e Alcance de Tiro](#percepção-de-inimigos-e-alcance-de-tiro-raio-único)
+  - [Comportamento de Projétil](#comportamento-de-projétil-tiro-base)
+  - [Upgrades do Tiro](#upgrades-do-tiro-até-5-níveis-cada-upgrades-independentes-entre-si)
+  - [Campo de Força (Arma 2)](#campo-de-força-arma-2)
+  - [Sabre Giratório (Arma 3)](#sabre-giratório-arma-3--tema-espacial)
+  - [Arma Vampírica ("Fang")](#arma-vampírica-fang)
+  - [Armas de Fogo com Munição](#sistema-de-armas-de-fogo-com-munição-e-recarga)
+  - [Padrões de Tiro Múltiplo](#padrões-de-tiro-múltiplo-escolha-do-jogador)
+  - [Escudo](#escudo)
+  - [Padronização de Eixos de Upgrade](#padronização-de-eixos-de-upgrade-decisão-de-arquitetura-pendente)
+  - [Tipos de Inimigo (Taxonomia)](#tipos-de-inimigo-taxonomia)
+  - [Penalidade por Dano Recebido](#penalidade-por-dano-recebido)
+  - [Energia Afetando Skills](#energia-afetando-qualidade-das-skills)
+  - [Power-ups Passivos](#power-ups-passivos)
+  - [Coleta Automática de Gemas](#coleta-automática-de-gemas-remanescentes)
+  - [Interface de Usuário (UI)](#interface-de-usuário-ui--visão-geral)
+  - [Ranking por Qualidade de Escolha](#ranking-por-qualidade-de-escolha)
+  - [Progressão Vitalícia vs. de Partida](#dois-tipos-de-progressão-vitalícia-vs-de-partida)
+  - [Moeda do Jogo](#moeda-do-jogo)
+  - [Rankings Honesto vs. VIP](#dois-rankings-distintos-honesto-vs-vip)
+  - [Estatísticas Detalhadas por Jogador](#estatísticas-detalhadas-por-jogador)
+  - [Ordem de Implementação Sugerida](#ordem-de-implementação-sugerida)
+  - [Pesquisa de Referência de Gênero](#pesquisa-de-referência-gênero-horde-survivor--bullet-heaven)
+  - [Plano Consolidado — Blocos Temáticos](#plano-consolidado--blocos-temáticos-pós-sprint-026)
+- [Histórico de Versões](#histórico)
+
+---
+
+# Pendências por Tema (Índice Rápido)
+
+> Visão consolidada do que já foi registrado neste documento mas ainda
+> **não implementado**, organizada por bloco temático (ver Plano
+> Consolidado, mais abaixo). Atualizado a cada nova pendência
+> registrada — consulte aqui antes de perguntar "o que falta?".
+
+### 🔧 Bloco de Obstáculos (em andamento)
+- [ ] Obstáculo destrutível (só o fixo existe até agora)
+- [ ] Geração automática de obstáculos a partir do Nível 11
+
+### ⚡ Bloco de Power-ups (não iniciado)
+- [ ] Ímã (raio de coleta de gemas ampliado)
+- [ ] Regeneração de vida passiva
+- [ ] Arma "Fang" (vampírica, roubo de vida)
+- [ ] Armas de fogo com munição/recarga (revólver, pesada, metralhadora)
+- [ ] Padrões de tiro múltiplo (diagonal, linha reta, quatro cantos)
+- [ ] Sabre giratório
+- [ ] Escudo (mecânica ainda não definida)
+- [ ] Padronização de eixos de upgrade entre armas
+- [ ] Tela de escolha de skill (1 ou 3 via vídeo simulado) — hoje é só upgrade automático
+
+### 👹 Bloco de Entidades de Chefes (não iniciado)
+- [ ] Mini-chefes (drop garantido, sem vídeo)
+- [ ] Chefão com barra de vida em fases coloridas + atordoamento
+- [ ] Tipos de inimigo: Aéreo, Ativo (cuspe venenoso), Residual (gosma)
+- [ ] Comportamentos de perseguição estilo Pac-Man
+- [ ] Formação de grupo (meia-lua) para inimigos à distância
+- [ ] Dificuldade adaptativa por desempenho real
+
+### 🚀 Bloco de Restauração da Nave (não iniciado)
+- [ ] Portas danificadas/trancadas até reparo
+- [ ] Material de reparo dropado por inimigos, vinculado a porta específica
+- [ ] Ondas com material composto (quebra-cabeça de montagem)
+- [ ] Minigames de reparo (Sudoku, Match 3, Pac-Man, Tetris)
+
+### 🎨 Bloco de Refinamento Geral (reservado para o final)
+- [ ] Sprites reais substituindo placeholders geométricos
+- [ ] Balanceamento fino geral
+- [ ] Polimento de UX
+- [ ] Revisar todo feedback visual de dano/HP: preferir efeitos que não
+      dependam de barra de HP quando possível (ex: encolhimento,
+      mudança de cor/opacidade), como já adotado para o obstáculo
+      destrutível — mais imersivo que barras sobrepostas ao sprite
+
+### 📊 Sistemas Transversais (não encaixam em um bloco só)
+- [ ] Sistema de Vidas completo (vídeo 1x, regeneração por tempo, compra)
+- [ ] UI de confirmação de Reentradas (hoje só cor da porta)
+- [ ] Moeda do jogo
+- [ ] Dois rankings (Honesto vs. VIP)
+- [ ] Coleta automática de gemas remanescentes (auto-ímã, mini-ímã esporádico)
+- [ ] UI final substituindo o painel de debug
+- [ ] Transição cinematográfica ao entrar em sala/nível novo
+- [ ] Estrutura de N salas por nível, além do que já existe (Nível 1 e 2)
 
 ---
 
@@ -903,26 +1007,89 @@ design (Sprints 024-026), com fontes reais do gênero:
   variedade tática real no combate. Planejado para a Sprint 026, junto
   dos demais comportamentos de perseguição diferenciados.
 
-### Plano Consolidado — Próximas Três Sprints
+### Plano Consolidado — Blocos Temáticos (Pós-Sprint 026)
 
-- **Sprint 024:** substituir o modelo de 2 ondas discretas por um piso
-  contínuo de inimigos por sala, com dificuldade crescendo via
-  composição de tipos ao longo do tempo de permanência na sala, não
-  por quantidade total (resolve a pendência de continuidade entre
-  visitas registrada anteriormente).
-- **Sprint 025:** drops físicos coletáveis (gemas/pontos visíveis no
-  mundo) substituindo a pontuação instantânea atual; power-up de ímã
-  com raio de atração próprio, distinto do raio de percepção/tiro do
-  jogador.
-- **Sprint 026:** dificuldade adaptativa por desempenho real do
-  jogador (não apenas por tempo ou visitas); comportamentos de
-  perseguição diferenciados por tipo de inimigo, inspirados nos
-  padrões clássicos de Pac-Man; formação de grupo (meia-lua) para
-  inimigos à distância.
+> Atualização: o plano anterior (por número de Sprint) ficou
+> desatualizado conforme o desenvolvimento avançou além do previsto.
+> A partir daqui, o planejamento passa a ser por **bloco temático**
+> (ver Seção 5 do `METODOLOGIA.md` — Agrupamento Temático de Sprints),
+> sem fixar quantas Sprints cada bloco vai exigir — cada bloco se
+> divide em Sprints específicas conforme a necessidade for aparecendo
+> durante o desenvolvimento.
+
+**Ordem definida (25/07/2026):**
+
+1. **Bloco de Obstáculos de Sala** — elementos físicos dentro das
+   salas, hoje inexistentes (o piso é vazio). Dois tipos coexistindo:
+   - **Fixos:** bloqueiam movimento e linha de tiro, servindo de
+     cobertura tática, sem poder ser destruídos.
+   - **Destrutíveis:** podem ser eliminados pelo jogador (atirando),
+     revelando espaço livre e possivelmente concedendo recompensa
+     (gema, material) ao serem destruídos.
+   - Motivação: o espaço de jogo hoje é "vazio" demais; obstáculos
+     também tornam os power-ups futuros (ímã, padrões de tiro)
+     mecanicamente mais interessantes, ao interagir com o ambiente.
+
+2. **Bloco de Power-ups** — começando pelo ímã (já conectado ao
+   sistema de gemas da Sprint 026), expandindo para os demais itens já
+   registrados neste documento (regeneração de vida, Fang, armas de
+   fogo com munição, padrões de tiro múltiplo, sabre giratório,
+   escudo), um de cada vez, conforme a demanda for aparecendo.
+
+3. **Bloco de Entidades de Chefes** — mini-chefes, chefes e chefões,
+   implementando a Estrutura de Boss Rush já detalhada neste
+   documento (barra de fases coloridas, mecânica de atordoamento,
+   drops garantidos de mini-chefes sem exigir vídeo).
+
+4. **Bloco de Restauração da Nave** — início da mecânica central de
+   "Reparo em Cadeia" (Progressão Espacial), ainda não iniciada:
+   portas danificadas, material de reparo, vínculo entre drops e
+   sistemas específicos da nave.
+
+5. **Bloco de Refinamento Geral** — ao final dos blocos anteriores,
+   uma ou mais Sprints dedicadas a revisar e polir o que já foi
+   construído em modo protótipo: ajustes de sprite/visual definitivo
+   (hoje tudo é placeholder geométrico), balanceamento fino,
+   comportamentos de linha de visão/obstáculo mais sofisticados,
+   polimento geral de UX. Registrado desde já porque o volume de itens
+   "funcional, mas ainda protótipo" tende a crescer conforme os blocos
+   anteriores avançam — nem tudo precisa ser perfeito na primeira
+   implementação, mas nada deve ser esquecido de revisar depois.
+
+Esta ordem prioriza primeiro tornar o espaço de jogo mais rico
+(obstáculos) antes de expandir a variedade de combate (power-ups e
+chefes), deixando a mecânica narrativa central (restauração) para
+depois que a base de combate estiver mais madura, e reservando um
+momento explícito de polimento geral ao final.
 
 ---
 
 # Histórico
+
+## v4.8
+- Revisado o conceito de Obstáculo Destrutível: corroído apenas por
+  inimigos (não pelo tiro do jogador), encolhendo visualmente até
+  sumir, sem soltar recompensa ao jogador — funciona como defesa
+  temporária, não como alvo de destruição pelo próprio jogador.
+- Adicionada observação de refinamento: preferir feedback visual sem
+  barra de HP quando possível (encolhimento, cor, opacidade).
+
+## v4.7
+- Adicionado Índice navegável no topo do documento e seção
+  "Pendências por Tema (Índice Rápido)", consolidando o que já foi
+  registrado mas ainda não implementado, organizada por bloco.
+- Adicionado 5º bloco ao Plano Consolidado: "Bloco de Refinamento
+  Geral" (sprites reais, balanceamento fino, polimento de UX),
+  reservado para o final dos demais blocos.
+- Registrada implementação de linha de visão bloqueada por obstáculo
+  na mira automática (`_has_line_of_sight`, via `Rect.clipline`) —
+  jogador deixa de "enxergar através de paredes" ao escolher alvo.
+
+## v4.6
+- Substituído plano consolidado desatualizado (por número de Sprint)
+  por novo plano de 4 Blocos Temáticos: Obstáculos de Sala (fixos e
+  destrutíveis), Power-ups, Entidades de Chefes, e Restauração da
+  Nave — nessa ordem, sem fixar quantidade de Sprints por bloco.
 
 ## v4.5
 - Adicionada seção de Coleta Automática de Gemas Remanescentes: auto-

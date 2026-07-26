@@ -49,7 +49,8 @@ class Enemy(Entity):
     # ATUALIZACAO POR FRAME
     # ==================================================================
 
-    def update(self, dt: float, target_x: float, target_y: float, others: list, bounds: tuple) -> None:
+    def update(self, dt: float, target_x: float, target_y: float, others: list,
+               bounds: tuple, obstacles: list = None) -> None:
 
         direction = pygame.Vector2(
             target_x - self.x, target_y - self.y)
@@ -77,6 +78,9 @@ class Enemy(Entity):
             if direction.length_squared() > 0:
                 direction = direction.normalize()
 
+        # guarda a posicao antes de mover, para poder reverter por eixo se colidir com obstaculo
+        previous_x, previous_y = self.x, self.y
+
         self.x += direction.x * self.speed * dt
         self.y += direction.y * self.speed * dt
 
@@ -87,7 +91,18 @@ class Enemy(Entity):
 
         self.rect.x = self.x
         self.rect.y = self.y
-        
+
+        # bloqueia movimento por obstaculo fixo, revertendo eixo por eixo
+        if obstacles:
+            for obstacle in obstacles:
+                if self.rect.colliderect(obstacle.rect):
+                    self.x = previous_x
+                    self.rect.x = self.x
+
+                    if self.rect.colliderect(obstacle.rect):
+                        self.y = previous_y
+                        self.rect.y = self.y
+                            
     # ==================================================================
     # DESENHO
     # ==================================================================

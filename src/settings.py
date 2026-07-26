@@ -19,9 +19,13 @@ PLAYER_SHOOT_INTERVAL: float = 0.8  # segundos entre disparos automaticos
 PLAYER_RANGE_RADIUS: float = 300  # raio unico: percepcao de inimigos e alcance do tiro
 PLAYER_KNOCKBACK_FORCE: int = 220
 PLAYER_SHOOT_DAMAGE: int = 10  # dano de cada projetil disparado automaticamente
+
+# --- Player: progressao (drops e upgrades automaticos) ---
 POINTS_PER_UPGRADE: int = 10  # pontos de drop necessarios para o proximo upgrade automatico
 UPGRADE_DAMAGE_INCREMENT: int = 5  # quanto o dano do tiro aumenta a cada upgrade
 UPGRADE_THRESHOLD_GROWTH: float = 1.5  # limiar de pontos cresce 50% a cada upgrade conquistado
+
+# --- Gemas: coleta e efeito de arrasto ---
 GEM_PICKUP_RADIUS: float = 60  # distancia (entre centros) para a gema comecar a ser puxada
 GEM_COLLECT_DISTANCE: float = 6  # distancia minima para considerar a gema efetivamente coletada
 GEM_PULL_ACCELERATION: float = 400  # aceleracao da gema enquanto e puxada (pixels/s por segundo)
@@ -59,3 +63,10 @@ ENEMY_TYPES: dict = {
     },
 }
 ENEMY_POINTS_DIVISOR: float = 30  # (hp + damage) / este valor = pontos de drop do inimigo
+
+# --- Obstaculos: fixos (indestrutiveis) e destrutiveis (corroidos por inimigos, nao pelo player) ---
+DESTRUCTIBLE_OBSTACLE_HP: int = 20
+DESTRUCTIBLE_OBSTACLES_PER_ROOM: int = 4  # quantidade gerada aleatoriamente por sala
+DESTRUCTIBLE_OBSTACLE_SIZE: int = 40  # largura/altura do obstaculo destrutivel
+OBSTACLE_DAMAGE_COOLDOWN: float = 0.5  # segundos entre "mordidas" do inimigo no obstaculo (corrosao lenta)
+ENEMY_OBSTACLE_DAMAGE: int = 2  # dano causado pelo inimigo ao obstaculo destrutivel por contato

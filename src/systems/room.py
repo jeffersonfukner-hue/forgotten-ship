@@ -15,6 +15,9 @@ class Room:
         self.room_id: int = room_id
         self.doors: list[Door] = []
 
+        # tipo Obstacle, import evitado aqui p/ nao criar dependencia circular
+        self.obstacles: list = []
+
         # tipo Enemy, import evitado aqui p/ nao criar dependencia circular
         self.enemies: list = []
 
@@ -22,7 +25,7 @@ class Room:
         self.times_cleared: int = 0  # quantas vezes esta sala ja foi totalmente limpa
         self.cleared: bool = False  # True quando a sala foi esvaziada neste ciclo, ate ser reaberta
         self.horde_total_enemies: int = 0  # tamanho da horda ao ser gerada, para exibir X/Y na HUD
-        
+
         # --- reentradas: limite de revisitas, regenera com o tempo ---
         self.max_reentries: int = settings.ROOM_MAX_REENTRIES
         self.reentries: int = self.max_reentries
@@ -88,7 +91,7 @@ class Room:
         remaining = self.regen_interval - (elapsed % self.regen_interval)
 
         return remaining
-    
+
     def _now(self) -> float:
 
         import time
@@ -135,6 +138,18 @@ class Room:
         return None
 
     # ==================================================================
+    # OBSTACULOS
+    # ==================================================================
+
+    def add_obstacle(self, obstacle) -> None:
+
+        self.obstacles.append(obstacle)
+
+    def get_obstacles(self) -> list:
+
+        return self.obstacles
+
+    # ==================================================================
     # INIMIGOS
     # ==================================================================
 
@@ -150,12 +165,17 @@ class Room:
 
         self.enemies = [e for e in self.enemies if not e.is_dead]
 
+    def remove_destroyed_obstacles(self) -> None:
+
+        self.obstacles = [o for o in self.obstacles if not o.is_dead]   
+
     def register_kill(self, enemy_type: str, points: float) -> None:
-        
-        self.kills_by_type[enemy_type] = self.kills_by_type.get(enemy_type, 0) + 1
+
+        self.kills_by_type[enemy_type] = self.kills_by_type.get(
+            enemy_type, 0) + 1
         self.points_by_type[enemy_type] = self.points_by_type.get(
             enemy_type, 0.0) + points
-        
+
     # ==================================================================
     # DESENHO
     # ==================================================================
@@ -214,6 +234,9 @@ class Room:
                           (rl, rt, self.rect.width, self.rect.height), width=2,)
 
         # texto de sala/visitas vive na HUD fixa (GameScene.draw_ui), Sprint 016
+
+        for obstacle in self.obstacles:
+            obstacle.draw(screen, camera_x, camera_y)
 
         for door in self.doors:
             door.draw(screen, camera_x, camera_y)

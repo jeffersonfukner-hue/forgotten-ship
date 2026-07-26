@@ -1,24 +1,21 @@
+import time
+import random
+
 import pygame
 
 from src.scenes.scene import Scene
-
 from src.systems.entity_manager import EntityManager
-
 from src.entities.player import Player
-
 from src.systems.room import Room
-
 from src.systems.door import Door, TOP, BOTTOM, LEFT, RIGHT
-
 from src import settings
 
-import time
-
-import random
 
 class GameScene(Scene):
 
-    # --- tabelas de configuracao (candidatas a settings.py numa proxima Sprint) ---
+    # ==================================================================
+    # TABELAS DE CONFIGURACAO DE CLASSE
+    # ==================================================================
 
     # dimensoes de cada sala: Area de Carga (grande), Corredor (longo e estreito), Engenharia
     ROOM_SIZES = {
@@ -47,44 +44,42 @@ class GameScene(Scene):
         self.rooms: dict[int, Room] = {}
 
         # --- dados de portas: cada porta conhece sua sala, posicao e porta destino ---
-        # Nivel 1: Area de Carga - sala inicial, uma porta ao sul leva ao Nivel 2
-        # Nivel 2: Corredor conectando a Area de Carga a Engenharia
         self.door_data = {
             1: {
                 "room": 1,
                 "x": 700,
-                "y": 1000,  # borda sul da Area de Carga (bottom - wall)
+                "y": 1000,
                 "width": 40,
                 "height": 20,
                 "side": BOTTOM,
-                "target": 2,  # leva ao Corredor
+                "target": 2,
             },
             2: {
                 "room": 2,
                 "x": 210,
-                "y": 60,  # borda norte do Corredor
+                "y": 60,
                 "width": 40,
                 "height": 20,
                 "side": TOP,
-                "target": 1,  # volta a Area de Carga
+                "target": 1,
             },
             3: {
                 "room": 2,
                 "x": 210,
-                "y": 1440,  # borda sul do Corredor
+                "y": 1440,
                 "width": 40,
                 "height": 20,
                 "side": BOTTOM,
-                "target": 4,  # leva a Engenharia
+                "target": 4,
             },
             4: {
                 "room": 3,
                 "x": 510,
-                "y": 60,  # borda norte da Engenharia
+                "y": 60,
                 "width": 40,
                 "height": 20,
                 "side": TOP,
-                "target": 3,  # volta ao Corredor
+                "target": 3,
             },
         }
 
@@ -93,7 +88,7 @@ class GameScene(Scene):
             1: {
                 "level": 1,
                 "doors": [1],
-                "spawn": (704, 524),  # centro da Area de Carga
+                "spawn": (704, 524),
             },
             2: {
                 "level": 2,
@@ -105,12 +100,20 @@ class GameScene(Scene):
             },
         }
 
+        # --- obstaculos fixos por sala: posicionados manualmente (ate o Nivel 11, quando vira automatico) ---
+        self.obstacle_data = {
+            1: [
+                {"x": 400, "y": 300, "width": 80, "height": 80},
+                {"x": 900, "y": 500, "width": 60, "height": 120},
+            ],
+        }
+
         # --- sala inicial e jogador ---
         self.current_room_id: int = 1
         self.room: Room = self.create_room(self.current_room_id)
 
         spawn_x, spawn_y = self.room_data[self.current_room_id]["spawn"]
-        self.player: Player = Player(spawn_x, spawn_y,)
+        self.player: Player = Player(spawn_x, spawn_y)
         self.player.room = self.room
         self.entity_manager.add(self.player)
 
@@ -119,19 +122,13 @@ class GameScene(Scene):
         self.camera_x: float = 0.0
         self.camera_y: float = 0.0
 
-        # --- progressao: pontos de drop e upgrades ---
-        self.drop_points: int = 0
-        self.points_to_upgrade: int = settings.POINTS_PER_UPGRADE
-        self.shoot_damage: int = settings.PLAYER_SHOOT_DAMAGE  # pode subir com upgrades
-
     # ==================================================================
     # CRIACAO E CONFIGURACAO DE SALAS
     # ==================================================================
 
     def spawn_horde(self, room: Room) -> None:
         """Preenche a sala com o piso minimo de inimigos e inicia o
-        cronometro de sobrevivencia. Diferente do modelo antigo de ondas
-        discretas (Sprint 021-023), a sala mantem uma quantidade minima
+        cronometro de sobrevivencia. A sala mantem uma quantidade minima
         de inimigos vivos o tempo todo, reabastecida continuamente."""
 
         room.survival_start_time = time.time()
@@ -142,20 +139,10 @@ class GameScene(Scene):
         room.points_by_type = {}
 
         enemy_count = settings.HORDE_BASE_ENEMIES
-
         room.horde_total_enemies = enemy_count
 
         self._spawn_wave_enemies(room, enemy_count)
-    
-    def _pick_enemy_type(self, room: Room) -> str:
-        elapsed = time.time() - room.survival_start_time
 
-        # chance de spawnar inimigo forte cresce linearmente ate o teto configurado
-        progress = min(1.0, elapsed / settings.STRONG_ENEMY_RAMP_TIME)
-        chance = progress * settings.STRONG_ENEMY_MAX_CHANCE    
-    
-        return "strong" if random.random() < chance else "weak"
-    
     def _spawn_wave_enemies(self, room: Room, enemy_count: int) -> None:
         """Sorteia posicoes nas bordas da sala para uma leva de inimigos,
         respeitando distancia minima das portas. O tipo de cada inimigo e
@@ -196,17 +183,60 @@ class GameScene(Scene):
             enemy_type = self._pick_enemy_type(room)
             room.add_enemy(Enemy(x, y, enemy_type=enemy_type))
 
-    def calculate_wave_time(self, enemy_count: int) -> float:
+    def _pick_enemy_type(self, room: Room) -> str:
+        """Escolhe o tipo do inimigo individualmente: a chance de ser
+        'strong' cresce linearmente com o tempo de permanencia na sala,
+        ate um teto configurado."""
 
-        import math
+        elapsed = time.time() - room.survival_start_time
 
-        # tempo estimado para o player limpar a onda no ritmo atual de dano/cadencia
-        enemy_hp = 20  # HP atual do Enemy (Sprint 013) - fixo por enquanto, sem tipos variados
-        shots_per_enemy = math.ceil(enemy_hp / settings.PLAYER_SHOOT_DAMAGE)
-        time_per_enemy = shots_per_enemy * settings.PLAYER_SHOOT_INTERVAL
+        progress = min(1.0, elapsed / settings.STRONG_ENEMY_RAMP_TIME)
+        chance = progress * settings.STRONG_ENEMY_MAX_CHANCE
 
-        return enemy_count * time_per_enemy
-    
+        return "strong" if random.random() < chance else "weak"
+
+    def _spawn_destructible_obstacles(self, room: Room) -> None:
+        """Gera obstaculos destrutiveis em posicoes aleatorias, evitando
+        sobrepor obstaculos fixos ja existentes e a area central da sala
+        (onde o jogador normalmente aparece/atravessa)."""
+
+        from src.entities.obstacle import Obstacle
+
+        left, top, right, bottom = room.get_bounds()
+        size = settings.DESTRUCTIBLE_OBSTACLE_SIZE
+
+        existing_rects = [o.rect for o in room.get_obstacles()]
+
+        avoid_center = pygame.Vector2(room.rect.centerx, room.rect.centery)
+        avoid_radius = 100
+
+        for _ in range(settings.DESTRUCTIBLE_OBSTACLES_PER_ROOM):
+
+            for _attempt in range(20):
+
+                x = random.randint(int(left), int(right - size))
+                y = random.randint(int(top), int(bottom - size))
+
+                candidate_rect = pygame.Rect(x, y, size, size)
+
+                too_close_to_center = (
+                    pygame.Vector2(candidate_rect.centerx, candidate_rect.centery)
+                    .distance_to(avoid_center) < avoid_radius
+                )
+
+                overlaps_existing = any(
+                    candidate_rect.colliderect(r) for r in existing_rects)
+
+                if not too_close_to_center and not overlaps_existing:
+                    break
+
+            obstacle = Obstacle(
+                x=x, y=y, width=size, height=size,
+                destructible=True, hp=settings.DESTRUCTIBLE_OBSTACLE_HP)
+
+            room.add_obstacle(obstacle)
+            existing_rects.append(obstacle.rect)
+
     def create_room(self, room_id: int) -> Room:
         """Retorna a sala do cache, gerando uma nova horda se ela ja tiver sido
         limpa (respeitando reentradas), ou cria a sala do zero na primeira visita."""
@@ -238,7 +268,9 @@ class GameScene(Scene):
 
     def configure_room(self, room: Room, room_id: int) -> None:
         """Monta as portas da sala a partir de room_data/door_data,
-        e gera a primeira horda (trancando as portas se houver inimigos)."""
+        cria os obstaculos fixos (obstacle_data) e destrutiveis
+        (aleatorios), e gera a primeira horda (trancando as portas
+        se houver inimigos)."""
 
         room_info = self.room_data[room_id]
 
@@ -256,6 +288,21 @@ class GameScene(Scene):
                     side=door_info["side"],
                     target_door=door_info["target"]
                 ))
+
+        # cria os obstaculos fixos desta sala, se houver algum definido
+        from src.entities.obstacle import Obstacle
+
+        for obstacle_info in self.obstacle_data.get(room_id, []):
+            room.add_obstacle(
+                Obstacle(
+                    x=obstacle_info["x"],
+                    y=obstacle_info["y"],
+                    width=obstacle_info["width"],
+                    height=obstacle_info["height"],
+                ))
+
+        # gera obstaculos destrutiveis aleatorios, evitando sobrepor os fixos
+        self._spawn_destructible_obstacles(room)
 
         self.spawn_horde(room)
 
@@ -277,7 +324,8 @@ class GameScene(Scene):
 
     def find_closest_enemy(self, enemies: list):
         """Retorna o inimigo vivo mais proximo do player, dentro do raio de
-        percepcao (player.range_radius), ou None se nenhum estiver ao alcance."""
+        percepcao (player.range_radius) e com linha de visao livre (sem
+        obstaculo no caminho), ou None se nenhum atender aos dois criterios."""
 
         closest = None
         closest_distance = None
@@ -289,11 +337,25 @@ class GameScene(Scene):
             if distance > self.player.range_radius:
                 continue  # fora do alcance de percepcao, ignora
 
+            if not self._has_line_of_sight(self.player.rect.center, enemy.rect.center):
+                continue  # obstaculo bloqueia a visao, "cego" para este inimigo
+
             if closest_distance is None or distance < closest_distance:
                 closest = enemy
                 closest_distance = distance
 
         return closest
+
+    def _has_line_of_sight(self, start: tuple, end: tuple) -> bool:
+        """Verifica se a linha reta entre dois pontos e bloqueada por
+        algum obstaculo da sala atual, usando o algoritmo de clipping
+        de linha do proprio pygame.Rect (clipline)."""
+
+        for obstacle in self.room.get_obstacles():
+            if obstacle.rect.clipline(start, end):
+                return False  # a linha cruza este obstaculo
+
+        return True
 
     # ==================================================================
     # LOOP PRINCIPAL
@@ -308,30 +370,37 @@ class GameScene(Scene):
         self.entity_manager.update(dt)
         self.update_camera()
 
-        # --- limpeza de inimigos mortos ---
+        # --- limpeza de inimigos mortos e obstaculos destruidos ---
         self.room.remove_dead_enemies()
+        self.room.remove_destroyed_obstacles()
 
-        # --- piso continuo: reabastece inimigos ate manter o minimo vivo, so enquanto o jogo estiver ativo ---
+        # --- atualiza obstaculos (cooldown de corrosao e encolhimento visual) ---
+        for obstacle in self.room.get_obstacles():
+            obstacle.update(dt)
+
+        # --- verifica se o jogo terminou de vez (sem vidas restantes) ---
         game_over = self.player.is_dead and not self.player.has_lives_left()
 
+        # --- piso continuo: reabastece inimigos ate manter o minimo vivo ---
         current_count = len(self.room.get_enemies())
         missing = self.room.horde_total_enemies - current_count
 
-        if missing > 0 and not self.room.cleared and not self.room.time_expired and not game_over:
+        if (missing > 0 and not self.room.cleared
+                and not self.room.time_expired and not game_over):
             self._spawn_wave_enemies(self.room, missing)
 
-        # --- condicao de vitoria: sobreviver por tempo determinado (versao simples) ---
-        # jogador definitivamente morto (sem vidas) nao conta mais tempo de sobrevivencia
-        if self.player.is_dead and not self.player.has_lives_left():
+        # --- condicao de vitoria: sobreviver por tempo determinado ---
+        if game_over:
             survival_elapsed = self.room.horde_clear_time or 0.0
         else:
             survival_elapsed = time.time() - self.room.survival_start_time
 
-        # ao esgotar o tempo, para de reabastecer - mas so destranca a porta quando nao houver mais inimigos vivos
-        if survival_elapsed >= self.room.survival_duration:
+        # ao esgotar o tempo, para de reabastecer - so destranca quando nao houver mais inimigos vivos
+        if not game_over and survival_elapsed >= self.room.survival_duration:
             self.room.time_expired = True
 
-        if self.room.time_expired and not self.room.get_enemies() and not self.room.cleared:
+        if (self.room.time_expired and not self.room.get_enemies()
+                and not self.room.cleared):
 
             for door in self.room.get_doors():
                 door.unlock()
@@ -371,9 +440,19 @@ class GameScene(Scene):
 
                     self.player.confirm_shot()
 
-        # --- projeteis: movimento e colisao com inimigos ---
+        # --- projeteis: movimento, colisao com obstaculos e com inimigos ---
         for projectile in self.projectiles:
             projectile.update(dt)
+
+            # todo obstaculo bloqueia o projetil do player, independente de ser destrutivel
+            # (destrutiveis so sao corroidos por inimigos, nao pelo tiro do player)
+            for obstacle in self.room.get_obstacles():
+                if not obstacle.is_dead and projectile.rect.colliderect(obstacle.rect):
+                    projectile.is_dead = True
+                    break
+
+            if projectile.is_dead:
+                continue  # ja bloqueado pelo obstaculo, nao verifica inimigos
 
             for enemy in enemies:
                 if not enemy.is_dead and projectile.rect.colliderect(enemy.rect):
@@ -385,7 +464,7 @@ class GameScene(Scene):
 
                     if enemy.is_dead:
                         self.player.register_kill(enemy.enemy_type, enemy.drop_value)
-                        self.room.register_kill(enemy.enemy_type, enemy.drop_value) 
+                        self.room.register_kill(enemy.enemy_type, enemy.drop_value)
 
                         from src.entities.gem import Gem
                         self.gems.append(Gem(enemy.x, enemy.y, enemy.drop_value))
@@ -429,15 +508,29 @@ class GameScene(Scene):
                     gem.is_dead = True
 
         self.gems = [g for g in self.gems if not g.is_dead]
-        
+
         # --- inimigos: movimento e colisao com o player ---
         if not self.player.is_dead:  # inimigos param de agir assim que o jogador morre
-            
+
             room_bounds = self.room.get_bounds()
+            room_obstacles = self.room.get_obstacles()
 
             for enemy in enemies:
-                enemy.update(dt, self.player.x, self.player.y, enemies, room_bounds)
+                enemy.update(dt, self.player.x, self.player.y, enemies, room_bounds, room_obstacles)
 
+            # inimigo corroi obstaculo destrutivel por proximidade (nao apenas sobreposicao exata)
+            # usa uma area "inflada" para deteccao, ja que o bloqueio de movimento impede sobreposicao real
+            attack_reach = 6  # pixels de folga alem da borda do obstaculo, para contar como "encostado"
+
+            for enemy in enemies:
+                for obstacle in room_obstacles:
+                    if obstacle.destructible and not obstacle.is_dead:
+                        inflated_rect = obstacle.rect.inflate(
+                            attack_reach * 2, attack_reach * 2)
+
+                        if enemy.rect.colliderect(inflated_rect):
+                            obstacle.take_damage(settings.ENEMY_OBSTACLE_DAMAGE)
+            
             for enemy in enemies:
                 if self.player.rect.colliderect(enemy.rect):
                     self.player.take_damage(enemy.damage)
@@ -606,15 +699,12 @@ class GameScene(Scene):
 
         hp_ratio = self.player.hp / self.player.max_hp
 
-        # fundo da barra (vermelho escuro, representa vida perdida)
         pygame.draw.rect(screen, (80, 30, 30),
                           (bar_x, bar_y, bar_width, bar_height))
 
-        # preenchimento atual (verde, proporcional ao HP restante)
         pygame.draw.rect(screen, (60, 180, 90),
                           (bar_x, bar_y, bar_width * hp_ratio, bar_height))
 
-        # contorno
         pygame.draw.rect(screen, (255, 255, 255),
                           (bar_x, bar_y, bar_width, bar_height), width=2)
 
@@ -627,21 +717,18 @@ class GameScene(Scene):
 
     def draw_progress_bar(self, screen: pygame.Surface) -> None:
 
-        bar_x, bar_y = 20, 46  # logo abaixo da barra de HP
+        bar_x, bar_y = 20, 46
         bar_width, bar_height = 200, 10
 
         ratio = self.player.drop_points / self.player.points_to_upgrade
-        ratio = min(1.0, ratio)  # protege contra qualquer excesso momentaneo
+        ratio = min(1.0, ratio)
 
-        # fundo (roxo escuro, representa progresso faltante)
         pygame.draw.rect(screen, (50, 30, 70),
                           (bar_x, bar_y, bar_width, bar_height))
 
-        # preenchimento (dourado, progresso atual rumo ao proximo upgrade)
         pygame.draw.rect(screen, (200, 170, 60),
                           (bar_x, bar_y, bar_width * ratio, bar_height))
 
-        # contorno
         pygame.draw.rect(screen, (255, 255, 255),
                           (bar_x, bar_y, bar_width, bar_height), width=1)
 
@@ -653,7 +740,6 @@ class GameScene(Scene):
 
     def draw_room_and_lives(self, screen: pygame.Surface) -> None:
 
-        # linha compacta e essencial: "Room X | Vidas: Y/Z"
         font = pygame.font.Font(None, 26)
         text = font.render(
             f"Room {self.room.room_id}  |  Vidas: {self.player.lives}/{self.player.max_lives}",
@@ -676,9 +762,8 @@ class GameScene(Scene):
 
         panel_width = 260
         panel_height = padding * 2 + line_height * len(lines)
-        panel_x, panel_y = 20, 82
+        panel_x, panel_y = 20, 92
 
-        # fundo translucido, sem borda
         panel_surface = pygame.Surface(
             (panel_width, panel_height), pygame.SRCALPHA)
         panel_surface.fill((20, 20, 30, 140))
@@ -692,7 +777,7 @@ class GameScene(Scene):
 
     def _build_debug_lines(self) -> list[str]:
 
-        self.room.regen_reentries()  # forca o calculo de regeneracao a cada frame, para refletir o tempo real
+        self.room.regen_reentries()
 
         lines = []
 
@@ -709,12 +794,12 @@ class GameScene(Scene):
         lines.extend(self._build_kill_stat_lines(
             self.player.kills_by_type, self.player.points_by_type))
 
-        lines.append("")  # linha em branco separando o resumo da lista de salas
+        lines.append("")
         lines.append("Salas:")
 
         for room_id in sorted(self.rooms.keys()):
             room = self.rooms[room_id]
-            room.regen_reentries()  # forca atualizacao antes de exibir
+            room.regen_reentries()
 
             timer_text = (f"{room.time_until_next_regen():.0f}s"
                           if room.reentries < room.max_reentries else "cheio")
@@ -722,33 +807,28 @@ class GameScene(Scene):
             lines.append(
                 f"  Room {room_id}: {room.reentries}/{room.max_reentries} ({timer_text})")
 
-            # estatisticas da visita atual (ainda em andamento), aninhadas logo abaixo
             for enemy_type in sorted(room.kills_by_type.keys()):
                 kills = room.kills_by_type[enemy_type]
                 points = room.points_by_type[enemy_type]
                 lines.append(
                     f"    {enemy_type}: {kills} mortos, {points:.1f} pts")
 
-            # historico de visitas ja concluidas, mais recente primeiro
             for entry in reversed(room.visit_history):
                 lines.append(
                     f"    Visita {entry['visit_number']}: "
                     f"{entry['clear_time']:.1f}s, {entry['total_points']:.1f} pts")
 
-                # quebra por tipo de inimigo, indentada sob a visita
                 for enemy_type in sorted(entry['kills_by_type'].keys()):
                     kills = entry['kills_by_type'][enemy_type]
                     lines.append(f"      {enemy_type}: {kills}")
 
         return lines
-    
+
     def _build_survival_line(self) -> str:
 
-        # piso continuo: mostra tempo sobrevivido, ou o tempo final se a sala ja foi vencida
         if self.room.cleared:
             return f"Sala vencida em: {self.room.horde_clear_time:.1f}s"
 
-        # jogador definitivamente morto: congela o cronometro no valor exato do momento da morte
         if self.player.is_dead and not self.player.has_lives_left():
             return "Sobrevivendo: -- (GAME OVER)"
 
@@ -756,13 +836,13 @@ class GameScene(Scene):
         remaining = max(0.0, self.room.survival_duration - elapsed)
 
         return f"Sobrevivendo: {elapsed:.1f}s (faltam {remaining:.1f}s)"
-    
+
     def _build_enemy_counter_line(self) -> str:
 
         total = self.room.horde_total_enemies
 
         if total == 0:
-            return "Inimigos: --"  # sala sem horda gerada ainda
+            return "Inimigos: --"
 
         current = len(self.room.get_enemies())
 
@@ -770,7 +850,6 @@ class GameScene(Scene):
 
     def _build_progress_line(self) -> str:
 
-        # barra de progresso ja aparece na HUD fixa; aqui so o poder atual, para debug
         return f"Dano do tiro: {self.player.shoot_damage}"
 
     def _build_kill_stat_lines(self, kills_by_type: dict, points_by_type: dict) -> list[str]:
