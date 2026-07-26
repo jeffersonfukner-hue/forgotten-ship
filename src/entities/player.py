@@ -57,6 +57,9 @@ class Player(Entity):
         self.passive_levels: dict = {
             key: 0 for key in settings.PASSIVE_POWERUPS}
 
+        # --- regeneracao de vida: acumula fracao de HP entre frames, aplica quando >= 1 ---
+        self._regen_accumulator: float = 0.0
+
         # --- estatisticas: mortos e pontos gerados, por tipo de inimigo ---
         self.kills_by_type: dict = {}
         self.points_by_type: dict = {}
@@ -167,8 +170,10 @@ class Player(Entity):
         # sera substituido por escolha de 3 opcoes em Sprint futura
         self.shoot_damage += settings.UPGRADE_DAMAGE_INCREMENT
 
-        # power-ups passivos sobem junto, no mesmo gatilho, ate a escolha das opcoes existir
-        self.upgrade_passive("magnet")
+        # power-ups passivos sobem junto, no mesmo gatilho, ate a escolha de opcoes existir
+        # generico: todos os power-ups passivos configurados sobem juntos, sem listar um por um
+        for key in settings.PASSIVE_POWERUPS:
+            self.upgrade_passive(key)
 
     def upgrade_passive(self, key: str) -> None:
 
@@ -185,6 +190,20 @@ class Player(Entity):
 
         return config["base_value"] + config["increment"] * self.passive_levels[key]
 
+    def update_regen(self, dt: float) -> None:
+
+        # nivel 0 = sem regeneracao, nao acumula nada
+        if self.passive_levels["regen"] == 0 or self.hp >= self.max_hp:
+            return
+
+        regen_per_second = self.get_passive_value("regen")
+        self._regen_accumulator += regen_per_second * dt
+
+        if self._regen_accumulator >= 1.0:
+            healed = int(self._regen_accumulator)
+            self.hp = min(self.max_hp, self.hp + healed)
+            self._regen_accumulator -= healed
+
     # ==================================================================
     # ATUALIZACAO POR FRAME
     # ==================================================================
@@ -199,6 +218,8 @@ class Player(Entity):
 
         if self.shoot_cooldown > 0:
             self.shoot_cooldown -= dt  # cooldown de tiro corre sempre, independente do estado
+
+        self.update_regen(dt)
 
         if self.state == "walking":
             self.update_walking(dt)

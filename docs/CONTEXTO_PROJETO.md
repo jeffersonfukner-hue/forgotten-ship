@@ -5,8 +5,8 @@
 ## Estado Atual
 - Projeto: Forgotten Ship (jogo 01 da A1 Game Academy), horde survival espacial em Python/Pygame CE
 - Vinculado a: canal do YouTube (documentação em vídeo) + curso pago futuro
-- Último sprint fechado: [SPRINT_028.md] — Ímã (primeiro power-up passivo) + sistema genérico de power-ups passivos
-- Em andamento agora: definir próximo item do Bloco de Power-ups (candidatos: regeneração de vida, arma Fang, armas de fogo)
+- Último sprint fechado: [SPRINT_029.md] — Regeneração de vida (segundo power-up passivo) + correção do upgrade automático genérico
+- Em andamento agora: pesquisar boas práticas validadas de power-up em jogos horde survival antes de decidir o próximo item (candidatos: arma Fang, armas de fogo, tiro múltiplo, sabre giratório, escudo)
 
 ## Repositórios
 - `a1-game-academy`: metodologia e documentação institucional
@@ -46,11 +46,15 @@
 - Inimigos: fluxo contínuo (substituiu ondas discretas), configuração via dicionário (fraco/forte)
 - Obstáculos: fixos e destrutíveis, bloqueiam linha de visão pro auto-aim
 - Progressão: drops de gemas com animação de puxão progressivo, upgrades com dano automático crescente
-- Power-ups passivos: configuração genérica via dicionário (`PASSIVE_POWERUPS`, mesmo padrão de `Enemy`/`Obstacle`), nível calculado sob demanda via `get_passive_value()`, sobem junto com o upgrade automático (sem escolha de opções ainda)
-- HUD com painel de debug
+- Power-ups passivos: configuração genérica via dicionário (`PASSIVE_POWERUPS`, mesmo padrão de `Enemy`/`Obstacle`), nível calculado sob demanda via `get_passive_value()`, sobem junto com o upgrade automático via laço sobre todos os itens configurados (sem escolha de opções ainda) — ímã e regeneração de vida implementados e validados juntos (Sprint 029)
+
+## Bugs e Refinamentos Pendentes (Sprint futura de correção — Obstáculos)
+- Bug: obstáculo destrutível pode nascer sobre a posição de entrada de uma porta, prendendo o player sem chance de escapar do dano
+- Refinamento: obstáculos destrutíveis sem margem mínima da parede, permitindo inimigo preso no vão entre parede e obstáculo
+- Conteúdo faltando: obstáculos fixos (`obstacle_data`) definidos só na Sala 1; Salas 2 e 3 sem nenhum
 
 ## Backlog — Blocos Pendentes (VISAO.md v4.9)
-- Power-ups: regeneração de vida, arma Fang, armas de fogo (munição/recarga), tiro múltiplo, sabre giratório, escudo (ímã já implementado — Sprint 028)
+- Power-ups: arma Fang, armas de fogo (munição/recarga), tiro múltiplo, sabre giratório, escudo (ímã e regeneração de vida já implementados — Sprints 028/029)
 - Boss Entities: mini-bosses, boss com barra de fases e stagger
 - Ship Restoration: mecânica narrativa central (reparo da nave = defesa)
 

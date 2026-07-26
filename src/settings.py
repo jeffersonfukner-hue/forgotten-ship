@@ -37,6 +37,11 @@ PASSIVE_POWERUPS: dict = {
         "increment": 20,    # ganho de raio por nivel
         "max_level": 5,
     },
+    "regen": {
+        "base_value": 1,    # HP regenerado por segundo, no nivel 1
+        "increment": 1,     # ganho de HP/s por nivel
+        "max_level": 5,
+    },
 }
 
 # --- Gemas: coleta e efeito de arrasto ---

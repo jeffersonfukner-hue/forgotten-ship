@@ -799,6 +799,7 @@ class GameScene(Scene):
         lines.append(self._build_enemy_counter_line())
         lines.append(self._build_progress_line())
         lines.append(self._build_magnet_line())
+        lines.append(self._build_regen_line())
 
         lines.append("")
         lines.append("Estatisticas totais (mortos / pontos):")
@@ -869,6 +870,17 @@ class GameScene(Scene):
         radius = self.player.get_passive_value("magnet")
 
         return f"Ima: nivel {level} (raio {radius:.0f}px)"
+
+    def _build_regen_line(self) -> str:
+
+        level = self.player.passive_levels["regen"]
+
+        if level == 0:
+            return "Regen: nivel 0 (inativo)"
+
+        rate = self.player.get_passive_value("regen")
+
+        return f"Regen: nivel {level} ({rate:.0f} HP/s)"
 
     def _build_kill_stat_lines(self, kills_by_type: dict, points_by_type: dict) -> list[str]:
 
