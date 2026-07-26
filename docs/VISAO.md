@@ -1,7 +1,7 @@
 # Forgotten Ship
 ## VISAO.md
 
-> **Versão:** 4.8
+> **Versão:** 4.9
 > **Status:** Em desenvolvimento — mudança de direção
 > **Projeto:** Jogo 01 da A1 Game Academy
 
@@ -31,11 +31,14 @@
   - [Upgrades do Tiro](#upgrades-do-tiro-até-5-níveis-cada-upgrades-independentes-entre-si)
   - [Campo de Força (Arma 2)](#campo-de-força-arma-2)
   - [Sabre Giratório (Arma 3)](#sabre-giratório-arma-3--tema-espacial)
-  - [Arma Vampírica ("Fang")](#arma-vampírica-fang)
+  - [Sifão de Energia](#sifão-de-energia-reskin-temático-de-fang)
   - [Armas de Fogo com Munição](#sistema-de-armas-de-fogo-com-munição-e-recarga)
   - [Padrões de Tiro Múltiplo](#padrões-de-tiro-múltiplo-escolha-do-jogador)
-  - [Escudo](#escudo)
+  - [Escudo Deflector](#escudo-deflector)
   - [Padronização de Eixos de Upgrade](#padronização-de-eixos-de-upgrade-decisão-de-arquitetura-pendente)
+  - [Referências Externas de Design](#referências-externas-de-design-pesquisa-de-validação--sprint-029)
+  - [Sistema de Escolha de Skills — Regras de Arquitetura](#sistema-de-escolha-de-skills--regras-de-arquitetura-sprint-029)
+  - [Lista Consolidada de Power-ups](#lista-consolidada-de-power-ups-sprint-029)
   - [Tipos de Inimigo (Taxonomia)](#tipos-de-inimigo-taxonomia)
   - [Penalidade por Dano Recebido](#penalidade-por-dano-recebido)
   - [Energia Afetando Skills](#energia-afetando-qualidade-das-skills)
@@ -61,20 +64,24 @@
 > Consolidado, mais abaixo). Atualizado a cada nova pendência
 > registrada — consulte aqui antes de perguntar "o que falta?".
 
-### 🔧 Bloco de Obstáculos (em andamento)
-- [ ] Obstáculo destrutível (só o fixo existe até agora)
+### 🔧 Bloco de Obstáculos (concluído — Sprint 027)
+- [x] Obstáculo destrutível
 - [ ] Geração automática de obstáculos a partir do Nível 11
 
-### ⚡ Bloco de Power-ups (não iniciado)
-- [ ] Ímã (raio de coleta de gemas ampliado)
-- [ ] Regeneração de vida passiva
-- [ ] Arma "Fang" (vampírica, roubo de vida)
-- [ ] Armas de fogo com munição/recarga (revólver, pesada, metralhadora)
-- [ ] Padrões de tiro múltiplo (diagonal, linha reta, quatro cantos)
+### ⚡ Bloco de Power-ups (em andamento — Ímã e Regeneração implementados)
+- [x] Ímã (raio de coleta de gemas ampliado) — Sprint 028
+- [x] Regeneração de vida passiva — Sprint 029
+- [ ] Sifão de Energia (ex-"Fang", drena energia do inimigo → reparo do jogador)
+- [ ] Phaser Leve / Canhão de Plasma / Metralhadora de Pulso (munição/recarga)
+- [ ] Padrões de tiro múltiplo (diagonal, quatro direções, paralelo)
 - [ ] Sabre giratório
-- [ ] Escudo (mecânica ainda não definida)
+- [ ] Escudo Deflector (progressão por troca de mecânica — já definida)
 - [ ] Padronização de eixos de upgrade entre armas
 - [ ] Tela de escolha de skill (1 ou 3 via vídeo simulado) — hoje é só upgrade automático
+- [ ] Grupos de exclusividade entre ramos de uma mesma arma
+- [ ] Liberação progressiva de power-ups por nível
+- [ ] Limite de armas simultâneas equipadas (crescente por nível)
+- [ ] Generalizar feedback visual de debug para qualquer power-up ativo
 
 ### 👹 Bloco de Entidades de Chefes (não iniciado)
 - [ ] Mini-chefes (drop garantido, sem vídeo)
@@ -98,6 +105,9 @@
       dependam de barra de HP quando possível (ex: encolhimento,
       mudança de cor/opacidade), como já adotado para o obstáculo
       destrutível — mais imersivo que barras sobrepostas ao sprite
+- [ ] Iniciar a construção da narrativa do jogo — hoje o conceito
+      existe (alienígena à deriva, restauração da nave), mas nenhum
+      texto, diálogo ou lore foi escrito ainda
 
 ### 📊 Sistemas Transversais (não encaixam em um bloco só)
 - [ ] Sistema de Vidas completo (vídeo 1x, regeneração por tempo, compra)
@@ -695,25 +705,27 @@ ver o indicador visual, sem surpresas.
   - Velocidade de giro
   - Dano por lâmina
 
-## Arma Vampírica ("Fang")
+## Sifão de Energia (reskin temático de "Fang")
 
-Arma nova, ainda a definir em detalhe: dano vinculado a roubo de vida
-— parte do dano causado ao inimigo é convertida em cura para o
-jogador. Upgrades aumentam tanto o dano causado quanto a fração de
-vida roubada (dois eixos independentes).
+Arma que drena energia do sistema do inimigo, convertendo parte do
+dano causado em reparo para o jogador — reskin espacial do conceito
+originalmente batizado "Fang" (vampírico), ajustado para manter
+consistência com o tema Star Trek do projeto. Upgrades aumentam tanto
+o dano causado quanto a fração de energia convertida em reparo (dois
+eixos independentes).
 
 ## Sistema de Armas de Fogo com Munição e Recarga
 
 Diferente do tiro automático de munição infinita já implementado,
 armas de fogo temáticas teriam capacidade de pente limitada e tempo de
-recarga:
+recarga. Renomeadas para manter tema espacial:
 
-- **Revólver:** poucos tiros por carregamento (5 ou 6 — número exato
-  ainda a decidir), reload rápido.
-- **Arma pesada:** carregamento maior (ex: 12 tiros), dano por tiro
-  mais alto, reload mais lento.
-- **Metralhadora:** cadência de disparo muito alta, carregamento
-  intermediário.
+- **Phaser Leve** (ex-Revólver): poucos tiros por carregamento (5 ou 6
+  — número exato ainda a decidir), reload rápido.
+- **Canhão de Plasma** (ex-Arma Pesada): carregamento maior (ex: 12
+  tiros), dano por tiro mais alto, reload mais lento.
+- **Metralhadora de Pulso** (ex-Metralhadora): cadência de disparo
+  muito alta, carregamento intermediário.
 - Armas mais lentas/pesadas seriam especialmente úteis contra
   chefões (dano concentrado), enquanto armas rápidas seriam melhores
   contra hordas numerosas — diferenciação tática por tipo de ameaça.
@@ -725,15 +737,31 @@ mais próximo em linha reta), upgrades futuros permitiriam escolher um
 padrão de disparo:
 
 - Diagonal (múltiplos tiros se abrindo em ângulo)
-- Linha reta (múltiplos tiros na mesma direção, um atrás do outro ou
-  em paralelo)
-- Quatro cantos (tiros simultâneos em direções ortogonais)
+- Linha reta / Paralelo (múltiplos tiros na mesma direção, um atrás do
+  outro ou em paralelo)
+- Quatro direções (tiros simultâneos em direções ortogonais)
 
-## Escudo
+> Estas três variantes formam um **grupo de exclusividade** dentro do
+> Tiro Múltiplo — ver "Sistema de Escolha de Skills" abaixo: a primeira
+> escolhida especializa a arma, as demais deixam de aparecer como opção.
 
-Item de defesa a detalhar — registrado como conceito, sem mecânica
-definida ainda (ex: pode ser um bloqueio de dano temporário, uma
-barreira com HP próprio, ou redução percentual de dano recebido).
+## Escudo Deflector
+
+Diferente dos demais power-ups (que sobem em intensidade dentro da
+mesma mecânica), o Escudo Deflector progride **trocando de mecânica**
+conforme o nível sobe — começa na variante menos eficiente e libera
+variantes mais fortes em níveis avançados, dando ao jogador uma razão
+concreta para continuar investindo nele:
+
+- **Nível 1-2:** Redução percentual de dano recebido (passivo simples).
+- **Nível 3-4:** Barreira com HP próprio, absorve dano até esgotar e
+  regenera com o tempo (mais forte que redução fixa).
+- **Nível 5:** Bloqueio total temporário — um hit totalmente gratuito
+  a cada X segundos (a variante mais forte, reservada ao teto).
+
+> Este é o primeiro power-up do backlog com progressão por troca de
+> mecânica, não por intensidade — vale revisar se algum outro item
+> (Sifão de Energia, Sabre) se beneficiaria do mesmo padrão no futuro.
 
 ## Padronização de Eixos de Upgrade (Decisão de Arquitetura Pendente)
 
@@ -746,13 +774,107 @@ uma estrutura nova a cada arma:
 - Força/Dano
 - Velocidade (de disparo, de movimento do projétil/lâmina, ou de giro)
 - Raio/Alcance
-- Eixos específicos de uma arma (ex: fração de roubo de vida do Fang,
-  capacidade de pente e tempo de reload das armas de fogo)
+- Eixos específicos de uma arma (ex: fração de roubo de vida do Sifão
+  de Energia, capacidade de pente e tempo de reload das armas de fogo)
 
 > Definir essa padronização antes de implementar o sistema de escolha
 > de skills evita retrabalho — cada arma nova poderia reaproveitar a
 > mesma estrutura de dados de upgrade, preenchendo apenas os eixos que
 > fizerem sentido para ela.
+
+### Referências Externas de Design (Pesquisa de Validação — Sprint 029)
+
+Pesquisa conduzida para embasar a transição de upgrade 100% automático
+para escolha entre opções, com fontes de análise do gênero horde
+survivor / bullet heaven:
+
+- **Escolha real bate upgrade automático:** os jogos mais bem
+  avaliados do gênero (Vampire Survivors e sucessores) usam escolha
+  entre 3 opções a cada level up como o principal gerador de
+  "profundidade de build" — comparável a deckbuilding. Upgrade
+  automático sem escolha (modelo atual do Forgotten Ship) entrega
+  progressão, mas não gera decisão nenhuma da parte do jogador.
+- **Sinergia entre power-ups > empilhar número isolado:** os títulos
+  citados como referência de qualidade criam interações emergentes
+  entre itens (não apenas "+X% de dano"), fazendo builds diferentes
+  parecerem visual e estrategicamente distintos, não só numericamente.
+- **Cadência de recompensa sem espaço morto:** o padrão mais citado é
+  o jogador quase nunca passar mais que poucos segundos sem algo bom
+  acontecendo (gema, level up, escolha). O ritmo de drop já implementado
+  no Forgotten Ship (Sprint 025/026) já atende a esse critério.
+- **Risco de escolha decorativa:** se uma das 3 opções for sempre
+  claramente inferior, o jogador aprende a ignorá-la e a "escolha"
+  deixa de ser real. Cada power-up precisa ser viável isoladamente,
+  não só em combinação.
+
+> Conclusão prática: a transição de `apply_automatic_upgrade()` para
+> escolha de 3 opções, já sinalizada como pendente desde a Sprint 024,
+> passa a ser prioridade antes de adicionar novos power-ups automáticos
+> — cada item novo (Sifão de Energia, Phasers, etc.) só realiza seu
+> valor completo dentro de um sistema de escolha real.
+
+## Sistema de Escolha de Skills — Regras de Arquitetura (Sprint 029)
+
+Registrado antes da implementação da tela de escolha de 3 opções
+(ainda pendente), consolidando decisões que afetam diretamente sua
+estrutura de dados:
+
+### Ramos Mutuamente Exclusivos Dentro de uma Mesma Arma
+
+Armas com múltiplas variantes de upgrade (ex: Tiro Múltiplo: Diagonal
+/ Quatro Direções / Paralelo) não são escolhas repetidas a cada level
+— a **primeira escolha especializa a arma permanentemente** para o
+resto da partida. Ao escolher "Tiro Múltiplo — Diagonal", as variantes
+irmãs (Quatro Direções, Paralelo) somem da lista de opções futuras;
+os upgrades seguintes daquela arma só evoluem dentro do ramo já
+escolhido. Isso vale para qualquer arma com variantes internas — não
+apenas Tiro Múltiplo.
+
+> Implica uma estrutura de dados com **grupos de exclusividade**: cada
+> grupo (ex: `tiro_multiplo_variante`) tem ramos irmãos que se excluem
+> mutuamente após a primeira escolha; armas sem variantes (Sabre,
+> Sifão de Energia, Ímã) não pertencem a grupo nenhum e permanecem
+> independentes entre si.
+
+### Liberação Progressiva de Power-ups por Nível
+
+Nem todos os power-ups ficam disponíveis como opção desde o início —
+eles são liberados progressivamente conforme o jogador sobe de nível,
+evitando sobrecarga de escolha logo no começo da partida e dando
+espaço para o jogador aprender cada mecânica individualmente antes da
+próxima aparecer. Ordem e níveis exatos de liberação a definir durante
+a implementação da tela de escolha.
+
+### Limite de Armas Simultâneas Equipadas
+
+Existe um teto de quantas armas/power-ups o jogador pode ter ativos ao
+mesmo tempo, crescendo conforme o nível (ex: começa com 2 slots,
+libera mais conforme avança) — número exato de slots por faixa de
+nível a definir durante a implementação, seguindo o mesmo espírito de
+"referência a ajustar" já usado em outras mecânicas deste documento
+(ex: capacidade do Phaser Leve).
+
+### Feedback Visual Mínimo (Debug) — Generalizado
+
+O painel de debug já mostra individualmente o nível de Ímã e
+Regeneração (`_build_magnet_line`, `_build_regen_line`). Ao introduzir
+mais power-ups, este padrão deve generalizar para **iterar sobre todos
+os power-ups com nível > 0**, em vez de um método hardcoded por item —
+mesmo princípio de generalização já aplicado à estrutura de dados em
+`PASSIVE_POWERUPS`.
+
+## Lista Consolidada de Power-ups (Sprint 029)
+
+| # | Power-up | Eixos de Upgrade |
+|---|---|---|
+| 1 | Tiro (base) | Velocidade, Tamanho, Penetração, Cadência, Alcance — todos até nível 5; Múltiplo (Diagonal / Quatro Direções / Paralelo) como grupo exclusivo, cada ramo até nível 5 |
+| 2 | Campo de Força | Área, Dano — até nível 5 cada |
+| 3 | Sabre Giratório | Quantidade de lâminas, Velocidade de giro, Dano por lâmina — até nível 5 cada |
+| 4 | Sifão de Energia | Dano causado, Fração convertida em reparo — até nível 5 cada |
+| 5 | Phaser Leve / Canhão de Plasma / Metralhadora de Pulso | Capacidade do carregador, Dano por tiro, Tempo de reload (+ Cadência na Metralhadora) — até nível 5 cada |
+| 6 | Escudo Deflector | Progressão por troca de mecânica (ver seção própria) — nível 1-2, 3-4, 5 |
+| 7 | Ímã | Raio de atração — até nível 5 (já implementado, Sprint 028) |
+| 8 | Regeneração de Vida | Taxa de HP/s — até nível 5 (já implementado, Sprint 029) |
 
 ## Tipos de Inimigo (Taxonomia)
 
@@ -814,11 +936,16 @@ melhoram a experiência/eficiência geral do jogador:
 - **Ímã:** atrai drops coletáveis dentro de um raio próprio, distinto
   do raio de percepção/alcance de tiro já existente — reduz a
   necessidade de andar até cada drop individualmente. Upgradável em
-  níveis, aumentando o raio de atração.
+  níveis, aumentando o raio de atração. **Implementado na Sprint 028.**
 - **Regeneração de vida:** recupera uma pequena quantidade de HP ao
   longo do tempo, de forma passiva, sem depender de itens ou fontes de
   cura específicas. Upgradável em níveis, aumentando a taxa de
-  regeneração.
+  regeneração. **Implementado na Sprint 029.**
+
+> Ambos implementados via estrutura genérica de configuração por
+> dicionário (`settings.PASSIVE_POWERUPS`), mesmo padrão usado em
+> `Enemy` e `Obstacle` — ver `CONTEXTO_PROJETO.md` para detalhes de
+> arquitetura.
 
 ## Coleta Automática de Gemas Remanescentes
 
@@ -1019,22 +1146,24 @@ design (Sprints 024-026), com fontes reais do gênero:
 
 **Ordem definida (25/07/2026):**
 
-1. **Bloco de Obstáculos de Sala** — elementos físicos dentro das
-   salas, hoje inexistentes (o piso é vazio). Dois tipos coexistindo:
+1. **Bloco de Obstáculos de Sala** (concluído — Sprint 027) — elementos
+   físicos dentro das salas, antes inexistentes. Dois tipos
+   coexistindo:
    - **Fixos:** bloqueiam movimento e linha de tiro, servindo de
      cobertura tática, sem poder ser destruídos.
-   - **Destrutíveis:** podem ser eliminados pelo jogador (atirando),
-     revelando espaço livre e possivelmente concedendo recompensa
-     (gema, material) ao serem destruídos.
+   - **Destrutíveis:** corroídos apenas por inimigos (não pelo tiro do
+     jogador), funcionando como defesa temporária.
    - Motivação: o espaço de jogo hoje é "vazio" demais; obstáculos
      também tornam os power-ups futuros (ímã, padrões de tiro)
      mecanicamente mais interessantes, ao interagir com o ambiente.
 
-2. **Bloco de Power-ups** — começando pelo ímã (já conectado ao
-   sistema de gemas da Sprint 026), expandindo para os demais itens já
-   registrados neste documento (regeneração de vida, Fang, armas de
-   fogo com munição, padrões de tiro múltiplo, sabre giratório,
-   escudo), um de cada vez, conforme a demanda for aparecendo.
+2. **Bloco de Power-ups** (em andamento — Ímã e Regeneração de Vida já
+   implementados) — expandindo para os demais itens já registrados
+   neste documento (Sifão de Energia, Phasers, padrões de tiro
+   múltiplo, sabre giratório, Escudo Deflector), um de cada vez.
+   Antes de continuar, transição para tela de escolha de 3 opções
+   (com grupos de exclusividade e liberação progressiva por nível) —
+   ver "Sistema de Escolha de Skills" acima.
 
 3. **Bloco de Entidades de Chefes** — mini-chefes, chefes e chefões,
    implementando a Estrutura de Boss Rush já detalhada neste
@@ -1051,10 +1180,12 @@ design (Sprints 024-026), com fontes reais do gênero:
    construído em modo protótipo: ajustes de sprite/visual definitivo
    (hoje tudo é placeholder geométrico), balanceamento fino,
    comportamentos de linha de visão/obstáculo mais sofisticados,
-   polimento geral de UX. Registrado desde já porque o volume de itens
-   "funcional, mas ainda protótipo" tende a crescer conforme os blocos
-   anteriores avançam — nem tudo precisa ser perfeito na primeira
-   implementação, mas nada deve ser esquecido de revisar depois.
+   polimento geral de UX, início da construção da narrativa do jogo
+   (hoje só conceito, sem texto/diálogo/lore). Registrado desde já
+   porque o volume de itens "funcional, mas ainda protótipo" tende a
+   crescer conforme os blocos anteriores avançam — nem tudo precisa
+   ser perfeito na primeira implementação, mas nada deve ser esquecido
+   de revisar depois.
 
 Esta ordem prioriza primeiro tornar o espaço de jogo mais rico
 (obstáculos) antes de expandir a variedade de combate (power-ups e
@@ -1065,6 +1196,31 @@ momento explícito de polimento geral ao final.
 ---
 
 # Histórico
+
+## v4.9
+- Adicionada seção "Referências Externas de Design (Pesquisa de
+  Validação)": pesquisa sobre boas práticas do gênero horde survivor,
+  confirmando prioridade da transição de upgrade automático para
+  escolha de 3 opções.
+- Adicionado "Sistema de Escolha de Skills — Regras de Arquitetura":
+  grupos de exclusividade entre ramos de uma mesma arma, liberação
+  progressiva de power-ups por nível, limite de armas simultâneas
+  equipadas (crescente por nível), e generalização do feedback visual
+  de debug para qualquer power-up ativo.
+- Adicionada "Lista Consolidada de Power-ups", tabela de referência
+  central com os 8 itens do bloco e seus eixos de upgrade.
+- Renomeados: "Fang" → "Sifão de Energia"; Revólver/Arma Pesada/
+  Metralhadora → Phaser Leve/Canhão de Plasma/Metralhadora de Pulso —
+  ajuste de consistência temática (Star Trek).
+- Revisado "Escudo" → "Escudo Deflector": progressão por troca de
+  mecânica (redução % → barreira com HP → bloqueio total), em vez de
+  mecânica única a definir.
+- Marcados como implementados: Ímã (Sprint 028) e Regeneração de Vida
+  (Sprint 029), incluindo referência à estrutura genérica de
+  `PASSIVE_POWERUPS`.
+- Adicionado item de narrativa ao Bloco de Refinamento Geral.
+- Atualizada "Pendências por Tema" refletindo o estado real do Bloco
+  de Obstáculos (concluído) e do Bloco de Power-ups (em andamento).
 
 ## v4.8
 - Revisado o conceito de Obstáculo Destrutível: corroído apenas por
