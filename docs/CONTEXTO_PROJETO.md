@@ -60,6 +60,7 @@
 - Vida extra como drop raro (aumenta `max_lives` permanentemente), introduzindo conceito de raridade ponderada entre itens do mesmo pool
 - Tela de Estatísticas dedicada: migrar histórico acumulado (visitas, estatísticas por tipo, `visit_history`) do painel de debug para estrutura salva, mantendo só o essencial imediato na tela ao vivo (sem perder nenhum dado já coletado)
 - Estudo (não decisão): avaliar migrar dicionários de configuração (`settings.py`) para JSON — vale a pena se surgir necessidade de edição por não-programador, hot-reload ou modding; nenhuma pressão real ainda
+- Novo eixo do Sifão de Energia: `siphon_cadencia` (reduz `siphon_interval` por nível, mesmo espírito da Cadência do Tiro base) — deve seguir o mesmo pré-requisito de `siphon_dano` nível 1 já usado pelos outros eixos secundários do Sifão
 
 ## Backlog — Blocos Pendentes (VISAO.md v4.9)
 - Power-ups: armas de fogo (Phaser Leve/Canhão de Plasma/Metralhadora de Pulso, munição/recarga), tiro múltiplo, Escudo Deflector (ímã, regeneração, Sabre Giratório e Sifão de Energia já implementados — Sprints 028/029/031/032)
