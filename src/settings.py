@@ -44,6 +44,13 @@ PASSIVE_POWERUPS: dict = {
     },
 }
 
+# --- nomes exibidos na tela de escolha de upgrade (chave -> texto amigavel) ---
+UPGRADE_LABELS: dict = {
+    "damage": "Dano do Tiro",
+    "magnet": "Ima (raio de atracao)",
+    "regen": "Regeneracao de Vida",
+}
+
 # --- Gemas: coleta e efeito de arrasto ---
 # distancia (entre centros) para a gema comecar a ser puxada
 GEM_PICKUP_RADIUS: float = 60

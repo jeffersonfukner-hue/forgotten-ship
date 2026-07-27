@@ -1,3 +1,5 @@
+import random
+
 import pygame
 
 from typing import TYPE_CHECKING
@@ -52,6 +54,9 @@ class Player(Entity):
         self.level: int = 0  # quantidade de upgrades ja conquistados
         self.drop_points: float = 0.0
         self.points_to_upgrade: float = settings.POINTS_PER_UPGRADE
+
+        # --- escolha de upgrade: sinaliza pra GameScene que precisa pausar e sortear opcoes ---
+        self.level_up_pending: bool = False
 
         # --- power-ups passivos: nivel atual de cada um (0 = nao adquirido) ---
         self.passive_levels: dict = {
@@ -155,7 +160,8 @@ class Player(Entity):
             # cada novo level exige mais pontos, na mesma proporcao de crescimento das ondas
             self.points_to_upgrade *= settings.UPGRADE_THRESHOLD_GROWTH
 
-            self.apply_automatic_upgrade()
+            # nao aplica mais automaticamente - sinaliza para a GameScene pausar e sortear 3 opcoes
+            self.level_up_pending = True
 
     def register_kill(self, enemy_type: str, points: float) -> None:
 
@@ -164,15 +170,31 @@ class Player(Entity):
         self.points_by_type[enemy_type] = self.points_by_type.get(
             enemy_type, 0.0) + points
 
-    def apply_automatic_upgrade(self) -> None:
+    def get_available_upgrades(self) -> list[str]:
 
-        # upgrade minimo para provar o ciclo drop -> progresso -> mais forte
-        # sera substituido por escolha de 3 opcoes em Sprint futura
-        self.shoot_damage += settings.UPGRADE_DAMAGE_INCREMENT
+        # "damage" nao tem teto de nivel ainda - sempre disponivel como opcao
+        available = ["damage"]
 
-        # power-ups passivos sobem junto, no mesmo gatilho, ate a escolha de opcoes existir
-        # generico: todos os power-ups passivos configurados sobem juntos, sem listar um por um
+        # power-ups passivos so aparecem como opcao se ainda nao atingiram o teto
         for key in settings.PASSIVE_POWERUPS:
+            if self.passive_levels[key] < settings.PASSIVE_POWERUPS[key]["max_level"]:
+                available.append(key)
+
+        return available
+
+    def choose_random_upgrades(self, count: int = 3) -> list[str]:
+
+        # sorteia ate 'count' opcoes distintas, sem repetir, dentre as disponiveis
+        available = self.get_available_upgrades()
+
+        return random.sample(available, min(count, len(available)))
+
+    def apply_upgrade(self, key: str) -> None:
+
+        # unico ponto que sabe como cada chave de upgrade e aplicada de fato
+        if key == "damage":
+            self.shoot_damage += settings.UPGRADE_DAMAGE_INCREMENT
+        else:
             self.upgrade_passive(key)
 
     def upgrade_passive(self, key: str) -> None:

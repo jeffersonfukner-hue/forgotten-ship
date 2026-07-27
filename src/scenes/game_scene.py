@@ -122,6 +122,9 @@ class GameScene(Scene):
         self.camera_x: float = 0.0
         self.camera_y: float = 0.0
 
+        # --- escolha de upgrade: None = jogo roda normal; lista = pausado, aguardando escolha ---
+        self.upgrade_choices: list[str] | None = None
+
     # ==================================================================
     # CRIACAO E CONFIGURACAO DE SALAS
     # ==================================================================
@@ -363,9 +366,28 @@ class GameScene(Scene):
     # ==================================================================
 
     def handle_event(self, event: pygame.event.Event) -> None:
-        pass
+
+        if self.upgrade_choices is None or event.type != pygame.KEYDOWN:
+            return  # so processa teclas quando a tela de escolha esta ativa
+
+        key_to_index = {pygame.K_1: 0, pygame.K_2: 1, pygame.K_3: 2}
+
+        index = key_to_index.get(event.key)
+
+        if index is not None and index < len(self.upgrade_choices):
+            chosen_key = self.upgrade_choices[index]
+            self.player.apply_upgrade(chosen_key)
+            self.upgrade_choices = None
 
     def update(self, dt: float) -> None:
+
+        # ao detectar level up pendente, sorteia as opcoes e pausa o jogo ate a escolha
+        if self.player.level_up_pending and self.upgrade_choices is None:
+            self.upgrade_choices = self.player.choose_random_upgrades()
+            self.player.level_up_pending = False
+
+        if self.upgrade_choices is not None:
+            return  # jogo totalmente pausado enquanto aguarda a escolha do jogador
 
         # --- entidades e camera ---
         self.entity_manager.update(dt)
@@ -673,6 +695,9 @@ class GameScene(Scene):
         self.draw_world(screen)
         self.draw_ui(screen)
 
+        if self.upgrade_choices is not None:
+            self.draw_upgrade_choices(screen)
+
     def draw_background(self, screen: pygame.Surface) -> None:
 
         screen.fill((18, 20, 30))
@@ -701,6 +726,29 @@ class GameScene(Scene):
 
         # --- painel de debug, compacto e translucido ---
         self.draw_debug_panel(screen)
+
+    def draw_upgrade_choices(self, screen: pygame.Surface) -> None:
+
+        overlay = pygame.Surface(
+            (settings.WINDOW_WIDTH, settings.WINDOW_HEIGHT), pygame.SRCALPHA)
+        overlay.fill((10, 10, 20, 200))
+        screen.blit(overlay, (0, 0))
+
+        title_font = pygame.font.Font(None, 36)
+        title = title_font.render("Escolha um upgrade", True, (255, 255, 255))
+        title_rect = title.get_rect(
+            center=(settings.WINDOW_WIDTH / 2, settings.WINDOW_HEIGHT / 2 - 80))
+        screen.blit(title, title_rect)
+
+        option_font = pygame.font.Font(None, 28)
+
+        for i, key in enumerate(self.upgrade_choices):
+            label = settings.UPGRADE_LABELS.get(key, key)
+            text = option_font.render(
+                f"[{i + 1}] {label}", True, (220, 220, 220))
+            text_rect = text.get_rect(
+                center=(settings.WINDOW_WIDTH / 2, settings.WINDOW_HEIGHT / 2 - 20 + i * 40))
+            screen.blit(text, text_rect)
 
     def draw_hp_bar(self, screen: pygame.Surface) -> None:
 
