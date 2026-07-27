@@ -50,6 +50,10 @@ class Player(Entity):
         self.range_radius: float = settings.PLAYER_RANGE_RADIUS
         self.shoot_damage: int = settings.PLAYER_SHOOT_DAMAGE  # pode aumentar com upgrades
 
+        # --- combate: sifao de energia, cadencia propria (independente do tiro principal) ---
+        self.siphon_cooldown: float = 0.0
+        self.siphon_interval: float = settings.SIPHON_INTERVAL
+
         # --- progressao: pontos de drop e upgrades automaticos ---
         self.level: int = 0  # quantidade de upgrades ja conquistados
         self.drop_points: float = 0.0
@@ -144,6 +148,14 @@ class Player(Entity):
     def confirm_shot(self) -> None:
 
         self.shoot_cooldown = self.shoot_interval
+
+    def ready_to_siphon(self) -> bool:
+
+        return self.siphon_cooldown <= 0
+
+    def confirm_siphon(self) -> None:
+
+        self.siphon_cooldown = self.siphon_interval
 
     # ==================================================================
     # PROGRESSAO (DROPS E UPGRADES)
@@ -287,6 +299,9 @@ class Player(Entity):
 
         if self.shoot_cooldown > 0:
             self.shoot_cooldown -= dt  # cooldown de tiro corre sempre, independente do estado
+
+        if self.siphon_cooldown > 0:
+            self.siphon_cooldown -= dt  # cooldown do sifao corre independente, cadencia propria
 
         self.update_regen(dt)
 

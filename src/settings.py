@@ -23,7 +23,7 @@ PLAYER_SHOOT_DAMAGE: int = 10  # dano de cada projetil disparado automaticamente
 
 # --- Player: progressao (drops e upgrades automaticos) ---
 # pontos de drop necessarios para o proximo upgrade automatico
-POINTS_PER_UPGRADE: int = 10
+POINTS_PER_UPGRADE: int = 2
 UPGRADE_DAMAGE_INCREMENT: int = 5  # quanto o dano do tiro aumenta a cada upgrade
 # limiar de pontos cresce 50% a cada upgrade conquistado
 UPGRADE_THRESHOLD_GROWTH: float = 1.5
@@ -59,6 +59,18 @@ PASSIVE_POWERUPS: dict = {
         "increment": 3,     # ganho de dano por nivel
         "max_level": 5,
     },
+    "siphon_dano": {
+        # nivel 0 = arma nao dispara ainda (sem dano, sem efeito)
+        "base_value": 0,
+        "increment": 4,     # dano do raio extrator por disparo, por nivel
+        "max_level": 5,
+    },
+    "siphon_conversao": {
+        "base_value": 0,    # nivel 0 = nenhuma cura, mesmo se a arma ja disparar
+        # fracao do dano causado convertida em cura (0.1 = 10%)
+        "increment": 0.1,
+        "max_level": 5,
+    },
 }
 
 # --- agrupa eixos que pertencem a mesma arma, para contagem de slots (uma arma = 1 slot, nao 1 por eixo) ---
@@ -66,6 +78,8 @@ CATEGORY_GROUPS: dict = {
     "sabre_quantidade": "sabre",
     "sabre_velocidade": "sabre",
     "sabre_dano": "sabre",
+    "siphon_dano": "sifao",
+    "siphon_conversao": "sifao",
 }
 
 # --- pre-requisitos: eixo -> (eixo do qual depende, nivel minimo exigido) ---
@@ -74,6 +88,7 @@ CATEGORY_GROUPS: dict = {
 UPGRADE_PREREQUISITES: dict = {
     "sabre_velocidade": ("sabre_quantidade", 1),
     "sabre_dano": ("sabre_quantidade", 1),
+    "siphon_conversao": ("siphon_dano", 1),
 }
 
 # --- quantos power-ups diferentes (fora "damage") o jogador pode ter equipados, por nivel minimo ---
@@ -92,6 +107,8 @@ UPGRADE_LABELS: dict = {
     "sabre_quantidade": "Sabre - Quantidade de Laminas",
     "sabre_velocidade": "Sabre - Velocidade de Giro",
     "sabre_dano": "Sabre - Dano por Lamina",
+    "siphon_dano": "Sifao de Energia - Dano",
+    "siphon_conversao": "Sifao de Energia - Conversao em Reparo",
 }
 
 # --- Gemas: coleta e efeito de arrasto ---
@@ -147,6 +164,12 @@ ENEMY_POINTS_DIVISOR: float = 30
 SABER_ORBIT_RADIUS: float = 50  # distancia da lamina ate o centro do player
 # segundos entre "cortes" no mesmo inimigo, evita dano por frame
 SABER_HIT_COOLDOWN: float = 0.5
+
+# --- Sifao de Energia: raio extrator instantaneo, mira o 2o inimigo mais proximo ---
+# segundos entre disparos - cadencia propria, mais lenta que o tiro
+SIPHON_INTERVAL: float = 1.5
+# segundos que o feixe visual permanece na tela apos disparar
+SIPHON_BEAM_DURATION: float = 0.15
 
 # --- Obstaculos: fixos (indestrutiveis) e destrutiveis (corroidos por inimigos, nao pelo player) ---
 DESTRUCTIBLE_OBSTACLE_HP: int = 20

@@ -128,6 +128,9 @@ class GameScene(Scene):
         # --- escolha de upgrade: None = jogo roda normal; lista = pausado, aguardando escolha ---
         self.upgrade_choices: list[str] | None = None
 
+        # --- sifao de energia: feixe visual instantaneo, (inicio, fim, tempo_restante) ou None ---
+        self.siphon_beam: tuple | None = None
+
     # ==================================================================
     # CRIACAO E CONFIGURACAO DE SALAS
     # ==================================================================
@@ -323,19 +326,27 @@ class GameScene(Scene):
     # ==================================================================
 
     def spawn_damage_text(self, x: float, y: float, amount: int) -> None:
-        """Cria um texto flutuante de dano na posicao informada."""
+        """Cria um texto flutuante de dano (vermelho) na posicao informada."""
 
         from src.entities.floating_text import FloatingText
         self.floating_texts.append(
             FloatingText(x, y - 20, f"-{amount}"))
 
-    def find_closest_enemy(self, enemies: list):
-        """Retorna o inimigo vivo mais proximo do player, dentro do raio de
-        percepcao (player.range_radius) e com linha de visao livre (sem
-        obstaculo no caminho), ou None se nenhum atender aos dois criterios."""
+    def spawn_heal_text(self, x: float, y: float, amount: int) -> None:
+        """Cria um texto flutuante de cura (verde) na posicao informada."""
 
-        closest = None
-        closest_distance = None
+        from src.entities.floating_text import FloatingText
+        self.floating_texts.append(
+            FloatingText(x, y - 20, f"+{amount}", color=(100, 220, 120)))
+
+    def get_enemies_by_distance(self, enemies: list) -> list:
+        """Retorna os inimigos vivos dentro do raio de percepcao e com linha
+        de visao livre, ordenados do mais proximo ao mais distante do
+        player. Base para qualquer arma que precise mirar o Nº mais
+        proximo (tiro principal usa o indice 0, Sifao usa o indice 1,
+        armas futuras podem consumir indices seguintes)."""
+
+        in_range = []
 
         for enemy in enemies:
             distance = pygame.Vector2(
@@ -347,11 +358,20 @@ class GameScene(Scene):
             if not self._has_line_of_sight(self.player.rect.center, enemy.rect.center):
                 continue  # obstaculo bloqueia a visao, "cego" para este inimigo
 
-            if closest_distance is None or distance < closest_distance:
-                closest = enemy
-                closest_distance = distance
+            in_range.append((distance, enemy))
 
-        return closest
+        in_range.sort(key=lambda pair: pair[0])
+
+        return [enemy for _distance, enemy in in_range]
+
+    def find_closest_enemy(self, enemies: list):
+        """Retorna o inimigo vivo mais proximo (mantido para compatibilidade
+        com o disparo automatico principal) - equivale ao indice 0 de
+        get_enemies_by_distance()."""
+
+        ordered = self.get_enemies_by_distance(enemies)
+
+        return ordered[0] if ordered else None
 
     def _has_line_of_sight(self, start: tuple, end: tuple) -> bool:
         """Verifica se a linha reta entre dois pontos e bloqueada por
@@ -590,6 +610,50 @@ class GameScene(Scene):
                             self.gems.append(
                                 Gem(enemy.x, enemy.y, enemy.drop_value))
 
+        # --- sifao de energia: raio extrator instantaneo, mira o 2o inimigo mais proximo ---
+        if self.siphon_beam is not None:
+            start, end, time_left = self.siphon_beam
+            time_left -= dt
+            self.siphon_beam = (
+                start, end, time_left) if time_left > 0 else None
+
+        siphon_damage = self.player.get_passive_value("siphon_dano")
+
+        if self.player.ready_to_siphon() and siphon_damage > 0:
+            ordered_enemies = self.get_enemies_by_distance(enemies)
+
+            if len(ordered_enemies) >= 2:
+                target = ordered_enemies[1]
+
+                target.take_damage(siphon_damage)
+                self.player.confirm_siphon()
+
+                conversion = self.player.get_passive_value("siphon_conversao")
+
+                if conversion > 0:
+                    # garante minimo de 1 HP sempre que a conversao estiver ativa -
+                    # sem isso, valores baixos de dano x conversao truncariam para 0
+                    healed = max(1, round(siphon_damage * conversion))
+
+                    self.player.hp = min(
+                        self.player.max_hp, self.player.hp + healed)
+                    self.spawn_heal_text(self.player.x, self.player.y, healed)
+
+                self.siphon_beam = (
+                    self.player.rect.center, target.rect.center, settings.SIPHON_BEAM_DURATION)
+
+                self.spawn_damage_text(target.x, target.y, siphon_damage)
+
+                if target.is_dead:
+                    self.player.register_kill(
+                        target.enemy_type, target.drop_value)
+                    self.room.register_kill(
+                        target.enemy_type, target.drop_value)
+
+                    from src.entities.gem import Gem
+                    self.gems.append(
+                        Gem(target.x, target.y, target.drop_value))
+
         # --- inimigos: movimento e colisao com o player ---
         if not self.player.is_dead:  # inimigos param de agir assim que o jogador morre
 
@@ -768,6 +832,13 @@ class GameScene(Scene):
 
         for saber in self.sabers:
             saber.draw(screen, self.camera_x, self.camera_y)
+
+        if self.siphon_beam is not None:
+            start, end, _time_left = self.siphon_beam
+            screen_start = (start[0] - self.camera_x, start[1] - self.camera_y)
+            screen_end = (end[0] - self.camera_x, end[1] - self.camera_y)
+            pygame.draw.line(screen, (140, 220, 160),
+                             screen_start, screen_end, width=3)
 
         for text in self.floating_texts:
             text.draw(screen, self.camera_x, self.camera_y)
