@@ -339,6 +339,13 @@ class GameScene(Scene):
         self.floating_texts.append(
             FloatingText(x, y - 20, f"+{amount}", color=(100, 220, 120)))
 
+    def spawn_block_text(self, x: float, y: float) -> None:
+        """Cria um texto flutuante de bloqueio total (azul) na posicao informada."""
+
+        from src.entities.floating_text import FloatingText
+        self.floating_texts.append(
+            FloatingText(x, y - 20, "Bloqueado!", color=(120, 180, 240)))
+
     def get_enemies_by_distance(self, enemies: list) -> list:
         """Retorna os inimigos vivos dentro do raio de percepcao e com linha
         de visao livre, ordenados do mais proximo ao mais distante do
@@ -680,11 +687,15 @@ class GameScene(Scene):
 
             for enemy in enemies:
                 if self.player.rect.colliderect(enemy.rect):
-                    self.player.take_damage(enemy.damage)
+                    damage_taken, was_blocked = self.player.take_damage(
+                        enemy.damage)
                     self.player.apply_knockback(enemy.x, enemy.y)
 
-                    self.spawn_damage_text(
-                        self.player.x, self.player.y, enemy.damage)
+                    if was_blocked:
+                        self.spawn_block_text(self.player.x, self.player.y)
+                    else:
+                        self.spawn_damage_text(
+                            self.player.x, self.player.y, damage_taken)
 
                     if self.player.is_dead:
 

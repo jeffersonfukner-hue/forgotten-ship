@@ -54,6 +54,11 @@ class Player(Entity):
         self.siphon_cooldown: float = 0.0
         self.siphon_interval: float = settings.SIPHON_INTERVAL
 
+        # --- escudo deflector: barreira atual (HP), tempo desde o ultimo dano, cooldown de bloqueio ---
+        self.shield_hp: float = 0.0
+        self.shield_regen_timer: float = 0.0
+        self.block_cooldown: float = 0.0
+
         # --- progressao: pontos de drop e upgrades automaticos ---
         self.level: int = 0  # quantidade de upgrades ja conquistados
         self.drop_points: float = 0.0
@@ -77,17 +82,44 @@ class Player(Entity):
     # VIDA, MORTE E CONTINUAR
     # ==================================================================
 
-    def take_damage(self, amount: int) -> None:
+    def take_damage(self, amount: int) -> tuple[int, bool]:
+        """Aplica dano recebido, passando pelas camadas do Escudo Deflector
+        na ordem: bloqueio total (se disponivel) -> reducao percentual ->
+        absorcao pela barreira (com transbordo) -> HP do player. Retorna
+        (dano_real_no_hp, foi_bloqueado) para a GameScene decidir o
+        feedback visual correto."""
 
         if self.is_dead or self.damage_cooldown > 0:
-            return  # ainda invencivel, ignora o dano
+            return 0, False  # ainda invencivel, ignora o dano
 
-        self.hp -= amount
+        self.shield_regen_timer = 0.0  # qualquer dano reinicia o delay de regeneracao
+
+        # camada 3: bloqueio total periodico (mais forte, checada primeiro)
+        if self.passive_levels["escudo_bloqueio"] > 0 and self.block_cooldown <= 0:
+            self.block_cooldown = settings.SHIELD_BLOCK_COOLDOWN
+            self.damage_cooldown = self.damage_cooldown_time
+            return 0, True
+
+        # camada 1: reducao percentual
+        if self.passive_levels["escudo_reducao"] > 0:
+            reduction = self.get_passive_value("escudo_reducao") / 100
+            amount = amount * (1 - reduction)
+
+        # camada 2: barreira com transbordo (absorve o que der, o resto vai pro HP)
+        if self.shield_hp > 0:
+            absorbed = min(self.shield_hp, amount)
+            self.shield_hp -= absorbed
+            amount -= absorbed
+
+        damage_taken = round(amount)
+        self.hp -= damage_taken
         self.damage_cooldown = self.damage_cooldown_time
 
         if self.hp <= 0:
             self.hp = 0
             self.is_dead = True
+
+        return damage_taken, False
 
     def revive(self) -> None:
 
@@ -285,6 +317,22 @@ class Player(Entity):
             self.hp = min(self.max_hp, self.hp + healed)
             self._regen_accumulator -= healed
 
+    def update_shield(self, dt: float) -> None:
+
+        if self.block_cooldown > 0:
+            self.block_cooldown -= dt
+
+        if self.passive_levels["escudo_barreira"] == 0:
+            return  # barreira nao adquirida, nada a regenerar
+
+        self.shield_regen_timer += dt
+
+        shield_max = self.get_passive_value("escudo_barreira")
+
+        if self.shield_regen_timer >= settings.SHIELD_REGEN_DELAY and self.shield_hp < shield_max:
+            self.shield_hp = min(shield_max, self.shield_hp +
+                                 settings.SHIELD_REGEN_RATE * dt)
+
     # ==================================================================
     # ATUALIZACAO POR FRAME
     # ==================================================================
@@ -304,6 +352,7 @@ class Player(Entity):
             self.siphon_cooldown -= dt  # cooldown do sifao corre independente, cadencia propria
 
         self.update_regen(dt)
+        self.update_shield(dt)
 
         if self.state == "walking":
             self.update_walking(dt)
@@ -477,6 +526,19 @@ class Player(Entity):
                          (bar_x, bar_y, bar_width, bar_height))
         pygame.draw.rect(screen, (60, 180, 90),
                          (bar_x, bar_y, bar_width * hp_ratio, bar_height))
+
+        # barreira do escudo deflector: barra azul fina, logo acima da barra de HP,
+        # so desenhada se a barreira ja foi adquirida (nivel > 0)
+        if self.passive_levels["escudo_barreira"] > 0:
+            shield_max = self.get_passive_value("escudo_barreira")
+            shield_ratio = self.shield_hp / shield_max if shield_max > 0 else 0
+
+            shield_bar_y = bar_y - bar_height - 2
+
+            pygame.draw.rect(screen, (30, 40, 70),
+                             (bar_x, shield_bar_y, bar_width, bar_height))
+            pygame.draw.rect(screen, (100, 160, 230),
+                             (bar_x, shield_bar_y, bar_width * shield_ratio, bar_height))
 
     def draw_range_indicator(self, screen: pygame.Surface, camera_x: float, camera_y: float) -> None:
 

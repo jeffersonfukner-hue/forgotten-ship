@@ -71,6 +71,21 @@ PASSIVE_POWERUPS: dict = {
         "increment": 0.1,
         "max_level": 5,
     },
+    "escudo_reducao": {
+        "base_value": 10,   # 10% de reducao de dano no nivel 1
+        "increment": 10,    # nivel 2 = 20%
+        "max_level": 2,
+    },
+    "escudo_barreira": {
+        "base_value": 30,   # HP maximo da barreira no nivel 1
+        "increment": 30,    # nivel 2 = 60 HP maximo
+        "max_level": 2,
+    },
+    "escudo_bloqueio": {
+        "base_value": 1,    # so serve como "flag" - liga o bloqueio periodico
+        "increment": 0,
+        "max_level": 1,
+    },
 }
 
 # --- agrupa eixos que pertencem a mesma arma, para contagem de slots (uma arma = 1 slot, nao 1 por eixo) ---
@@ -80,6 +95,9 @@ CATEGORY_GROUPS: dict = {
     "sabre_dano": "sabre",
     "siphon_dano": "sifao",
     "siphon_conversao": "sifao",
+    "escudo_reducao": "escudo",
+    "escudo_barreira": "escudo",
+    "escudo_bloqueio": "escudo",
 }
 
 # --- pre-requisitos: eixo -> (eixo do qual depende, nivel minimo exigido) ---
@@ -89,8 +107,10 @@ UPGRADE_PREREQUISITES: dict = {
     "sabre_velocidade": ("sabre_quantidade", 1),
     "sabre_dano": ("sabre_quantidade", 1),
     "siphon_conversao": ("siphon_dano", 1),
+    # cadeia do escudo: reducao -> barreira -> bloqueio, cada camada some-se as anteriores
+    "escudo_barreira": ("escudo_reducao", 2),
+    "escudo_bloqueio": ("escudo_barreira", 2),
 }
-
 # --- quantos power-ups diferentes (fora "damage") o jogador pode ter equipados, por nivel minimo ---
 POWERUP_SLOTS_BY_LEVEL: list = [
     (0, 2),
@@ -109,8 +129,10 @@ UPGRADE_LABELS: dict = {
     "sabre_dano": "Sabre - Dano por Lamina",
     "siphon_dano": "Sifao de Energia - Dano",
     "siphon_conversao": "Sifao de Energia - Conversao em Reparo",
+    "escudo_reducao": "Escudo Deflector - Reducao de Dano",
+    "escudo_barreira": "Escudo Deflector - Barreira de Energia",
+    "escudo_bloqueio": "Escudo Deflector - Bloqueio Periodico",
 }
-
 # --- Gemas: coleta e efeito de arrasto ---
 # distancia (entre centros) para a gema comecar a ser puxada
 GEM_PICKUP_RADIUS: float = 60
@@ -170,6 +192,13 @@ SABER_HIT_COOLDOWN: float = 0.5
 SIPHON_INTERVAL: float = 1.5
 # segundos que o feixe visual permanece na tela apos disparar
 SIPHON_BEAM_DURATION: float = 0.15
+
+# --- Escudo Deflector: 3 camadas cumulativas (reducao %, barreira HP, bloqueio periodico) ---
+# segundos sem levar dano antes da barreira comecar a regenerar
+SHIELD_REGEN_DELAY: float = 3.0
+# HP de barreira regenerado por segundo, apos o delay
+SHIELD_REGEN_RATE: float = 5.0
+SHIELD_BLOCK_COOLDOWN: float = 8.0  # segundos entre bloqueios totais gratuitos
 
 # --- Obstaculos: fixos (indestrutiveis) e destrutiveis (corroidos por inimigos, nao pelo player) ---
 DESTRUCTIBLE_OBSTACLE_HP: int = 20

@@ -5,8 +5,8 @@
 ## Estado Atual
 - Projeto: Forgotten Ship (jogo 01 da A1 Game Academy), horde survival espacial em Python/Pygame CE
 - Vinculado a: canal do YouTube (documentação em vídeo) + curso pago futuro
-- Último sprint fechado: [SPRINT_032.md] — Sifão de Energia (raio extrator, mira o 2º inimigo mais próximo, cadência própria)
-- Em andamento agora: próximo item da Lista Consolidada de Power-ups (Phasers ou Escudo Deflector)
+- Último sprint fechado: [SPRINT_033.md] — Escudo Deflector (3 camadas cumulativas: redução %, barreira com transbordo, bloqueio periódico)
+- Em andamento agora: próximo item da Lista Consolidada (armas de fogo ou tiro múltiplo) — depois, prioridade elevada para reorganizar o painel de debug / Tela de Estatísticas
 
 ## Repositórios
 - `a1-game-academy`: metodologia e documentação institucional
@@ -51,6 +51,7 @@
 - Slots de power-up: limite de armas/passivos simultâneos, agrupados por categoria (`CATEGORY_GROUPS` — eixos de uma mesma arma contam como 1 slot só), crescendo com o nível (`POWERUP_SLOTS_BY_LEVEL`: 2→3→4→5); "damage" não ocupa slot. Pré-requisitos entre eixos (`UPGRADE_PREREQUISITES`) escondem upgrades secundários de uma arma até o eixo base atingir nível mínimo (Sprint 031)
 - Sabre Giratório: primeira arma com múltiplos eixos (quantidade/velocidade/dano), entidade própria (`Saber`), sincronizada e recriada por inteiro a cada mudança de quantidade para manter espaçamento angular uniforme (Sprint 031)
 - Sifão de Energia: arma de efeito instantâneo (raio extrator, sem entidade Projectile), cadência própria, mira o 2º inimigo mais próximo via `get_enemies_by_distance()` (generalização de `find_closest_enemy`); cura com piso mínimo de 1 HP para evitar truncamento silencioso em conversões baixas (Sprint 032)
+- Escudo Deflector: 3 camadas cumulativas (não substitutivas) — redução %, barreira com transbordo, bloqueio periódico — desbloqueadas em cadeia via pré-requisito; `take_damage()` retorna tupla `(dano_real, foi_bloqueado)` para feedback visual diferenciado; barreira regenera com delay de 3s sem dano (Sprint 033)
 
 ## Bugs e Refinamentos Pendentes (Sprint futura de correção — Obstáculos e Consumíveis)
 - Bug: obstáculo destrutível pode nascer sobre a posição de entrada de uma porta, prendendo o player sem chance de escapar do dano
@@ -58,12 +59,12 @@
 - Conteúdo faltando: obstáculos fixos (`obstacle_data`) definidos só na Sala 1; Salas 2 e 3 sem nenhum
 - Nova categoria a implementar: Consumíveis de efeito único (não acumulam nível, diferente dos passivos) — drop do obstáculo destrutível ainda indefinido (candidatos: recarga de energia, puxão total de gemas, sorteio aleatório entre eles)
 - Vida extra como drop raro (aumenta `max_lives` permanentemente), introduzindo conceito de raridade ponderada entre itens do mesmo pool
-- Tela de Estatísticas dedicada: migrar histórico acumulado (visitas, estatísticas por tipo, `visit_history`) do painel de debug para estrutura salva, mantendo só o essencial imediato na tela ao vivo (sem perder nenhum dado já coletado)
+- Tela de Estatísticas dedicada (PRIORIDADE — logo após o próximo item de power-ups): painel de debug já com 8+ linhas de power-up, maioria "nível 0 (inativo)" sem utilidade imediata; migrar histórico acumulado (visitas, estatísticas por tipo, `visit_history`) para estrutura salva, e no mínimo esconder do painel ao vivo os power-ups ainda não adquiridos, mantendo só o essencial em tela (sem perder nenhum dado já coletado)
 - Estudo (não decisão): avaliar migrar dicionários de configuração (`settings.py`) para JSON — vale a pena se surgir necessidade de edição por não-programador, hot-reload ou modding; nenhuma pressão real ainda
 - Novo eixo do Sifão de Energia: `siphon_cadencia` (reduz `siphon_interval` por nível, mesmo espírito da Cadência do Tiro base) — deve seguir o mesmo pré-requisito de `siphon_dano` nível 1 já usado pelos outros eixos secundários do Sifão
 
 ## Backlog — Blocos Pendentes (VISAO.md v4.9)
-- Power-ups: armas de fogo (Phaser Leve/Canhão de Plasma/Metralhadora de Pulso, munição/recarga), tiro múltiplo, Escudo Deflector (ímã, regeneração, Sabre Giratório e Sifão de Energia já implementados — Sprints 028/029/031/032)
+- Power-ups: armas de fogo (Phaser Leve/Canhão de Plasma/Metralhadora de Pulso, munição/recarga), tiro múltiplo (ímã, regeneração, Sabre, Sifão e Escudo Deflector já implementados — Sprints 028/029/031/032/033)
 - Boss Entities: mini-bosses, boss com barra de fases e stagger
 - Ship Restoration: mecânica narrativa central (reparo da nave = defesa)
 
