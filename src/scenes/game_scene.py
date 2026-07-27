@@ -867,6 +867,7 @@ class GameScene(Scene):
     def draw_ui(self, screen: pygame.Surface) -> None:
 
         # --- elementos essenciais, sempre visiveis ---
+        self.draw_score(screen)
         self.draw_hp_bar(screen)
         self.draw_progress_bar(screen)
         self.draw_room_and_lives(screen)
@@ -897,9 +898,28 @@ class GameScene(Scene):
                 center=(settings.WINDOW_WIDTH / 2, settings.WINDOW_HEIGHT / 2 - 20 + i * 40))
             screen.blit(text, text_rect)
 
+    def draw_score(self, screen: pygame.Surface) -> None:
+
+        room_points = sum(self.room.points_by_type.values())
+        total_points = sum(self.player.points_by_type.values())
+
+        font_room = pygame.font.Font(None, 24)
+        text_room = font_room.render(
+            f"Sala: {room_points:.0f} pts", True, (255, 255, 255))
+        text_room_rect = text_room.get_rect()
+        text_room_rect.topleft = (20, 2)
+        screen.blit(text_room, text_room_rect)
+
+        font_total = pygame.font.Font(None, 18)
+        text_total = font_total.render(
+            f"Total: {total_points:.0f} pts", True, (170, 170, 170))
+        text_total_rect = text_total.get_rect()
+        text_total_rect.topleft = (20, 20)
+        screen.blit(text_total, text_total_rect)
+
     def draw_hp_bar(self, screen: pygame.Surface) -> None:
 
-        bar_x, bar_y = 20, 20
+        bar_x, bar_y = 20, 46
         bar_width, bar_height = 200, 24
 
         hp_ratio = self.player.hp / self.player.max_hp
@@ -922,7 +942,7 @@ class GameScene(Scene):
 
     def draw_progress_bar(self, screen: pygame.Surface) -> None:
 
-        bar_x, bar_y = 20, 46
+        bar_x, bar_y = 20, 72
         bar_width, bar_height = 200, 10
 
         ratio = self.player.drop_points / self.player.points_to_upgrade
@@ -950,7 +970,7 @@ class GameScene(Scene):
             f"Room {self.room.room_id}  |  Vidas: {self.player.lives}/{self.player.max_lives}",
             True, (255, 255, 255))
         text_rect = text.get_rect()
-        text_rect.topleft = (20, 62)
+        text_rect.topleft = (20, 82)
         screen.blit(text, text_rect)
 
     # ==================================================================
@@ -967,7 +987,7 @@ class GameScene(Scene):
 
         panel_width = 260
         panel_height = padding * 2 + line_height * len(lines)
-        panel_x, panel_y = 20, 92
+        panel_x, panel_y = 20, 118
 
         panel_surface = pygame.Surface(
             (panel_width, panel_height), pygame.SRCALPHA)

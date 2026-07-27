@@ -23,7 +23,7 @@ PLAYER_SHOOT_DAMAGE: int = 10  # dano de cada projetil disparado automaticamente
 
 # --- Player: progressao (drops e upgrades automaticos) ---
 # pontos de drop necessarios para o proximo upgrade automatico
-POINTS_PER_UPGRADE: int = 2
+POINTS_PER_UPGRADE: int = 1
 UPGRADE_DAMAGE_INCREMENT: int = 5  # quanto o dano do tiro aumenta a cada upgrade
 # limiar de pontos cresce 50% a cada upgrade conquistado
 UPGRADE_THRESHOLD_GROWTH: float = 1.5
@@ -118,6 +118,7 @@ POWERUP_SLOTS_BY_LEVEL: list = [
     (10, 4),
     (15, 5),
 ]
+
 # --- siglas compactas por categoria, para o resumo do painel de debug ---
 CATEGORY_LABELS: dict = {
     "magnet": "I",

@@ -5,8 +5,8 @@
 ## Estado Atual
 - Projeto: Forgotten Ship (jogo 01 da A1 Game Academy), horde survival espacial em Python/Pygame CE
 - Vinculado a: canal do YouTube (documentação em vídeo) + curso pago futuro
-- Último sprint fechado: [SPRINT_034.md] — Reorganização do painel de debug (resumo compacto por sigla + histórico expansível via TAB)
-- Em andamento agora: Sprint 035 — Pontuação em Tela Fixa (sala + geral, tempo real) — depois, retomar Bloco de Power-ups com Tiro Múltiplo
+- Último sprint fechado: [SPRINT_035.md] — Pontuação fixa em tela (sala + total, tempo real), reaproveitando dados já existentes
+- Em andamento agora: retomar Bloco de Power-ups com o Tiro Múltiplo
 
 ## Repositórios
 - `a1-game-academy`: metodologia e documentação institucional
@@ -53,6 +53,7 @@
 - Sifão de Energia: arma de efeito instantâneo (raio extrator, sem entidade Projectile), cadência própria, mira o 2º inimigo mais próximo via `get_enemies_by_distance()` (generalização de `find_closest_enemy`); cura com piso mínimo de 1 HP para evitar truncamento silencioso em conversões baixas (Sprint 032)
 - Escudo Deflector: 3 camadas cumulativas (não substitutivas) — redução %, barreira com transbordo, bloqueio periódico — desbloqueadas em cadeia via pré-requisito; `take_damage()` retorna tupla `(dano_real, foi_bloqueado)` para feedback visual diferenciado; barreira regenera com delay de 3s sem dano (Sprint 033)
 - Painel de debug reorganizado: resumo compacto sempre visível (`CATEGORY_LABELS`, sigla + maior nível por categoria equipada via `get_category_max_level()`), histórico completo (estatísticas, salas, visitas) expansível via tecla `TAB` (`debug_expanded`) — nenhum dado descartado, só reorganização de exibição (Sprint 034)
+- Pontuação fixa em tela: "Sala: X pts" (destaque) + "Total: Y pts" (discreto), reaproveitando `room.points_by_type`/`player.points_by_type` já existentes, sem nova lógica de acumulação; HUD reposicionado em cascata para abrir espaço no topo (Sprint 035)
 
 ## Bugs e Refinamentos Pendentes (Sprint futura de correção — Obstáculos e Consumíveis)
 - Bug: obstáculo destrutível pode nascer sobre a posição de entrada de uma porta, prendendo o player sem chance de escapar do dano
