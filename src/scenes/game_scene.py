@@ -131,6 +131,9 @@ class GameScene(Scene):
         # --- sifao de energia: feixe visual instantaneo, (inicio, fim, tempo_restante) ou None ---
         self.siphon_beam: tuple | None = None
 
+        # --- painel de debug: TAB expande/recolhe o historico detalhado (estatisticas, salas) ---
+        self.debug_expanded: bool = False
+
     # ==================================================================
     # CRIACAO E CONFIGURACAO DE SALAS
     # ==================================================================
@@ -419,8 +422,15 @@ class GameScene(Scene):
 
     def handle_event(self, event: pygame.event.Event) -> None:
 
-        if self.upgrade_choices is None or event.type != pygame.KEYDOWN:
-            return  # so processa teclas quando a tela de escolha esta ativa
+        if event.type != pygame.KEYDOWN:
+            return
+
+        if event.key == pygame.K_TAB:
+            self.debug_expanded = not self.debug_expanded
+            return
+
+        if self.upgrade_choices is None:
+            return  # teclas 1/2/3 so processam quando a tela de escolha esta ativa
 
         key_to_index = {pygame.K_1: 0, pygame.K_2: 1, pygame.K_3: 2}
 
@@ -974,6 +984,7 @@ class GameScene(Scene):
 
         self.room.regen_reentries()
 
+        # --- sempre visivel: essencial para decisao imediata durante o jogo ---
         lines = []
 
         lines.append(
@@ -985,8 +996,14 @@ class GameScene(Scene):
         lines.append(self._build_progress_line())
         lines.append(
             f"Slots: {len(self.player.get_equipped_categories())}/{self.player.get_max_powerup_slots()}")
-        lines.extend(self._build_powerup_lines())
+        lines.append(self._build_powerup_summary_line())
+        lines.append("")
+        lines.append("[TAB] historico detalhado")
 
+        if not self.debug_expanded:
+            return lines
+
+        # --- expandido (TAB): historico acumulado, so quando solicitado ---
         lines.append("")
         lines.append("Estatisticas totais (mortos / pontos):")
         lines.extend(self._build_kill_stat_lines(
@@ -1050,22 +1067,22 @@ class GameScene(Scene):
 
         return f"Dano do tiro: {self.player.shoot_damage}"
 
-    def _build_powerup_lines(self) -> list[str]:
+    def _build_powerup_summary_line(self) -> str:
 
-        # generico: uma linha por eixo configurado, mostrando nivel e valor atual
-        lines = []
+        # resumo compacto: so categorias equipadas (nivel > 0 em algum eixo), sigla + maior nivel
+        equipped = sorted(self.player.get_equipped_categories())
 
-        for key in settings.PASSIVE_POWERUPS:
-            label = settings.UPGRADE_LABELS.get(key, key)
-            level = self.player.passive_levels[key]
+        if not equipped:
+            return "Power-ups: nenhum"
 
-            if level == 0:
-                lines.append(f"{label}: nivel 0 (inativo)")
-            else:
-                value = self.player.get_passive_value(key)
-                lines.append(f"{label}: nivel {level} ({value:.1f})")
+        parts = []
 
-        return lines
+        for category in equipped:
+            label = settings.CATEGORY_LABELS.get(category, category)
+            max_level = self.player.get_category_max_level(category)
+            parts.append(f"{label}-{max_level}")
+
+        return "Power-ups: " + " ".join(parts)
 
     def _build_kill_stat_lines(self, kills_by_type: dict, points_by_type: dict) -> list[str]:
 

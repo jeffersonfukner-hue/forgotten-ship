@@ -229,6 +229,17 @@ class Player(Entity):
             if level > 0
         }
 
+    def get_category_max_level(self, category: str) -> int:
+
+        # para armas com multiplos eixos (ex: sabre), usa o maior nivel entre eles
+        # como indicador rapido de "quao fundo o jogador ja investiu" naquela categoria
+        levels = [
+            level for key, level in self.passive_levels.items()
+            if self.get_category(key) == category
+        ]
+
+        return max(levels) if levels else 0
+
     def get_max_powerup_slots(self) -> int:
 
         # POWERUP_SLOTS_BY_LEVEL e uma lista ordenada (nivel_minimo, slots) - pega o ultimo que se aplica

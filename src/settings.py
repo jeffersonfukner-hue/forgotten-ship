@@ -118,6 +118,14 @@ POWERUP_SLOTS_BY_LEVEL: list = [
     (10, 4),
     (15, 5),
 ]
+# --- siglas compactas por categoria, para o resumo do painel de debug ---
+CATEGORY_LABELS: dict = {
+    "magnet": "I",
+    "regen": "R",
+    "sabre": "S",
+    "sifao": "SF",
+    "escudo": "ED",
+}
 
 # --- nomes exibidos na tela de escolha de upgrade (chave -> texto amigavel) ---
 UPGRADE_LABELS: dict = {
