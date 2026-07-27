@@ -170,14 +170,61 @@ class Player(Entity):
         self.points_by_type[enemy_type] = self.points_by_type.get(
             enemy_type, 0.0) + points
 
+    def get_category(self, key: str) -> str:
+
+        # eixos de uma mesma arma (ex: sabre_quantidade, sabre_dano) compartilham categoria;
+        # chaves sem grupo configurado sao sua propria categoria (ex: "magnet")
+        return settings.CATEGORY_GROUPS.get(key, key)
+
+    def get_equipped_categories(self) -> set:
+
+        # uma categoria conta como "equipada" se qualquer um dos seus eixos ja tiver nivel > 0
+        return {
+            self.get_category(key)
+            for key, level in self.passive_levels.items()
+            if level > 0
+        }
+
+    def get_max_powerup_slots(self) -> int:
+
+        # POWERUP_SLOTS_BY_LEVEL e uma lista ordenada (nivel_minimo, slots) - pega o ultimo que se aplica
+        slots = settings.POWERUP_SLOTS_BY_LEVEL[0][1]
+
+        for min_level, value in settings.POWERUP_SLOTS_BY_LEVEL:
+            if self.level >= min_level:
+                slots = value
+
+        return slots
+
     def get_available_upgrades(self) -> list[str]:
 
-        # "damage" nao tem teto de nivel ainda - sempre disponivel como opcao
+        # "damage" nao ocupa slot - e a arma inicial, sempre disponivel
         available = ["damage"]
 
-        # power-ups passivos so aparecem como opcao se ainda nao atingiram o teto
+        equipped_categories = self.get_equipped_categories()
+        max_slots = self.get_max_powerup_slots()
+        slots_full = len(equipped_categories) >= max_slots
+
         for key in settings.PASSIVE_POWERUPS:
-            if self.passive_levels[key] < settings.PASSIVE_POWERUPS[key]["max_level"]:
+
+            if self.passive_levels[key] >= settings.PASSIVE_POWERUPS[key]["max_level"]:
+                continue  # eixo no teto, nunca mais aparece
+
+            prereq = settings.UPGRADE_PREREQUISITES.get(key)
+
+            if prereq is not None:
+                prereq_key, min_level = prereq
+
+                if self.passive_levels[prereq_key] < min_level:
+                    continue  # pre-requisito ainda nao atingido, eixo fica escondido
+
+            category = self.get_category(key)
+
+            if category in equipped_categories:
+                # arma ja equipada, eixo livre pra evoluir
+                available.append(key)
+            elif not slots_full:
+                # arma nova, so aparece se ainda ha slot livre
                 available.append(key)
 
         return available

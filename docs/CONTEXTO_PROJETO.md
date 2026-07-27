@@ -5,8 +5,8 @@
 ## Estado Atual
 - Projeto: Forgotten Ship (jogo 01 da A1 Game Academy), horde survival espacial em Python/Pygame CE
 - Vinculado a: canal do YouTube (documentação em vídeo) + curso pago futuro
-- Último sprint fechado: [SPRINT_030.md] — Tela de escolha de 3 upgrades no level up, substituindo o sistema automático
-- Em andamento agora: próximo item da Lista Consolidada de Power-ups (Sifão de Energia, Sabre Giratório ou Phasers), já plugado no sistema de escolha real
+- Último sprint fechado: [SPRINT_031.md] — Sabre Giratório + sistema de slots por categoria (2-5, crescente por nível) + pré-requisitos entre eixos
+- Em andamento agora: próximo item da Lista Consolidada de Power-ups (Sifão de Energia, Phasers ou Escudo Deflector)
 
 ## Repositórios
 - `a1-game-academy`: metodologia e documentação institucional
@@ -48,6 +48,8 @@
 - Progressão: drops de gemas com animação de puxão progressivo, upgrades com dano automático crescente
 - Power-ups passivos: configuração genérica via dicionário (`PASSIVE_POWERUPS`, mesmo padrão de `Enemy`/`Obstacle`), nível calculado sob demanda via `get_passive_value()` — ímã e regeneração de vida implementados (Sprints 028/029)
 - Sistema de escolha de upgrade: substituiu o upgrade automático — a cada level up, `GameScene` pausa o jogo (early return em `update()`), sorteia 3 opções via `player.choose_random_upgrades()` e aplica a escolha via `player.apply_upgrade(key)`; teclado (1/2/3) nesta primeira versão (Sprint 030)
+- Slots de power-up: limite de armas/passivos simultâneos, agrupados por categoria (`CATEGORY_GROUPS` — eixos de uma mesma arma contam como 1 slot só), crescendo com o nível (`POWERUP_SLOTS_BY_LEVEL`: 2→3→4→5); "damage" não ocupa slot. Pré-requisitos entre eixos (`UPGRADE_PREREQUISITES`) escondem upgrades secundários de uma arma até o eixo base atingir nível mínimo (Sprint 031)
+- Sabre Giratório: primeira arma com múltiplos eixos (quantidade/velocidade/dano), entidade própria (`Saber`), sincronizada e recriada por inteiro a cada mudança de quantidade para manter espaçamento angular uniforme (Sprint 031)
 
 ## Bugs e Refinamentos Pendentes (Sprint futura de correção — Obstáculos e Consumíveis)
 - Bug: obstáculo destrutível pode nascer sobre a posição de entrada de uma porta, prendendo o player sem chance de escapar do dano
@@ -55,9 +57,11 @@
 - Conteúdo faltando: obstáculos fixos (`obstacle_data`) definidos só na Sala 1; Salas 2 e 3 sem nenhum
 - Nova categoria a implementar: Consumíveis de efeito único (não acumulam nível, diferente dos passivos) — drop do obstáculo destrutível ainda indefinido (candidatos: recarga de energia, puxão total de gemas, sorteio aleatório entre eles)
 - Vida extra como drop raro (aumenta `max_lives` permanentemente), introduzindo conceito de raridade ponderada entre itens do mesmo pool
+- Tela de Estatísticas dedicada: migrar histórico acumulado (visitas, estatísticas por tipo, `visit_history`) do painel de debug para estrutura salva, mantendo só o essencial imediato na tela ao vivo (sem perder nenhum dado já coletado)
+- Estudo (não decisão): avaliar migrar dicionários de configuração (`settings.py`) para JSON — vale a pena se surgir necessidade de edição por não-programador, hot-reload ou modding; nenhuma pressão real ainda
 
 ## Backlog — Blocos Pendentes (VISAO.md v4.9)
-- Power-ups: arma Fang, armas de fogo (munição/recarga), tiro múltiplo, sabre giratório, escudo (ímã e regeneração de vida já implementados — Sprints 028/029)
+- Power-ups: Sifão de Energia, armas de fogo (Phaser Leve/Canhão de Plasma/Metralhadora de Pulso, munição/recarga), tiro múltiplo, Escudo Deflector (ímã, regeneração de vida e Sabre Giratório já implementados — Sprints 028/029/031)
 - Boss Entities: mini-bosses, boss com barra de fases e stagger
 - Ship Restoration: mecânica narrativa central (reparo da nave = defesa)
 

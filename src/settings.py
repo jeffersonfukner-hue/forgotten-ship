@@ -42,13 +42,56 @@ PASSIVE_POWERUPS: dict = {
         "increment": 1,     # ganho de HP/s por nivel
         "max_level": 5,
     },
+    "sabre_quantidade": {
+        # nivel 0 = nenhuma lamina (arma ainda nao escolhida)
+        "base_value": 0,
+        # +1 lamina por nivel (nivel 1 = 1 lamina, nivel 5 = 5 laminas)
+        "increment": 1,
+        "max_level": 5,
+    },
+    "sabre_velocidade": {
+        "base_value": 90,   # graus por segundo de giro, no nivel 1
+        "increment": 30,    # ganho de velocidade de giro por nivel
+        "max_level": 5,
+    },
+    "sabre_dano": {
+        "base_value": 5,    # dano por lamina, no nivel 1
+        "increment": 3,     # ganho de dano por nivel
+        "max_level": 5,
+    },
 }
+
+# --- agrupa eixos que pertencem a mesma arma, para contagem de slots (uma arma = 1 slot, nao 1 por eixo) ---
+CATEGORY_GROUPS: dict = {
+    "sabre_quantidade": "sabre",
+    "sabre_velocidade": "sabre",
+    "sabre_dano": "sabre",
+}
+
+# --- pre-requisitos: eixo -> (eixo do qual depende, nivel minimo exigido) ---
+# eixo com pre-requisito so aparece como opcao depois que o eixo base atingir o nivel exigido -
+# cria sensacao de progresso e novidade (feature nova se abre em nivel avancado, nao tudo de uma vez)
+UPGRADE_PREREQUISITES: dict = {
+    "sabre_velocidade": ("sabre_quantidade", 1),
+    "sabre_dano": ("sabre_quantidade", 1),
+}
+
+# --- quantos power-ups diferentes (fora "damage") o jogador pode ter equipados, por nivel minimo ---
+POWERUP_SLOTS_BY_LEVEL: list = [
+    (0, 2),
+    (5, 3),
+    (10, 4),
+    (15, 5),
+]
 
 # --- nomes exibidos na tela de escolha de upgrade (chave -> texto amigavel) ---
 UPGRADE_LABELS: dict = {
     "damage": "Dano do Tiro",
     "magnet": "Ima (raio de atracao)",
     "regen": "Regeneracao de Vida",
+    "sabre_quantidade": "Sabre - Quantidade de Laminas",
+    "sabre_velocidade": "Sabre - Velocidade de Giro",
+    "sabre_dano": "Sabre - Dano por Lamina",
 }
 
 # --- Gemas: coleta e efeito de arrasto ---
@@ -99,6 +142,11 @@ ENEMY_TYPES: dict = {
 }
 # (hp + damage) / este valor = pontos de drop do inimigo
 ENEMY_POINTS_DIVISOR: float = 30
+
+# --- Sabre Giratorio: orbita o player, dano por contato continuo ---
+SABER_ORBIT_RADIUS: float = 50  # distancia da lamina ate o centro do player
+# segundos entre "cortes" no mesmo inimigo, evita dano por frame
+SABER_HIT_COOLDOWN: float = 0.5
 
 # --- Obstaculos: fixos (indestrutiveis) e destrutiveis (corroidos por inimigos, nao pelo player) ---
 DESTRUCTIBLE_OBSTACLE_HP: int = 20

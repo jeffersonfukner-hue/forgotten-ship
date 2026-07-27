@@ -41,6 +41,9 @@ class GameScene(Scene):
         from src.entities.gem import Gem
         self.gems: list[Gem] = []
 
+        from src.entities.saber import Saber
+        self.sabers: list[Saber] = []
+
         self.rooms: dict[int, Room] = {}
 
         # --- dados de portas: cada porta conhece sua sala, posicao e porta destino ---
@@ -361,6 +364,28 @@ class GameScene(Scene):
 
         return True
 
+    def sync_sabers(self) -> None:
+        """Recria as instancias de Saber sempre que a quantidade muda, para
+        que os angulos fiquem sempre uniformemente espacados entre si
+        (2 laminas = lados opostos, 3 laminas = triangulo, etc.) - nao
+        preserva instancias antigas, ja que a redistribuicao de angulo
+        exige recalcular todas, nao so adicionar a nova."""
+
+        from src.entities.saber import Saber
+
+        target_count = int(self.player.get_passive_value("sabre_quantidade"))
+
+        if target_count == len(self.sabers):
+            return  # quantidade nao mudou, nada a fazer
+
+        # preserva a fase de rotacao atual (angulo da primeira lamina existente),
+        # para a lamina nao "pular" visualmente ao ganhar uma nova irma
+        base_angle = self.sabers[0].angle if self.sabers else 0
+
+        self.sabers = [
+            Saber((base_angle + (360 / target_count) * i) % 360)
+            for i in range(target_count)
+        ]
     # ==================================================================
     # LOOP PRINCIPAL
     # ==================================================================
@@ -538,6 +563,33 @@ class GameScene(Scene):
 
         self.gems = [g for g in self.gems if not g.is_dead]
 
+        # --- sabre giratorio: sincroniza quantidade, orbita e aplica dano por contato ---
+        self.sync_sabers()
+
+        if self.sabers:
+            rotation_speed = self.player.get_passive_value("sabre_velocidade")
+            saber_damage = self.player.get_passive_value("sabre_dano")
+
+            for saber in self.sabers:
+                saber.update(dt, self.player, rotation_speed)
+
+                for enemy in enemies:
+                    if not enemy.is_dead and saber.can_hit(enemy) and saber.rect.colliderect(enemy.rect):
+                        enemy.take_damage(saber_damage)
+                        saber.register_hit(enemy)
+
+                        self.spawn_damage_text(enemy.x, enemy.y, saber_damage)
+
+                        if enemy.is_dead:
+                            self.player.register_kill(
+                                enemy.enemy_type, enemy.drop_value)
+                            self.room.register_kill(
+                                enemy.enemy_type, enemy.drop_value)
+
+                            from src.entities.gem import Gem
+                            self.gems.append(
+                                Gem(enemy.x, enemy.y, enemy.drop_value))
+
         # --- inimigos: movimento e colisao com o player ---
         if not self.player.is_dead:  # inimigos param de agir assim que o jogador morre
 
@@ -714,6 +766,9 @@ class GameScene(Scene):
         for gem in self.gems:
             gem.draw(screen, self.camera_x, self.camera_y)
 
+        for saber in self.sabers:
+            saber.draw(screen, self.camera_x, self.camera_y)
+
         for text in self.floating_texts:
             text.draw(screen, self.camera_x, self.camera_y)
 
@@ -846,8 +901,9 @@ class GameScene(Scene):
         lines.append(self._build_survival_line())
         lines.append(self._build_enemy_counter_line())
         lines.append(self._build_progress_line())
-        lines.append(self._build_magnet_line())
-        lines.append(self._build_regen_line())
+        lines.append(
+            f"Slots: {len(self.player.get_equipped_categories())}/{self.player.get_max_powerup_slots()}")
+        lines.extend(self._build_powerup_lines())
 
         lines.append("")
         lines.append("Estatisticas totais (mortos / pontos):")
@@ -912,23 +968,22 @@ class GameScene(Scene):
 
         return f"Dano do tiro: {self.player.shoot_damage}"
 
-    def _build_magnet_line(self) -> str:
+    def _build_powerup_lines(self) -> list[str]:
 
-        level = self.player.passive_levels["magnet"]
-        radius = self.player.get_passive_value("magnet")
+        # generico: uma linha por eixo configurado, mostrando nivel e valor atual
+        lines = []
 
-        return f"Ima: nivel {level} (raio {radius:.0f}px)"
+        for key in settings.PASSIVE_POWERUPS:
+            label = settings.UPGRADE_LABELS.get(key, key)
+            level = self.player.passive_levels[key]
 
-    def _build_regen_line(self) -> str:
+            if level == 0:
+                lines.append(f"{label}: nivel 0 (inativo)")
+            else:
+                value = self.player.get_passive_value(key)
+                lines.append(f"{label}: nivel {level} ({value:.1f})")
 
-        level = self.player.passive_levels["regen"]
-
-        if level == 0:
-            return "Regen: nivel 0 (inativo)"
-
-        rate = self.player.get_passive_value("regen")
-
-        return f"Regen: nivel {level} ({rate:.0f} HP/s)"
+        return lines
 
     def _build_kill_stat_lines(self, kills_by_type: dict, points_by_type: dict) -> list[str]:
 
