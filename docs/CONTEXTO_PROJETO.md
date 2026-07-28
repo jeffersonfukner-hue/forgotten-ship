@@ -70,6 +70,7 @@
 - Vida extra como drop raro (aumenta `max_lives` permanentemente), introduzindo conceito de raridade ponderada entre itens do mesmo pool
 - Tela de Estatísticas dedicada (banco de dados): quando existir, registrar a build de power-ups equipada em cada visita de sala, não só o resultado agregado — permite comparar builds objetivamente e gerar gráficos de decisão (data science aplicada, conecta com "Ranking por Qualidade de Escolha" do VISAO.md)
 - Estudo (não decisão): avaliar migrar dicionários de configuração (`settings.py`) para JSON — vale a pena se surgir necessidade de edição por não-programador, hot-reload ou modding; nenhuma pressão real ainda
+- Dificuldade escalável por reentrada e por nível de sala: `HORDE_ENEMIES_PER_VISIT` já existe em `settings.py` mas nunca foi conectado (`spawn_horde()` sempre usa `HORDE_BASE_ENEMIES` fixo); `ROOM_SURVIVAL_DURATION` também deveria escalar proporcionalmente por reentrada; campo `"level"` já existe em `room_data` mas ainda não influencia spawn/dificuldade. Conecta direto com a seção já existente no VISAO.md "Continuidade de Ondas Entre Visitas e Teto de Volume" (composição de tipos, não só quantidade, com teto ~18-20) — falta só implementar o que já está desenhado
 - Novo eixo do Sifão de Energia: `siphon_cadencia` (reduz `siphon_interval` por nível, mesmo espírito da Cadência do Tiro base) — deve seguir o mesmo pré-requisito de `siphon_dano` nível 1 já usado pelos outros eixos secundários do Sifão
 
 ## Backlog — Blocos Pendentes (VISAO.md v4.9)
