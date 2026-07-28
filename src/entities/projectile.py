@@ -7,11 +7,12 @@ from src.entities.entity import Entity
 class Projectile(Entity):
 
     def __init__(self, x: float, y: float, direction: pygame.Vector2,
-                 damage: int = None, max_range: float = 100, pierce: int = 1) -> None:
+                 damage: int = None, max_range: float = 100, pierce: int = 1,
+                 speed: float = 400) -> None:
         super().__init__(x=x, y=y, width=8, height=8,)
 
         # --- movimento ---
-        self.speed: int = 400
+        self.speed: float = speed
         self.direction: pygame.Vector2 = direction
 
         # --- combate ---

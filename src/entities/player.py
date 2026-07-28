@@ -54,6 +54,10 @@ class Player(Entity):
         self.siphon_cooldown: float = 0.0
         self.siphon_interval: float = settings.SIPHON_INTERVAL
 
+        # --- combate: rajada de tiro, dispara N vezes em sequencia sem re-mirar ---
+        self.pending_burst_shots: list = []
+        self.burst_timer: float = 0.0
+
         # --- escudo deflector: barreira atual (HP), tempo desde o ultimo dano, cooldown de bloqueio ---
         self.shield_hp: float = 0.0
         self.shield_regen_timer: float = 0.0
@@ -188,6 +192,21 @@ class Player(Entity):
     def confirm_siphon(self) -> None:
 
         self.siphon_cooldown = self.siphon_interval
+
+    def queue_burst(self, shots: list, repeats: int) -> None:
+
+        # guarda 'repeats' copias da mesma lista de disparos, para reproduzir
+        # sem re-mirar a cada tiro da rajada
+        self.pending_burst_shots = [shots] * repeats
+        self.burst_timer = settings.BURST_SHOT_DELAY
+
+    def has_pending_burst(self) -> bool:
+
+        return len(self.pending_burst_shots) > 0
+
+    def pop_burst_shots(self) -> list:
+
+        return self.pending_burst_shots.pop(0)
 
     # ==================================================================
     # PROGRESSAO (DROPS E UPGRADES)
@@ -421,6 +440,12 @@ class Player(Entity):
 
         if self.siphon_cooldown > 0:
             self.siphon_cooldown -= dt  # cooldown do sifao corre independente, cadencia propria
+
+        if self.burst_timer > 0:
+            self.burst_timer -= dt  # intervalo entre tiros da mesma rajada
+
+        # alcance recalculado todo frame, a partir do nivel atual do power-up "range"
+        self.range_radius = self.get_passive_value("range")
 
         self.update_regen(dt)
         self.update_shield(dt)

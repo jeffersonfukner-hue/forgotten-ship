@@ -102,6 +102,28 @@ PASSIVE_POWERUPS: dict = {
         "increment": 1,     # nivel 2 = 3 tiros, ate nivel 5 = 6 tiros
         "max_level": 5,
     },
+    "tiro_velocidade": {
+        # velocidade padrao do projetil (mesmo valor de antes desta feature)
+        "base_value": 400,
+        "increment": 80,    # ganho de velocidade por nivel
+        "max_level": 5,
+    },
+    "tiro_penetracao": {
+        # nivel 0 = 1 impacto (comportamento atual, sem regressao)
+        "base_value": 1,
+        "increment": 1,     # +1 inimigo atravessado por nivel
+        "max_level": 5,
+    },
+    "tiro_rajada": {
+        "base_value": 1,    # nivel 0 = 1 tiro por gatilho (normal)
+        "increment": 1,     # nivel 1 = 2 tiros, nivel 5 = 6 tiros por rajada
+        "max_level": 5,
+    },
+    "range": {
+        "base_value": 300,  # mesmo valor de PLAYER_RANGE_RADIUS, sem regressao no nivel 0
+        "increment": 40,    # ganho de alcance por nivel
+        "max_level": 5,
+    },
 }
 
 # --- agrupa eixos que pertencem a mesma arma, para contagem de slots (uma arma = 1 slot, nao 1 por eixo) ---
@@ -126,8 +148,9 @@ EXCLUSIVE_CATEGORIES: set = {"tiro_multiplo"}
 
 # --- categorias que nunca ocupam slot de power-up, mesmo apos equipadas -
 # tiro multiplo e parte do Tiro (base), que ja nao ocupa slot como "damage" ---
-FREE_CATEGORIES: set = {"tiro_multiplo"}
-
+FREE_CATEGORIES: set = {
+    "tiro_multiplo", "tiro_velocidade", "tiro_penetracao", "tiro_rajada", "range",
+}
 # --- pre-requisitos: eixo -> (eixo do qual depende, nivel minimo exigido) ---
 # eixo com pre-requisito so aparece como opcao depois que o eixo base atingir o nivel exigido -
 # cria sensacao de progresso e novidade (feature nova se abre em nivel avancado, nao tudo de uma vez)
@@ -173,6 +196,10 @@ UPGRADE_LABELS: dict = {
     "tiro_diagonal": "Tiro Multiplo - Diagonal",
     "tiro_quadrantes": "Tiro Multiplo - Quadrantes",
     "tiro_paralelo": "Tiro Multiplo - Paralelo",
+    "tiro_velocidade": "Tiro - Velocidade",
+    "tiro_penetracao": "Tiro - Penetracao",
+    "tiro_rajada": "Tiro - Rajada",
+    "range": "Tiro - Alcance",
 }
 # --- Gemas: coleta e efeito de arrasto ---
 # distancia (entre centros) para a gema comecar a ser puxada
@@ -227,6 +254,9 @@ ENEMY_POINTS_DIVISOR: float = 30
 SABER_ORBIT_RADIUS: float = 50  # distancia da lamina ate o centro do player
 # segundos entre "cortes" no mesmo inimigo, evita dano por frame
 SABER_HIT_COOLDOWN: float = 0.5
+
+# --- Tiro (base): rajada dispara N tiros em sequencia rapida, sem re-mirar entre eles ---
+BURST_SHOT_DELAY: float = 0.08  # segundos entre cada disparo dentro da mesma rajada
 
 # --- Sifao de Energia: raio extrator instantaneo, mira o 2o inimigo mais proximo ---
 # segundos entre disparos - cadencia propria, mais lenta que o tiro

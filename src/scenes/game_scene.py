@@ -400,6 +400,22 @@ class GameScene(Scene):
             return "esquerda"
         return "cima"
 
+    def _create_projectiles(self, shots: list) -> None:
+        """Cria os projeteis para uma lista de disparos (direction+offset),
+        aplicando velocidade e penetracao vindas dos upgrades do Tiro."""
+
+        from src.entities.projectile import Projectile
+
+        projectile_speed = self.player.get_passive_value("tiro_velocidade")
+        pierce = int(self.player.get_passive_value("tiro_penetracao"))
+
+        for shot in shots:
+            self.projectiles.append(Projectile(
+                self.player.x +
+                shot["offset"].x, self.player.y + shot["offset"].y,
+                shot["direction"], max_range=self.player.range_radius,
+                damage=self.player.shoot_damage, speed=projectile_speed, pierce=pierce))
+
     def _has_line_of_sight(self, start: tuple, end: tuple) -> bool:
         """Verifica se a linha reta entre dois pontos e bloqueada por
         algum obstaculo da sala atual, usando o algoritmo de clipping
@@ -522,8 +538,19 @@ class GameScene(Scene):
 
         enemies = self.room.get_enemies()
 
+        # --- rajada pendente: dispara a proxima repeticao, sem iniciar um novo ciclo de mira ---
+        if self.player.has_pending_burst():
+            if self.player.burst_timer <= 0:
+                shots = self.player.pop_burst_shots()
+                self._create_projectiles(shots)
+
+                if self.player.has_pending_burst():
+                    self.player.burst_timer = settings.BURST_SHOT_DELAY
+                else:
+                    self.player.confirm_shot()
+
         # --- disparo automatico do player (1 ou mais projeteis, conforme Tiro Multiplo) ---
-        if self.player.ready_to_shoot() and enemies:
+        elif self.player.ready_to_shoot() and enemies:
 
             quadrant_level = self.player.passive_levels["tiro_quadrantes"]
 
@@ -568,15 +595,17 @@ class GameScene(Scene):
                         directions.append(direction.normalize())
 
                 if directions:
-                    from src.entities.projectile import Projectile
+                    shots = [{"direction": d, "offset": pygame.Vector2(
+                        0, 0)} for d in directions]
+                    self._create_projectiles(shots)
 
-                    for direction in directions:
-                        self.projectiles.append(Projectile(
-                            self.player.x, self.player.y, direction,
-                            max_range=self.player.range_radius,
-                            damage=self.player.shoot_damage))
+                    burst_count = int(
+                        self.player.get_passive_value("tiro_rajada"))
 
-                    self.player.confirm_shot()
+                    if burst_count > 1:
+                        self.player.queue_burst(shots, burst_count - 1)
+                    else:
+                        self.player.confirm_shot()
 
             else:
                 # --- Diagonal, Paralelo, ou nenhuma variante: comportamento existente ---
@@ -590,18 +619,16 @@ class GameScene(Scene):
                     if direction.length_squared() > 0:
                         direction = direction.normalize()
 
-                        from src.entities.projectile import Projectile
+                        shots = self.player.get_shot_vectors(direction)
+                        self._create_projectiles(shots)
 
-                        for shot in self.player.get_shot_vectors(direction):
-                            spawn_x = self.player.x + shot["offset"].x
-                            spawn_y = self.player.y + shot["offset"].y
+                        burst_count = int(
+                            self.player.get_passive_value("tiro_rajada"))
 
-                            self.projectiles.append(Projectile(
-                                spawn_x, spawn_y, shot["direction"],
-                                max_range=self.player.range_radius,
-                                damage=self.player.shoot_damage))
-
-                        self.player.confirm_shot()
+                        if burst_count > 1:
+                            self.player.queue_burst(shots, burst_count - 1)
+                        else:
+                            self.player.confirm_shot()
 
         # --- projeteis: movimento, colisao com obstaculos e com inimigos ---
         for projectile in self.projectiles:
