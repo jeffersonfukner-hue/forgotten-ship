@@ -5,8 +5,8 @@
 ## Estado Atual
 - Projeto: Forgotten Ship (jogo 01 da A1 Game Academy), horde survival espacial em Python/Pygame CE
 - Vinculado a: canal do YouTube (documentação em vídeo) + curso pago futuro
-- Último sprint fechado: [SPRINT_043.md] — Refactor: `PASSIVE_POWERUPS` → `POWER_UPS` com campo `"type"`, métodos renomeados em cadeia
-- Em andamento agora: bugs de obstáculos (spawn sobre porta, margem de parede, fixos faltando) — depois, Bloco de Entidades de Chefes, depois Restauração da Nave
+- Último sprint fechado: [SPRINT_044.md] — Bugs de obstáculos corrigidos (margem de porta/parede, fixos nas Salas 2 e 3)
+- Em andamento agora: Bloco de Entidades de Chefes (mini-bosses, boss com fases) — depois, Bloco de Restauração da Nave
 
 ## Repositórios
 - `a1-game-academy`: metodologia e documentação institucional
@@ -63,6 +63,7 @@
 - Correção de distribuição de alvo: Sifão/Phaser/Plasma/Pulso usam `ordered_enemies[min(N-1, len(ordered_enemies)-1)]` em vez de exigir quantidade mínima de inimigos — mira o mais distante disponível em vez de ficar mudo com poucos alvos no raio (Sprint 041)
 - Metralhadora de Pulso: terceira arma de fogo, única com cadência como eixo upável (`pulso_cadencia`, via `get_power_up_value()`, não constante fixa como Phaser/Plasma); mira o 5º mais próximo; projéteis laranja (Sprint 042)
 - Refactor `POWER_UPS`: renomeado de `PASSIVE_POWERUPS`, cada entrada com `"type": "active"/"passive"` (metadado, sem uso funcional ainda); métodos renomeados em cadeia (`passive_levels`→`power_up_levels`, `get_passive_value`→`get_power_up_value`, `upgrade_passive`→`increase_power_up_level`); arquivos entregues completos, não em diffs, dado o volume (Sprint 043)
+- Bugs de obstáculos corrigidos: `DESTRUCTIBLE_OBSTACLE_DOOR_MARGIN`/`DESTRUCTIBLE_OBSTACLE_WALL_MARGIN` evitam spawn sobre porta ou colado à parede (faixa protegida por `min()`/`max()` para salas estreitas); obstáculos fixos adicionados às Salas 2 e 3 (Sprint 044)
 
 ### Bloco de Power-ups — Completo (Sprints 028-042)
 11 armas/sistemas implementados: Tiro base (dano/velocidade/penetração/rajada/alcance), Tiro Múltiplo (Diagonal/Paralelo/Quadrantes, exclusivos entre si), Ímã, Regeneração, Sabre Giratório, Sifão de Energia, Escudo Deflector (3 camadas cumulativas), Campo de Força, Phaser Leve, Canhão de Plasma, Metralhadora de Pulso. Arquitetura comum: `POWER_UPS` (dicionário genérico por chave, com campo `"type"`), `CATEGORY_GROUPS` (agrupa eixos por arma para slots), `UPGRADE_PREREQUISITES` (cadeia de liberação), `POWERUP_SLOTS_BY_LEVEL` (2→5), `EXCLUSIVE_CATEGORIES`/`FREE_CATEGORIES`. Distribuição de alvo entre armas automáticas: tiro=1º mais próximo, Sifão=2º, Phaser=3º, Plasma=4º, Pulso=5º (todas resilientes a poucos inimigos). Detalhes de cada Sprint em `docs/sprints/SPRINT_028.md` a `SPRINT_043.md`.
@@ -70,17 +71,15 @@
 ## Backlog — Próximos Blocos (decisão em aberto)
 - Bloco de Entidades de Chefes: mini-bosses, boss com barra de fases e stagger
 - Bloco de Restauração da Nave: mecânica narrativa central (reparo da nave = defesa)
-- Bugs/refinamentos de obstáculos e consumíveis (registrados abaixo)
 
-## Bugs e Refinamentos Pendentes (Sprint futura de correção — Obstáculos e Consumíveis)
-- Bug: obstáculo destrutível pode nascer sobre a posição de entrada de uma porta, prendendo o player sem chance de escapar do dano
-- Refinamento: obstáculos destrutíveis sem margem mínima da parede, permitindo inimigo preso no vão entre parede e obstáculo
-- Conteúdo faltando: obstáculos fixos (`obstacle_data`) definidos só na Sala 1; Salas 2 e 3 sem nenhum
+## Bugs e Refinamentos Pendentes (Sprint futura — Reentrada, Consumíveis, Coleta)
+- Dificuldade escalável por reentrada e por nível de sala: `HORDE_ENEMIES_PER_VISIT` já existe em `settings.py` mas nunca foi conectado (`spawn_horde()` sempre usa `HORDE_BASE_ENEMIES` fixo); `ROOM_SURVIVAL_DURATION` também deveria escalar proporcionalmente por reentrada; campo `"level"` já existe em `room_data` mas ainda não influencia spawn/dificuldade; **incluir também regeneração de obstáculos destrutíveis por reentrada** (hoje não voltam depois de destruídos, sala fica progressivamente mais vazia) — identificado na Sprint 044, adiado deliberadamente para cá. Conecta com VISAO.md "Continuidade de Ondas Entre Visitas e Teto de Volume"
 - Nova categoria a implementar: Consumíveis de efeito único (não acumulam nível, diferente dos passivos) — drop do obstáculo destrutível ainda indefinido (candidatos: recarga de energia, puxão total de gemas, sorteio aleatório entre eles)
 - Vida extra como drop raro (aumenta `max_lives` permanentemente), introduzindo conceito de raridade ponderada entre itens do mesmo pool
+- Coleta Automática de Gemas Remanescentes: já registrado no VISAO.md desde a Sprint 026 (auto-ímã ao vencer sala sem morrer, mini-ímã esporádico), ainda não implementado
 - Tela de Estatísticas dedicada (banco de dados): quando existir, registrar a build de power-ups equipada em cada visita de sala, não só o resultado agregado — permite comparar builds objetivamente e gerar gráficos de decisão (data science aplicada, conecta com "Ranking por Qualidade de Escolha" do VISAO.md)
 - Estudo (não decisão): avaliar migrar dicionários de configuração (`settings.py`) para JSON — vale a pena se surgir necessidade de edição por não-programador, hot-reload ou modding; nenhuma pressão real ainda
-- Dificuldade escalável por reentrada e por nível de sala: `HORDE_ENEMIES_PER_VISIT` já existe em `settings.py` mas nunca foi conectado (`spawn_horde()` sempre usa `HORDE_BASE_ENEMIES` fixo); `ROOM_SURVIVAL_DURATION` também deveria escalar proporcionalmente por reentrada; campo `"level"` já existe em `room_data` mas ainda não influencia spawn/dificuldade. Conecta direto com a seção já existente no VISAO.md "Continuidade de Ondas Entre Visitas e Teto de Volume" (composição de tipos, não só quantidade, com teto ~18-20) — falta só implementar o que já está desenhado
+- Novo eixo do Sifão de Energia: `siphon_cadencia` (reduz `siphon_interval` por nível, mesmo espírito da Cadência do Tiro base) — deve seguir o mesmo pré-requisito de `siphon_dano` nível 1 já usado pelos outros eixos secundários do Sifão
 
 ## Preferências de Estilo
 - Tema Star Trek (Stardate, terminologia de nave)

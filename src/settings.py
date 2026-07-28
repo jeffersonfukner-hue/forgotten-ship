@@ -359,7 +359,7 @@ GEM_PULL_ACCELERATION: float = 400
 GEM_PULL_MAX_SPEED: float = 500
 
 # --- Horda: geracao de inimigos ---
-HORDE_BASE_ENEMIES: int = 30  # quantidade de inimigos na primeira horda de uma sala
+HORDE_BASE_ENEMIES: int = 12  # quantidade de inimigos na primeira horda de uma sala
 # incremento de inimigos a cada revisita (rejogabilidade) - constante ja existe mas
 # ainda nao esta conectada em spawn_horde(); ver Backlog em CONTEXTO_PROJETO.md
 HORDE_ENEMIES_PER_VISIT: int = 6
@@ -439,3 +439,9 @@ DESTRUCTIBLE_OBSTACLE_SIZE: int = 40  # largura/altura do obstaculo destrutivel
 OBSTACLE_DAMAGE_COOLDOWN: float = 0.5
 # dano causado pelo inimigo ao obstaculo destrutivel por contato
 ENEMY_OBSTACLE_DAMAGE: int = 2
+# distancia minima entre um obstaculo destrutivel e a posicao de entrada de
+# qualquer porta da sala - evita prender o player contra a parede ao entrar
+DESTRUCTIBLE_OBSTACLE_DOOR_MARGIN: float = 100
+# distancia minima entre um obstaculo destrutivel e a parede da sala - evita
+# um vao estreito onde um inimigo poderia ficar preso entre parede e obstaculo
+DESTRUCTIBLE_OBSTACLE_WALL_MARGIN: float = 30

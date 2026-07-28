@@ -110,6 +110,16 @@ class GameScene(Scene):
                 {"x": 400, "y": 300, "width": 80, "height": 80},
                 {"x": 900, "y": 500, "width": 60, "height": 120},
             ],
+            2: [
+                # corredor estreito (300px de largura) - obstaculo pequeno, encostado
+                # numa lateral, deixando espaco livre suficiente para o player desviar
+                {"x": 100, "y": 600, "width": 60, "height": 60},
+                {"x": 160, "y": 900, "width": 60, "height": 60},
+            ],
+            3: [
+                {"x": 350, "y": 250, "width": 80, "height": 80},
+                {"x": 650, "y": 450, "width": 60, "height": 100},
+            ],
         }
 
         # --- sala inicial e jogador ---
@@ -213,38 +223,55 @@ class GameScene(Scene):
 
     def _spawn_destructible_obstacles(self, room: Room) -> None:
         """Gera obstaculos destrutiveis em posicoes aleatorias, evitando
-        sobrepor obstaculos fixos ja existentes e a area central da sala
-        (onde o jogador normalmente aparece/atravessa)."""
+        sobrepor obstaculos fixos ja existentes, a area central da sala
+        (onde o jogador normalmente aparece/atravessa), a posicao de
+        entrada de qualquer porta (nao prende o player contra a parede),
+        e mantendo margem minima da parede (evita vao onde um inimigo
+        poderia ficar preso entre parede e obstaculo)."""
 
         from src.entities.obstacle import Obstacle
 
         left, top, right, bottom = room.get_bounds()
         size = settings.DESTRUCTIBLE_OBSTACLE_SIZE
+        wall_margin = settings.DESTRUCTIBLE_OBSTACLE_WALL_MARGIN
 
         existing_rects = [o.rect for o in room.get_obstacles()]
 
         avoid_center = pygame.Vector2(room.rect.centerx, room.rect.centery)
         avoid_radius = 100
 
+        door_positions = [
+            pygame.Vector2(door.rect.center) for door in room.get_doors()]
+        door_margin = settings.DESTRUCTIBLE_OBSTACLE_DOOR_MARGIN
+
+        # limites com margem de parede aplicada - sala precisa ser maior que
+        # 2x a margem + o tamanho do obstaculo para essa faixa fazer sentido
+        min_x = int(left + wall_margin)
+        max_x = int(right - size - wall_margin)
+        min_y = int(top + wall_margin)
+        max_y = int(bottom - size - wall_margin)
+
         for _ in range(settings.DESTRUCTIBLE_OBSTACLES_PER_ROOM):
 
             for _attempt in range(20):
 
-                x = random.randint(int(left), int(right - size))
-                y = random.randint(int(top), int(bottom - size))
+                x = random.randint(min(min_x, max_x), max(min_x, max_x))
+                y = random.randint(min(min_y, max_y), max(min_y, max_y))
 
                 candidate_rect = pygame.Rect(x, y, size, size)
+                candidate_center = pygame.Vector2(candidate_rect.center)
 
                 too_close_to_center = (
-                    pygame.Vector2(candidate_rect.centerx,
-                                   candidate_rect.centery)
-                    .distance_to(avoid_center) < avoid_radius
-                )
+                    candidate_center.distance_to(avoid_center) < avoid_radius)
+
+                too_close_to_door = any(
+                    candidate_center.distance_to(door_pos) < door_margin
+                    for door_pos in door_positions)
 
                 overlaps_existing = any(
                     candidate_rect.colliderect(r) for r in existing_rects)
 
-                if not too_close_to_center and not overlaps_existing:
+                if not too_close_to_center and not too_close_to_door and not overlaps_existing:
                     break
 
             obstacle = Obstacle(

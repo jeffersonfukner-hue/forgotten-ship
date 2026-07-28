@@ -5,27 +5,41 @@ from src.entities.entity import Entity
 
 
 class Obstacle(Entity):
+    """Elemento fisico dentro de uma sala. Dois tipos: fixo (indestrutivel,
+    bloqueia movimento e linha de tiro permanentemente) e destrutivel
+    (corroido apenas por inimigos, nao pelo tiro do player; encolhe
+    visualmente ate sumir, servindo de defesa temporaria)."""
 
     def __init__(self, x: float, y: float, width: int, height: int,
                  destructible: bool = False, hp: int = 0) -> None:
         super().__init__(x=x, y=y, width=width, height=height)
 
+        # --- dimensoes originais: referencia para o encolhimento visual ---
         self.original_width: int = width
         self.original_height: int = height
 
+        # --- vida e aparencia, conforme o tipo ---
         self.destructible: bool = destructible
 
         if destructible:
             self.max_hp: int = hp
             self.hp: int = hp
-            self.color: tuple = (150, 120, 60)  # tom marrom/dourado: sinaliza "destrutivel"
+            # tom marrom/dourado: sinaliza "destrutivel"
+            self.color: tuple = (150, 120, 60)
         else:
             self.max_hp: int = 0
             self.hp: int = 0
-            self.color: tuple = (110, 115, 125)  # cinza metalico: fixo, indestrutivel
+            # cinza metalico: fixo, indestrutivel
+            self.color: tuple = (110, 115, 125)
 
+        # --- estado de dano ---
         self.is_dead: bool = False  # so relevante para destrutiveis; fixo nunca fica True
-        self.damage_cooldown: float = 0.0  # evita corrosao instantanea por multiplos inimigos no mesmo frame
+        # evita corrosao instantanea por multiplos inimigos no mesmo frame
+        self.damage_cooldown: float = 0.0
+
+    # ==================================================================
+    # COMBATE
+    # ==================================================================
 
     def take_damage(self, amount: int) -> None:
 
@@ -39,6 +53,10 @@ class Obstacle(Entity):
             self.hp = 0
             self.is_dead = True
 
+    # ==================================================================
+    # ATUALIZACAO POR FRAME
+    # ==================================================================
+
     def update(self, dt: float) -> None:
 
         if self.damage_cooldown > 0:
@@ -46,9 +64,15 @@ class Obstacle(Entity):
 
         # encolhe visualmente conforme perde HP, ate sumir de vez
         if self.destructible and self.max_hp > 0:
-            ratio = max(0.05, self.hp / self.max_hp)  # nunca zera de vez, encolhe ate quase sumir
+            # nunca zera de vez, encolhe ate quase sumir
+            ratio = max(0.05, self.hp / self.max_hp)
             self.rect.width = max(1, int(self.original_width * ratio))
             self.rect.height = max(1, int(self.original_height * ratio))
+
+    # ==================================================================
+    # DESENHO
+    # ==================================================================
+
     def draw(self, screen: pygame.Surface, camera_x: float = 0, camera_y: float = 0) -> None:
 
         screen_rect = self.rect.copy()
