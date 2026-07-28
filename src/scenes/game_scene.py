@@ -776,6 +776,35 @@ class GameScene(Scene):
                     self.gems.append(
                         Gem(target.x, target.y, target.drop_value))
 
+        # --- campo de forca: pulso de dano em area, atingindo todos os inimigos dentro do raio ---
+        field_radius = self.player.get_passive_value("campo_area")
+
+        if field_radius > 0 and self.player.force_field_timer <= 0:
+            field_damage = self.player.get_passive_value("campo_dano")
+
+            self.player.force_field_timer = settings.FORCE_FIELD_TICK_INTERVAL
+
+            for enemy in enemies:
+                if enemy.is_dead:
+                    continue
+
+                distance = pygame.Vector2(
+                    enemy.x - self.player.x, enemy.y - self.player.y).length()
+
+                if distance <= field_radius:
+                    enemy.take_damage(field_damage)
+                    self.spawn_damage_text(enemy.x, enemy.y, field_damage)
+
+                    if enemy.is_dead:
+                        self.player.register_kill(
+                            enemy.enemy_type, enemy.drop_value)
+                        self.room.register_kill(
+                            enemy.enemy_type, enemy.drop_value)
+
+                        from src.entities.gem import Gem
+                        self.gems.append(
+                            Gem(enemy.x, enemy.y, enemy.drop_value))
+
         # --- inimigos: movimento e colisao com o player ---
         if not self.player.is_dead:  # inimigos param de agir assim que o jogador morre
 

@@ -5,8 +5,8 @@
 ## Estado Atual
 - Projeto: Forgotten Ship (jogo 01 da A1 Game Academy), horde survival espacial em Python/Pygame CE
 - Vinculado a: canal do YouTube (documentação em vídeo) + curso pago futuro
-- Último sprint fechado: [SPRINT_037.md] — Bloco de Eixos do Tiro Base completo (velocidade, penetração, rajada, alcance como passivo)
-- Em andamento agora: Campo de Força (item pendente identificado, faltava na Lista Consolidada) — depois, Sprint de UI (tempo de jogo + salas limpas)
+- Último sprint fechado: [SPRINT_038.md] — Campo de Força (dano em área, tique periódico de 0.5s) — Lista Consolidada original de Power-ups encerrada por completo
+- Em andamento agora: Sprint de UI (tempo de jogo hh:mm:ss + salas limpas) — depois, armas de fogo
 
 ## Repositórios
 - `a1-game-academy`: metodologia e documentação institucional
@@ -56,11 +56,10 @@
 - Pontuação fixa em tela: "Sala: X pts" (destaque) + "Total: Y pts" (discreto), reaproveitando `room.points_by_type`/`player.points_by_type` já existentes, sem nova lógica de acumulação; HUD reposicionado em cascata para abrir espaço no topo (Sprint 035)
 - Tiro Múltiplo: 3 variantes (Diagonal, Paralelo, Quadrantes) em grupo de exclusividade permanente (`EXCLUSIVE_CATEGORIES`) — escolher uma remove as outras duas para sempre da lista de opções; não ocupa slot (`FREE_CATEGORIES`, parte do Tiro base); Quadrantes usa `atan2` para dividir o espaço em 4 fatias, cada uma buscando seu próprio alvo, Frente cobrindo dinamicamente o que sobra (Sprint 036)
 - Eixos do Tiro Base completos: velocidade e penetração parametrizados em `Projectile` (antes hardcoded), alcance recalculado a cada frame via `get_passive_value("range")` (antes constante fixa), rajada implementada como fila de disparos pendentes (`pending_burst_shots`, consumida por `BURST_SHOT_DELAY`) — repetição temporal, composável com Múltiplo (repetição espacial); nenhum ocupa slot (Sprint 037)
+- Campo de Força: sem entidade própria (cálculo direto de distância no loop principal, diferente do Sabre que tem posição orbital); cronômetro único compartilhado (`force_field_timer`) aplica dano a todos os inimigos no raio simultaneamente a cada tique (0.5s), diferente do cooldown por inimigo do Sabre; ocupa slot normal (não é parte do Tiro base) (Sprint 038)
 
 ## Backlog — Bloco de Power-ups Restante
-- Campo de Força — identificado na Sprint 037 como esquecido do registro de pendências (só armas de fogo estavam listadas); único item da Lista Consolidada original ainda não implementado, além das armas de fogo
-- Armas de fogo (Phaser Leve/Canhão de Plasma/Metralhadora de Pulso, munição/recarga)
-(ímã, regeneração, Sabre, Sifão, Escudo Deflector, Tiro Múltiplo e eixos do Tiro Base já implementados — Sprints 028/029/031/032/033/036/037)
+- Armas de fogo (Phaser Leve/Canhão de Plasma/Metralhadora de Pulso, munição/recarga) — único item restante, além da Lista Consolidada original (agora completa: ímã, regeneração, Sabre, Sifão, Escudo Deflector, Tiro Múltiplo, eixos do Tiro Base e Campo de Força — Sprints 028/029/031/032/033/036/037/038)
 
 ## Backlog — UI
 - Tempo de jogo (hh:mm:ss) e número total de salas limpas, exibidos permanentemente na tela

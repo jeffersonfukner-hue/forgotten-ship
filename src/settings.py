@@ -17,7 +17,7 @@ PLAYER_MAX_HP: int = 100
 PLAYER_MAX_LIVES: int = 5
 PLAYER_SHOOT_INTERVAL: float = 0.8  # segundos entre disparos automaticos
 # raio unico: percepcao de inimigos e alcance do tiro
-PLAYER_RANGE_RADIUS: float = 300
+PLAYER_RANGE_RADIUS: float = 100
 PLAYER_KNOCKBACK_FORCE: int = 220
 PLAYER_SHOOT_DAMAGE: int = 10  # dano de cada projetil disparado automaticamente
 
@@ -120,12 +120,22 @@ PASSIVE_POWERUPS: dict = {
         "max_level": 5,
     },
     "range": {
-        "base_value": 300,  # mesmo valor de PLAYER_RANGE_RADIUS, sem regressao no nivel 0
+        "base_value": 100,  # mesmo valor de PLAYER_RANGE_RADIUS, sem regressao no nivel 0
         "increment": 40,    # ganho de alcance por nivel
         "max_level": 5,
     },
+    "campo_area": {
+        # nivel 0 = campo nao existe ainda (raio zero, sem efeito)
+        "base_value": 0,
+        "increment": 40,    # ganho de raio por nivel, em pixels
+        "max_level": 5,
+    },
+    "campo_dano": {
+        "base_value": 4,    # dano aplicado a cada tique (0.5s), no nivel 1
+        "increment": 3,     # ganho de dano por tique, por nivel
+        "max_level": 5,
+    },
 }
-
 # --- agrupa eixos que pertencem a mesma arma, para contagem de slots (uma arma = 1 slot, nao 1 por eixo) ---
 CATEGORY_GROUPS: dict = {
     "sabre_quantidade": "sabre",
@@ -139,6 +149,8 @@ CATEGORY_GROUPS: dict = {
     "tiro_diagonal": "tiro_multiplo",
     "tiro_quadrantes": "tiro_multiplo",
     "tiro_paralelo": "tiro_multiplo",
+    "campo_area": "campo",
+    "campo_dano": "campo",
 }
 
 # --- categorias onde a PRIMEIRA escolha entre os ramos bloqueia os demais para sempre -
@@ -161,6 +173,7 @@ UPGRADE_PREREQUISITES: dict = {
     # cadeia do escudo: reducao -> barreira -> bloqueio, cada camada some-se as anteriores
     "escudo_barreira": ("escudo_reducao", 2),
     "escudo_bloqueio": ("escudo_barreira", 2),
+    "campo_dano": ("campo_area", 1),
 }
 # --- quantos power-ups diferentes (fora "damage") o jogador pode ter equipados, por nivel minimo ---
 POWERUP_SLOTS_BY_LEVEL: list = [
@@ -178,6 +191,7 @@ CATEGORY_LABELS: dict = {
     "sifao": "SF",
     "escudo": "ED",
     "tiro_multiplo": "TM",
+    "campo": "CF",
 }
 
 # --- nomes exibidos na tela de escolha de upgrade (chave -> texto amigavel) ---
@@ -200,6 +214,8 @@ UPGRADE_LABELS: dict = {
     "tiro_penetracao": "Tiro - Penetracao",
     "tiro_rajada": "Tiro - Rajada",
     "range": "Tiro - Alcance",
+    "campo_area": "Campo de Forca - Area",
+    "campo_dano": "Campo de Forca - Dano",
 }
 # --- Gemas: coleta e efeito de arrasto ---
 # distancia (entre centros) para a gema comecar a ser puxada
@@ -257,6 +273,9 @@ SABER_HIT_COOLDOWN: float = 0.5
 
 # --- Tiro (base): rajada dispara N tiros em sequencia rapida, sem re-mirar entre eles ---
 BURST_SHOT_DELAY: float = 0.08  # segundos entre cada disparo dentro da mesma rajada
+
+# --- Campo de Forca: dano em area ao redor do player, aplicado em tiques periodicos ---
+FORCE_FIELD_TICK_INTERVAL: float = 0.5  # segundos entre cada pulso de dano
 
 # --- Sifao de Energia: raio extrator instantaneo, mira o 2o inimigo mais proximo ---
 # segundos entre disparos - cadencia propria, mais lenta que o tiro

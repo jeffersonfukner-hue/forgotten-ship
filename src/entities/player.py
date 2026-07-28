@@ -58,6 +58,9 @@ class Player(Entity):
         self.pending_burst_shots: list = []
         self.burst_timer: float = 0.0
 
+        # --- campo de forca: cronometro do proximo tique de dano em area ---
+        self.force_field_timer: float = 0.0
+
         # --- escudo deflector: barreira atual (HP), tempo desde o ultimo dano, cooldown de bloqueio ---
         self.shield_hp: float = 0.0
         self.shield_regen_timer: float = 0.0
@@ -444,6 +447,9 @@ class Player(Entity):
         if self.burst_timer > 0:
             self.burst_timer -= dt  # intervalo entre tiros da mesma rajada
 
+        if self.force_field_timer > 0:
+            self.force_field_timer -= dt  # intervalo entre tiques do campo de forca
+
         # alcance recalculado todo frame, a partir do nivel atual do power-up "range"
         self.range_radius = self.get_passive_value("range")
 
@@ -652,3 +658,25 @@ class Player(Entity):
 
         screen.blit(
             surface, (center[0] - self.range_radius, center[1] - self.range_radius))
+
+        self.draw_force_field(screen, camera_x, camera_y)
+
+    def draw_force_field(self, screen: pygame.Surface, camera_x: float, camera_y: float) -> None:
+
+        field_radius = self.get_passive_value("campo_area")
+
+        if field_radius <= 0:
+            return  # campo nao adquirido ainda, nada a desenhar
+
+        center = (self.rect.centerx - camera_x, self.rect.centery - camera_y)
+
+        diameter = int(field_radius * 2)
+        surface = pygame.Surface((diameter, diameter), pygame.SRCALPHA)
+
+        pygame.draw.circle(
+            surface, (220, 90, 60, 35), (field_radius, field_radius), field_radius,)
+        pygame.draw.circle(
+            surface, (220, 90, 60, 90), (field_radius, field_radius), field_radius, width=2,)
+
+        screen.blit(
+            surface, (center[0] - field_radius, center[1] - field_radius))
