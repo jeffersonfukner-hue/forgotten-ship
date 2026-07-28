@@ -148,6 +148,9 @@ class GameScene(Scene):
         # --- tempo de jogo: acumula desde o inicio da sessao, nunca reseta entre salas ---
         self.session_time: float = 0.0
 
+        # --- reabastecimento gradual: cronometro entre cada inimigo reposto individualmente ---
+        self.reinforcement_timer: float = 0.0
+
     # ==================================================================
     # CRIACAO E CONFIGURACAO DE SALAS
     # ==================================================================
@@ -155,7 +158,10 @@ class GameScene(Scene):
     def spawn_horde(self, room: Room) -> None:
         """Preenche a sala com o piso minimo de inimigos e inicia o
         cronometro de sobrevivencia. A sala mantem uma quantidade minima
-        de inimigos vivos o tempo todo, reabastecida continuamente."""
+        de inimigos vivos o tempo todo, reabastecida gradualmente (nao
+        em massa) sempre que a populacao cai abaixo do gatilho. O piso
+        cresce a cada reentrada (room.times_cleared), tornando cada
+        revisita mais dificil que a anterior."""
 
         room.survival_start_time = time.time()
         room.time_expired = False
@@ -164,26 +170,35 @@ class GameScene(Scene):
         room.kills_by_type = {}
         room.points_by_type = {}
 
-        enemy_count = settings.HORDE_BASE_ENEMIES
+        # piso cresce por reentrada: primeira visita = base; cada revisita soma mais
+        enemy_count = (settings.HORDE_BASE_ENEMIES
+                       + settings.HORDE_ENEMIES_PER_VISIT * room.times_cleared)
         room.horde_total_enemies = enemy_count
+
+        # zera o cronometro de reabastecimento - nova horda comeca sem reposicao pendente
+        self.reinforcement_timer = 0.0
 
         self._spawn_wave_enemies(room, enemy_count)
 
     def _spawn_wave_enemies(self, room: Room, enemy_count: int) -> None:
         """Sorteia posicoes nas bordas da sala para uma leva de inimigos,
-        respeitando distancia minima das portas. O tipo de cada inimigo e
-        escolhido individualmente, com chance de ser forte crescendo ao
-        longo do tempo de permanencia na sala (ver _pick_enemy_type)."""
+        respeitando distancia minima das portas e evitando nascer em cima
+        de qualquer obstaculo (fixo ou destrutivel) - sem essa checagem, um
+        inimigo podia nascer preso dentro de um obstaculo fixo, incapaz de
+        se mover. O tipo de cada inimigo e escolhido individualmente, com
+        chance de ser forte crescendo ao longo do tempo de permanencia na
+        sala (ver _pick_enemy_type)."""
 
         from src.entities.enemy import Enemy
 
         left, top, right, bottom = room.get_bounds()
 
         door_positions = [door.rect.center for door in room.get_doors()]
+        obstacle_rects = [o.rect for o in room.get_obstacles()]
 
         for _ in range(enemy_count):
 
-            # tenta ate 20 vezes achar uma posicao longe o suficiente das portas
+            # tenta ate 20 vezes achar uma posicao longe das portas e fora de obstaculos
             for _attempt in range(20):
 
                 edge = random.randint(0, 3)
@@ -203,7 +218,13 @@ class GameScene(Scene):
                     for dx, dy in door_positions
                 )
 
-                if far_enough or not door_positions:
+                # usa o maior tamanho possivel de inimigo (strong) para a checagem,
+                # garantindo folga suficiente independente de qual tipo for sorteado
+                candidate_rect = pygame.Rect(x, y, 18, 18)
+                overlaps_obstacle = any(
+                    candidate_rect.colliderect(rect) for rect in obstacle_rects)
+
+                if (far_enough or not door_positions) and not overlaps_obstacle:
                     break
 
             enemy_type = self._pick_enemy_type(room)
@@ -533,13 +554,24 @@ class GameScene(Scene):
         # --- verifica se o jogo terminou de vez (sem vidas restantes) ---
         game_over = self.player.is_dead and not self.player.has_lives_left()
 
-        # --- piso continuo: reabastece inimigos ate manter o minimo vivo ---
+        # --- reabastecimento gradual: so comeca quando >=20% do piso ja morreu, ---
+        # --- repondo 1 inimigo por vez (nao tudo de uma vez - "tudo de uma vez" ---
+        # --- fica reservado para o futuro modo de dificuldade "swarm") ---
+        if self.reinforcement_timer > 0:
+            self.reinforcement_timer -= dt
+
         current_count = len(self.room.get_enemies())
         missing = self.room.horde_total_enemies - current_count
 
-        if (missing > 0 and not self.room.cleared
-                and not self.room.time_expired and not game_over):
-            self._spawn_wave_enemies(self.room, missing)
+        trigger_count = max(1, round(
+            self.room.horde_total_enemies * settings.HORDE_REINFORCEMENT_TRIGGER_RATIO))
+
+        can_reinforce = (missing >= trigger_count and not self.room.cleared
+                         and not self.room.time_expired and not game_over)
+
+        if can_reinforce and self.reinforcement_timer <= 0:
+            self._spawn_wave_enemies(self.room, 1)
+            self.reinforcement_timer = settings.HORDE_REINFORCEMENT_INTERVAL
 
         # --- condicao de vitoria: sobreviver por tempo determinado ---
         if game_over:

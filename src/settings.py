@@ -360,9 +360,15 @@ GEM_PULL_MAX_SPEED: float = 500
 
 # --- Horda: geracao de inimigos ---
 HORDE_BASE_ENEMIES: int = 12  # quantidade de inimigos na primeira horda de uma sala
-# incremento de inimigos a cada revisita (rejogabilidade) - constante ja existe mas
-# ainda nao esta conectada em spawn_horde(); ver Backlog em CONTEXTO_PROJETO.md
+# incremento de inimigos a cada revisita (rejogabilidade) - conectado em spawn_horde(),
+# multiplicado por room.times_cleared (quantidade de vezes que a sala ja foi vencida)
 HORDE_ENEMIES_PER_VISIT: int = 6
+# fracao do piso de inimigos que precisa estar morta para iniciar o reabastecimento
+# gradual (0.2 = 20%) - antes disso, a sala fica sem reabastecer, dando respiro real
+HORDE_REINFORCEMENT_TRIGGER_RATIO: float = 0.2
+# segundos entre cada inimigo reabastecido individualmente - reabastecimento gradual,
+# nao em massa (reabastecer tudo de uma vez fica reservado para o futuro modo "swarm")
+HORDE_REINFORCEMENT_INTERVAL: float = 1.0
 # distancia minima entre um inimigo e qualquer porta ao nascer
 SAFE_SPAWN_DISTANCE: float = 120
 # segundos que o jogador precisa sobreviver para limpar a sala
