@@ -135,7 +135,26 @@ PASSIVE_POWERUPS: dict = {
         "increment": 3,     # ganho de dano por tique, por nivel
         "max_level": 5,
     },
+    "phaser_capacidade": {
+        # nivel 0 = arma nao existe (base_value nao usado, existencia checada por nivel > 0)
+        "base_value": 4,
+        "increment": 1,     # nivel 1 = 5 tiros, nivel 5 = 9 tiros por carregador
+        "max_level": 5,
+    },
+    "phaser_dano": {
+        # dano por tiro, no nivel 1 (arma ja atira com esse valor de base)
+        "base_value": 5,
+        "increment": 3,     # ganho de dano por nivel
+        "max_level": 5,
+    },
+    "phaser_reload": {
+        "base_value": 2.0,  # segundos de recarga, no nivel 1
+        # cada nivel reduz o tempo de recarga (reload mais rapido)
+        "increment": -0.3,
+        "max_level": 5,
+    },
 }
+
 # --- agrupa eixos que pertencem a mesma arma, para contagem de slots (uma arma = 1 slot, nao 1 por eixo) ---
 CATEGORY_GROUPS: dict = {
     "sabre_quantidade": "sabre",
@@ -151,6 +170,9 @@ CATEGORY_GROUPS: dict = {
     "tiro_paralelo": "tiro_multiplo",
     "campo_area": "campo",
     "campo_dano": "campo",
+    "phaser_capacidade": "phaser",
+    "phaser_dano": "phaser",
+    "phaser_reload": "phaser",
 }
 
 # --- categorias onde a PRIMEIRA escolha entre os ramos bloqueia os demais para sempre -
@@ -174,6 +196,8 @@ UPGRADE_PREREQUISITES: dict = {
     "escudo_barreira": ("escudo_reducao", 2),
     "escudo_bloqueio": ("escudo_barreira", 2),
     "campo_dano": ("campo_area", 1),
+    "phaser_dano": ("phaser_capacidade", 1),
+    "phaser_reload": ("phaser_capacidade", 1),
 }
 # --- quantos power-ups diferentes (fora "damage") o jogador pode ter equipados, por nivel minimo ---
 POWERUP_SLOTS_BY_LEVEL: list = [
@@ -192,6 +216,7 @@ CATEGORY_LABELS: dict = {
     "escudo": "ED",
     "tiro_multiplo": "TM",
     "campo": "CF",
+    "phaser": "PL",
 }
 
 # --- nomes exibidos na tela de escolha de upgrade (chave -> texto amigavel) ---
@@ -216,6 +241,9 @@ UPGRADE_LABELS: dict = {
     "range": "Tiro - Alcance",
     "campo_area": "Campo de Forca - Area",
     "campo_dano": "Campo de Forca - Dano",
+    "phaser_capacidade": "Phaser Leve - Capacidade do Carregador",
+    "phaser_dano": "Phaser Leve - Dano",
+    "phaser_reload": "Phaser Leve - Velocidade de Recarga",
 }
 # --- Gemas: coleta e efeito de arrasto ---
 # distancia (entre centros) para a gema comecar a ser puxada
@@ -276,6 +304,10 @@ BURST_SHOT_DELAY: float = 0.08  # segundos entre cada disparo dentro da mesma ra
 
 # --- Campo de Forca: dano em area ao redor do player, aplicado em tiques periodicos ---
 FORCE_FIELD_TICK_INTERVAL: float = 0.5  # segundos entre cada pulso de dano
+
+# --- Phaser Leve: municao limitada, mira o 3o inimigo mais proximo ---
+# segundos entre tiros, enquanto houver municao no carregador
+PHASER_FIRE_RATE: float = 0.3
 
 # --- Sifao de Energia: raio extrator instantaneo, mira o 2o inimigo mais proximo ---
 # segundos entre disparos - cadencia propria, mais lenta que o tiro

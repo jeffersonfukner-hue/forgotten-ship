@@ -5,8 +5,8 @@
 ## Estado Atual
 - Projeto: Forgotten Ship (jogo 01 da A1 Game Academy), horde survival espacial em Python/Pygame CE
 - Vinculado a: canal do YouTube (documentação em vídeo) + curso pago futuro
-- Último sprint fechado: [SPRINT_039.md] — Tempo de sessão (hh:mm:ss) e contador de salas limpas na UI, reaproveitando dados já existentes
-- Em andamento agora: armas de fogo (Phaser Leve, Canhão de Plasma, Metralhadora de Pulso) — único bloco restante de power-ups
+- Último sprint fechado: [SPRINT_040.md] — Phaser Leve (primeira arma com munição/recarga), mira o 3º inimigo mais próximo
+- Em andamento agora: Canhão de Plasma (segunda arma de fogo, reaproveitando o padrão de munição/recarga)
 
 ## Repositórios
 - `a1-game-academy`: metodologia e documentação institucional
@@ -58,9 +58,10 @@
 - Eixos do Tiro Base completos: velocidade e penetração parametrizados em `Projectile` (antes hardcoded), alcance recalculado a cada frame via `get_passive_value("range")` (antes constante fixa), rajada implementada como fila de disparos pendentes (`pending_burst_shots`, consumida por `BURST_SHOT_DELAY`) — repetição temporal, composável com Múltiplo (repetição espacial); nenhum ocupa slot (Sprint 037)
 - Campo de Força: sem entidade própria (cálculo direto de distância no loop principal, diferente do Sabre que tem posição orbital); cronômetro único compartilhado (`force_field_timer`) aplica dano a todos os inimigos no raio simultaneamente a cada tique (0.5s), diferente do cooldown por inimigo do Sabre; ocupa slot normal (não é parte do Tiro base) (Sprint 038)
 - Tempo de sessão e salas limpas: `session_time` vive na `GameScene` (confirmado via `game.py` que ela não é recriada durante a sessão), incrementado antes até da pausa de upgrade; salas limpas reaproveita `room.times_cleared` já existente, somado via `sum()` sobre todas as salas (Sprint 039)
+- Phaser Leve: primeira arma com munição/recarga — 3 condições combinadas em `ready_to_fire_phaser()` (munição > 0, cadência liberada, fora de reload); mira o 3º inimigo mais próximo; carregador enchido automaticamente ao upar capacidade; `Projectile` ganhou parâmetro `color` (Phaser em azul claro, tiro principal amarelo por padrão) (Sprint 040)
 
 ## Backlog — Bloco de Power-ups Restante
-- Armas de fogo (Phaser Leve/Canhão de Plasma/Metralhadora de Pulso, munição/recarga) — único item restante, além da Lista Consolidada original (agora completa: ímã, regeneração, Sabre, Sifão, Escudo Deflector, Tiro Múltiplo, eixos do Tiro Base e Campo de Força — Sprints 028/029/031/032/033/036/037/038)
+- Canhão de Plasma (carregador maior, dano mais alto, reload mais lento) e Metralhadora de Pulso (cadência muito alta) — reaproveitam o padrão de munição/recarga validado no Phaser Leve (Sprint 040)
 
 ## Bugs e Refinamentos Pendentes (Sprint futura de correção — Obstáculos e Consumíveis)
 - Bug: obstáculo destrutível pode nascer sobre a posição de entrada de uma porta, prendendo o player sem chance de escapar do dano

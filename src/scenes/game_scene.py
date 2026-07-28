@@ -810,6 +810,29 @@ class GameScene(Scene):
                         self.gems.append(
                             Gem(enemy.x, enemy.y, enemy.drop_value))
 
+        # --- phaser leve: municao limitada, mira o 3o inimigo mais proximo ---
+        if self.player.ready_to_fire_phaser():
+            ordered_enemies = self.get_enemies_by_distance(enemies)
+
+            if len(ordered_enemies) >= 3:
+                target = ordered_enemies[2]
+
+                direction = pygame.Vector2(
+                    target.x - self.player.x, target.y - self.player.y)
+
+                if direction.length_squared() > 0:
+                    direction = direction.normalize()
+                    phaser_damage = self.player.get_passive_value(
+                        "phaser_dano")
+
+                    from src.entities.projectile import Projectile
+                    self.projectiles.append(Projectile(
+                        self.player.x, self.player.y, direction,
+                        max_range=self.player.range_radius,
+                        damage=phaser_damage, pierce=1, color=(100, 200, 255)))
+
+                    self.player.confirm_phaser_shot()
+
         # --- inimigos: movimento e colisao com o player ---
         if not self.player.is_dead:  # inimigos param de agir assim que o jogador morre
 
@@ -1121,12 +1144,21 @@ class GameScene(Scene):
 
     def draw_room_and_lives(self, screen: pygame.Surface) -> None:
 
+        base_text = f"Room {self.room.room_id}  |  Vidas: {self.player.lives}/{self.player.max_lives}"
+
+        # phaser leve: mostra municao atual ou aviso de recarga, so se a arma ja foi adquirida
+        if self.player.passive_levels["phaser_capacidade"] > 0:
+            if self.player.phaser_reload_timer > 0:
+                base_text += "  |  Phaser: recarregando..."
+            else:
+                capacity = int(
+                    self.player.get_passive_value("phaser_capacidade"))
+                base_text += f"  |  Phaser: {self.player.phaser_ammo}/{capacity}"
+
         font = pygame.font.Font(None, 26)
-        text = font.render(
-            f"Room {self.room.room_id}  |  Vidas: {self.player.lives}/{self.player.max_lives}",
-            True, (255, 255, 255))
+        text = font.render(base_text, True, (255, 255, 255))
         text_rect = text.get_rect()
-        text_rect.topleft = (20, 82)
+        text_rect.topleft = (20, 88)
         screen.blit(text, text_rect)
 
     # ==================================================================

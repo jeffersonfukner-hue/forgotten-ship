@@ -8,12 +8,15 @@ class Projectile(Entity):
 
     def __init__(self, x: float, y: float, direction: pygame.Vector2,
                  damage: int = None, max_range: float = 100, pierce: int = 1,
-                 speed: float = 400) -> None:
+                 speed: float = 400, color: tuple = (255, 200, 80)) -> None:
         super().__init__(x=x, y=y, width=8, height=8,)
 
         # --- movimento ---
         self.speed: float = speed
         self.direction: pygame.Vector2 = direction
+
+        # --- visual: cor diferencia de qual arma o projetil veio ---
+        self.color: tuple = color
 
         # --- combate ---
         # damage=None usa o valor padrao de settings; permite sobrescrever por chamada se necessario
@@ -68,4 +71,4 @@ class Projectile(Entity):
         screen_center = (
             self.rect.centerx - camera_x, self.rect.centery - camera_y)
 
-        pygame.draw.circle(screen, (255, 220, 80), screen_center, 4,)
+        pygame.draw.circle(screen, self.color, screen_center, 4,)

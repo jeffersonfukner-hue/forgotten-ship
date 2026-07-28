@@ -54,6 +54,11 @@ class Player(Entity):
         self.siphon_cooldown: float = 0.0
         self.siphon_interval: float = settings.SIPHON_INTERVAL
 
+        # --- combate: phaser leve, municao limitada + recarga ---
+        self.phaser_ammo: int = 0
+        self.phaser_fire_cooldown: float = 0.0
+        self.phaser_reload_timer: float = 0.0
+
         # --- combate: rajada de tiro, dispara N vezes em sequencia sem re-mirar ---
         self.pending_burst_shots: list = []
         self.burst_timer: float = 0.0
@@ -196,6 +201,19 @@ class Player(Entity):
 
         self.siphon_cooldown = self.siphon_interval
 
+    def ready_to_fire_phaser(self) -> bool:
+
+        return (self.phaser_ammo > 0 and self.phaser_fire_cooldown <= 0
+                and self.phaser_reload_timer <= 0)
+
+    def confirm_phaser_shot(self) -> None:
+
+        self.phaser_ammo -= 1
+        self.phaser_fire_cooldown = settings.PHASER_FIRE_RATE
+
+        if self.phaser_ammo <= 0:
+            self.phaser_reload_timer = self.get_passive_value("phaser_reload")
+
     def queue_burst(self, shots: list, repeats: int) -> None:
 
         # guarda 'repeats' copias da mesma lista de disparos, para reproduzir
@@ -335,6 +353,12 @@ class Player(Entity):
         else:
             self.upgrade_passive(key)
 
+            if key == "phaser_capacidade":
+                # arma nova ou carregador maior: enche o pente por completo
+                self.phaser_ammo = int(
+                    self.get_passive_value("phaser_capacidade"))
+                self.phaser_reload_timer = 0.0
+
     def upgrade_passive(self, key: str) -> None:
 
         # aumenta o nivel de um power-up passivo, respeitando o teto configurado
@@ -443,6 +467,16 @@ class Player(Entity):
 
         if self.siphon_cooldown > 0:
             self.siphon_cooldown -= dt  # cooldown do sifao corre independente, cadencia propria
+
+        if self.phaser_fire_cooldown > 0:
+            self.phaser_fire_cooldown -= dt  # cadencia entre tiros dentro do mesmo carregador
+
+        if self.phaser_reload_timer > 0:
+            self.phaser_reload_timer -= dt  # tempo de recarga apos esvaziar o carregador
+
+            if self.phaser_reload_timer <= 0:
+                self.phaser_ammo = int(
+                    self.get_passive_value("phaser_capacidade"))
 
         if self.burst_timer > 0:
             self.burst_timer -= dt  # intervalo entre tiros da mesma rajada
