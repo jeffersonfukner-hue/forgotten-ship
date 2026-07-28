@@ -135,6 +135,9 @@ class GameScene(Scene):
         # --- painel de debug: TAB expande/recolhe o historico detalhado (estatisticas, salas) ---
         self.debug_expanded: bool = False
 
+        # --- tempo de jogo: acumula desde o inicio da sessao, nunca reseta entre salas ---
+        self.session_time: float = 0.0
+
     # ==================================================================
     # CRIACAO E CONFIGURACAO DE SALAS
     # ==================================================================
@@ -475,6 +478,8 @@ class GameScene(Scene):
             self.upgrade_choices = None
 
     def update(self, dt: float) -> None:
+
+        self.session_time += dt
 
         # ao detectar level up pendente, sorteia as opcoes e pausa o jogo ate a escolha
         if self.player.level_up_pending and self.upgrade_choices is None:
@@ -1002,6 +1007,7 @@ class GameScene(Scene):
 
         # --- elementos essenciais, sempre visiveis ---
         self.draw_score(screen)
+        self.draw_session_info(screen)
         self.draw_hp_bar(screen)
         self.draw_progress_bar(screen)
         self.draw_room_and_lives(screen)
@@ -1050,6 +1056,22 @@ class GameScene(Scene):
         text_total_rect = text_total.get_rect()
         text_total_rect.topleft = (20, 20)
         screen.blit(text_total, text_total_rect)
+
+    def draw_session_info(self, screen: pygame.Surface) -> None:
+
+        total_seconds = int(self.session_time)
+        hours, remainder = divmod(total_seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+
+        rooms_cleared = sum(room.times_cleared for room in self.rooms.values())
+
+        font = pygame.font.Font(None, 18)
+        text = font.render(
+            f"{hours:02d}:{minutes:02d}:{seconds:02d}  |  Salas limpas: {rooms_cleared}",
+            True, (170, 170, 170))
+        text_rect = text.get_rect()
+        text_rect.topright = (settings.WINDOW_WIDTH - 20, 2)
+        screen.blit(text, text_rect)
 
     def draw_hp_bar(self, screen: pygame.Surface) -> None:
 

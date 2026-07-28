@@ -5,8 +5,8 @@
 ## Estado Atual
 - Projeto: Forgotten Ship (jogo 01 da A1 Game Academy), horde survival espacial em Python/Pygame CE
 - Vinculado a: canal do YouTube (documentação em vídeo) + curso pago futuro
-- Último sprint fechado: [SPRINT_038.md] — Campo de Força (dano em área, tique periódico de 0.5s) — Lista Consolidada original de Power-ups encerrada por completo
-- Em andamento agora: Sprint de UI (tempo de jogo hh:mm:ss + salas limpas) — depois, armas de fogo
+- Último sprint fechado: [SPRINT_039.md] — Tempo de sessão (hh:mm:ss) e contador de salas limpas na UI, reaproveitando dados já existentes
+- Em andamento agora: armas de fogo (Phaser Leve, Canhão de Plasma, Metralhadora de Pulso) — único bloco restante de power-ups
 
 ## Repositórios
 - `a1-game-academy`: metodologia e documentação institucional
@@ -57,12 +57,10 @@
 - Tiro Múltiplo: 3 variantes (Diagonal, Paralelo, Quadrantes) em grupo de exclusividade permanente (`EXCLUSIVE_CATEGORIES`) — escolher uma remove as outras duas para sempre da lista de opções; não ocupa slot (`FREE_CATEGORIES`, parte do Tiro base); Quadrantes usa `atan2` para dividir o espaço em 4 fatias, cada uma buscando seu próprio alvo, Frente cobrindo dinamicamente o que sobra (Sprint 036)
 - Eixos do Tiro Base completos: velocidade e penetração parametrizados em `Projectile` (antes hardcoded), alcance recalculado a cada frame via `get_passive_value("range")` (antes constante fixa), rajada implementada como fila de disparos pendentes (`pending_burst_shots`, consumida por `BURST_SHOT_DELAY`) — repetição temporal, composável com Múltiplo (repetição espacial); nenhum ocupa slot (Sprint 037)
 - Campo de Força: sem entidade própria (cálculo direto de distância no loop principal, diferente do Sabre que tem posição orbital); cronômetro único compartilhado (`force_field_timer`) aplica dano a todos os inimigos no raio simultaneamente a cada tique (0.5s), diferente do cooldown por inimigo do Sabre; ocupa slot normal (não é parte do Tiro base) (Sprint 038)
+- Tempo de sessão e salas limpas: `session_time` vive na `GameScene` (confirmado via `game.py` que ela não é recriada durante a sessão), incrementado antes até da pausa de upgrade; salas limpas reaproveita `room.times_cleared` já existente, somado via `sum()` sobre todas as salas (Sprint 039)
 
 ## Backlog — Bloco de Power-ups Restante
 - Armas de fogo (Phaser Leve/Canhão de Plasma/Metralhadora de Pulso, munição/recarga) — único item restante, além da Lista Consolidada original (agora completa: ímã, regeneração, Sabre, Sifão, Escudo Deflector, Tiro Múltiplo, eixos do Tiro Base e Campo de Força — Sprints 028/029/031/032/033/036/037/038)
-
-## Backlog — UI
-- Tempo de jogo (hh:mm:ss) e número total de salas limpas, exibidos permanentemente na tela
 
 ## Bugs e Refinamentos Pendentes (Sprint futura de correção — Obstáculos e Consumíveis)
 - Bug: obstáculo destrutível pode nascer sobre a posição de entrada de uma porta, prendendo o player sem chance de escapar do dano
