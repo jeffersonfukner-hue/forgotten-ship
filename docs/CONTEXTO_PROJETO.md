@@ -5,8 +5,8 @@
 ## Estado Atual
 - Projeto: Forgotten Ship (jogo 01 da A1 Game Academy), horde survival espacial em Python/Pygame CE
 - Vinculado a: canal do YouTube (documentação em vídeo) + curso pago futuro
-- Último sprint fechado: [SPRINT_035.md] — Pontuação fixa em tela (sala + total, tempo real), reaproveitando dados já existentes
-- Em andamento agora: retomar Bloco de Power-ups com o Tiro Múltiplo
+- Último sprint fechado: [SPRINT_036.md] — Tiro Múltiplo (Diagonal, Paralelo, Quadrantes), grupo de exclusividade permanente entre ramos
+- Em andamento agora: Bloco de Eixos do Tiro Base (velocidade, penetração, rajada, alcance como passivo) — encerrado o Bloco de Power-ups original
 
 ## Repositórios
 - `a1-game-academy`: metodologia e documentação institucional
@@ -54,6 +54,13 @@
 - Escudo Deflector: 3 camadas cumulativas (não substitutivas) — redução %, barreira com transbordo, bloqueio periódico — desbloqueadas em cadeia via pré-requisito; `take_damage()` retorna tupla `(dano_real, foi_bloqueado)` para feedback visual diferenciado; barreira regenera com delay de 3s sem dano (Sprint 033)
 - Painel de debug reorganizado: resumo compacto sempre visível (`CATEGORY_LABELS`, sigla + maior nível por categoria equipada via `get_category_max_level()`), histórico completo (estatísticas, salas, visitas) expansível via tecla `TAB` (`debug_expanded`) — nenhum dado descartado, só reorganização de exibição (Sprint 034)
 - Pontuação fixa em tela: "Sala: X pts" (destaque) + "Total: Y pts" (discreto), reaproveitando `room.points_by_type`/`player.points_by_type` já existentes, sem nova lógica de acumulação; HUD reposicionado em cascata para abrir espaço no topo (Sprint 035)
+- Tiro Múltiplo: 3 variantes (Diagonal, Paralelo, Quadrantes) em grupo de exclusividade permanente (`EXCLUSIVE_CATEGORIES`) — escolher uma remove as outras duas para sempre da lista de opções; não ocupa slot (`FREE_CATEGORIES`, parte do Tiro base); Quadrantes usa `atan2` para dividir o espaço em 4 fatias, cada uma buscando seu próprio alvo, Frente cobrindo dinamicamente o que sobra (Sprint 036)
+
+## Backlog — Bloco de Eixos do Tiro Base (PRIORIDADE — antes de qualquer arma nova)
+- Velocidade do projétil — ainda não implementado
+- Penetração — conceito já existia desde VISAO.md v2.9 (Projectile já preparado tecnicamente para múltiplos impactos), ainda não exposto como upgrade
+- Rajada (Burst): nível 1 = 2 disparos por gatilho, nível 2 = 3, até nível 5 = 6 — eixo temporal, diferente do Múltiplo (espacial)
+- Alcance como power-up passivo: `PLAYER_RANGE_RADIUS` hoje é constante fixa, deve virar eixo em `PASSIVE_POWERUPS` (mesmo padrão do ímã)
 
 ## Bugs e Refinamentos Pendentes (Sprint futura de correção — Obstáculos e Consumíveis)
 - Bug: obstáculo destrutível pode nascer sobre a posição de entrada de uma porta, prendendo o player sem chance de escapar do dano
@@ -66,7 +73,7 @@
 - Novo eixo do Sifão de Energia: `siphon_cadencia` (reduz `siphon_interval` por nível, mesmo espírito da Cadência do Tiro base) — deve seguir o mesmo pré-requisito de `siphon_dano` nível 1 já usado pelos outros eixos secundários do Sifão
 
 ## Backlog — Blocos Pendentes (VISAO.md v4.9)
-- Power-ups: armas de fogo (Phaser Leve/Canhão de Plasma/Metralhadora de Pulso, munição/recarga), tiro múltiplo (ímã, regeneração, Sabre, Sifão e Escudo Deflector já implementados — Sprints 028/029/031/032/033)
+- Power-ups: armas de fogo (Phaser Leve/Canhão de Plasma/Metralhadora de Pulso, munição/recarga) — único item restante da Lista Consolidada original (ímã, regeneração, Sabre, Sifão, Escudo Deflector e Tiro Múltiplo já implementados — Sprints 028/029/031/032/033/036)
 - Boss Entities: mini-bosses, boss com barra de fases e stagger
 - Ship Restoration: mecânica narrativa central (reparo da nave = defesa)
 

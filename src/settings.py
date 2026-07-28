@@ -86,6 +86,22 @@ PASSIVE_POWERUPS: dict = {
         "increment": 0,
         "max_level": 1,
     },
+    "tiro_diagonal": {
+        # nivel 1 = 1 par de tiros diagonais (3 tiros total, com o reto)
+        "base_value": 1,
+        "increment": 1,     # cada nivel soma mais um par angulado
+        "max_level": 5,
+    },
+    "tiro_quadrantes": {
+        "base_value": 1,    # apenas marca o nivel (1=Tras, 2=+Cima, 3=+Baixo)
+        "increment": 1,
+        "max_level": 3,     # forca/velocidade ja vem dos upgrades globais existentes
+    },
+    "tiro_paralelo": {
+        "base_value": 1,    # nivel 1 = 2 tiros em paralelo
+        "increment": 1,     # nivel 2 = 3 tiros, ate nivel 5 = 6 tiros
+        "max_level": 5,
+    },
 }
 
 # --- agrupa eixos que pertencem a mesma arma, para contagem de slots (uma arma = 1 slot, nao 1 por eixo) ---
@@ -98,7 +114,19 @@ CATEGORY_GROUPS: dict = {
     "escudo_reducao": "escudo",
     "escudo_barreira": "escudo",
     "escudo_bloqueio": "escudo",
+    "tiro_diagonal": "tiro_multiplo",
+    "tiro_quadrantes": "tiro_multiplo",
+    "tiro_paralelo": "tiro_multiplo",
 }
+
+# --- categorias onde a PRIMEIRA escolha entre os ramos bloqueia os demais para sempre -
+# diferente de pre-requisito (que so exige nivel minimo em outro eixo), aqui os ramos
+# irmaos se tornam inacessiveis assim que qualquer um deles for escolhido ---
+EXCLUSIVE_CATEGORIES: set = {"tiro_multiplo"}
+
+# --- categorias que nunca ocupam slot de power-up, mesmo apos equipadas -
+# tiro multiplo e parte do Tiro (base), que ja nao ocupa slot como "damage" ---
+FREE_CATEGORIES: set = {"tiro_multiplo"}
 
 # --- pre-requisitos: eixo -> (eixo do qual depende, nivel minimo exigido) ---
 # eixo com pre-requisito so aparece como opcao depois que o eixo base atingir o nivel exigido -
@@ -126,6 +154,7 @@ CATEGORY_LABELS: dict = {
     "sabre": "S",
     "sifao": "SF",
     "escudo": "ED",
+    "tiro_multiplo": "TM",
 }
 
 # --- nomes exibidos na tela de escolha de upgrade (chave -> texto amigavel) ---
@@ -141,6 +170,9 @@ UPGRADE_LABELS: dict = {
     "escudo_reducao": "Escudo Deflector - Reducao de Dano",
     "escudo_barreira": "Escudo Deflector - Barreira de Energia",
     "escudo_bloqueio": "Escudo Deflector - Bloqueio Periodico",
+    "tiro_diagonal": "Tiro Multiplo - Diagonal",
+    "tiro_quadrantes": "Tiro Multiplo - Quadrantes",
+    "tiro_paralelo": "Tiro Multiplo - Paralelo",
 }
 # --- Gemas: coleta e efeito de arrasto ---
 # distancia (entre centros) para a gema comecar a ser puxada
@@ -153,7 +185,7 @@ GEM_PULL_ACCELERATION: float = 400
 GEM_PULL_MAX_SPEED: float = 500
 
 # --- Horda: geracao de inimigos ---
-HORDE_BASE_ENEMIES: int = 12  # quantidade de inimigos na primeira horda de uma sala
+HORDE_BASE_ENEMIES: int = 30  # quantidade de inimigos na primeira horda de uma sala
 # incremento de inimigos a cada revisita (rejogabilidade)
 HORDE_ENEMIES_PER_VISIT: int = 6
 # distancia minima entre um inimigo e qualquer porta ao nascer

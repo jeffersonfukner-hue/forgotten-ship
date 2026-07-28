@@ -258,7 +258,10 @@ class Player(Entity):
 
         equipped_categories = self.get_equipped_categories()
         max_slots = self.get_max_powerup_slots()
-        slots_full = len(equipped_categories) >= max_slots
+
+        # categorias livres (ex: tiro_multiplo) nao contam para o teto de slots
+        countable_equipped = equipped_categories - settings.FREE_CATEGORIES
+        slots_full = len(countable_equipped) >= max_slots
 
         for key in settings.PASSIVE_POWERUPS:
 
@@ -275,11 +278,22 @@ class Player(Entity):
 
             category = self.get_category(key)
 
+            # grupos de exclusividade: se um ramo irmao ja foi escolhido, este some para sempre
+            if category in settings.EXCLUSIVE_CATEGORIES and self.passive_levels[key] == 0:
+                sibling_chosen = any(
+                    self.passive_levels[sibling] > 0
+                    for sibling, sibling_category in settings.CATEGORY_GROUPS.items()
+                    if sibling_category == category and sibling != key
+                )
+
+                if sibling_chosen:
+                    continue
+
             if category in equipped_categories:
                 # arma ja equipada, eixo livre pra evoluir
                 available.append(key)
-            elif not slots_full:
-                # arma nova, so aparece se ainda ha slot livre
+            elif category in settings.FREE_CATEGORIES or not slots_full:
+                # arma nova: categorias livres sempre aparecem; as demais, so se ha slot
                 available.append(key)
 
         return available
@@ -313,6 +327,52 @@ class Player(Entity):
         config = settings.PASSIVE_POWERUPS[key]
 
         return config["base_value"] + config["increment"] * self.passive_levels[key]
+
+    def get_shot_vectors(self, base_direction: pygame.Vector2) -> list[dict]:
+        """Retorna a lista de disparos a serem criados neste ciclo de tiro,
+        cada um como {"direction": Vector2, "offset": Vector2}. Sem
+        nenhuma variante de Tiro Multiplo escolhida, retorna apenas o
+        tiro reto original (offset zero), preservando o comportamento
+        padrao do jogo antes desta feature."""
+
+        for key in ("tiro_diagonal",  "tiro_paralelo"):
+            if self.passive_levels[key] > 0:
+                active_variant = key
+                break
+        else:
+            return [{"direction": base_direction, "offset": pygame.Vector2(0, 0)}]
+
+        level = self.passive_levels[active_variant]
+        zero_offset = pygame.Vector2(0, 0)
+
+        if active_variant == "tiro_diagonal":
+
+            shots = [{"direction": base_direction, "offset": zero_offset}]
+            pairs = int(self.get_passive_value("tiro_diagonal"))
+
+            for i in range(pairs):
+                angle = 20 + i * 15  # graus - cada par adicional abre mais o leque
+                shots.append({"direction": base_direction.rotate(
+                    angle), "offset": zero_offset})
+                shots.append(
+                    {"direction": base_direction.rotate(-angle), "offset": zero_offset})
+
+            return shots
+
+        if active_variant == "tiro_paralelo":
+
+            count = int(self.get_passive_value("tiro_paralelo"))
+            perpendicular = pygame.Vector2(-base_direction.y, base_direction.x)
+            spacing = 14  # pixels entre cada tiro paralelo
+            start = -(count - 1) / 2
+
+            return [
+                {"direction": base_direction,
+                    "offset": perpendicular * spacing * (start + i)}
+                for i in range(count)
+            ]
+
+        return [{"direction": base_direction, "offset": zero_offset}]
 
     def update_regen(self, dt: float) -> None:
 

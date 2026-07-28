@@ -1,5 +1,6 @@
 import time
 import random
+import math
 
 import pygame
 
@@ -383,6 +384,22 @@ class GameScene(Scene):
 
         return ordered[0] if ordered else None
 
+    def _get_quadrant(self, dx: float, dy: float) -> str:
+        """Classifica um vetor (delta ate o alvo) em um dos 4 quadrantes
+        fixos do mundo, cada um cobrindo 90 graus: direita (a fatia que
+        nunca tem upgrade proprio, sempre reservada a Frente), baixo,
+        esquerda (Tras) e cima."""
+
+        angle = math.degrees(math.atan2(dy, dx))
+
+        if -45 <= angle < 45:
+            return "direita"
+        if 45 <= angle < 135:
+            return "baixo"
+        if angle >= 135 or angle < -135:
+            return "esquerda"
+        return "cima"
+
     def _has_line_of_sight(self, start: tuple, end: tuple) -> bool:
         """Verifica se a linha reta entre dois pontos e bloqueada por
         algum obstaculo da sala atual, usando o algoritmo de clipping
@@ -505,25 +522,86 @@ class GameScene(Scene):
 
         enemies = self.room.get_enemies()
 
-        # --- disparo automatico do player ---
+        # --- disparo automatico do player (1 ou mais projeteis, conforme Tiro Multiplo) ---
         if self.player.ready_to_shoot() and enemies:
-            target = self.find_closest_enemy(enemies)
 
-            if target is not None:
+            quadrant_level = self.player.passive_levels["tiro_quadrantes"]
 
-                direction = pygame.Vector2(
-                    target.x - self.player.x, target.y - self.player.y)
+            if quadrant_level > 0:
+                # --- Quadrantes: cada direcao liberada mira seu proprio alvo mais proximo,
+                # dentro da sua fatia de 90 graus; a Frente cobre o que sobrar ---
+                ordered_enemies = self.get_enemies_by_distance(enemies)
 
-                if direction.length_squared() > 0:
-                    direction = direction.normalize()
+                claimed_quadrants = []
+                if quadrant_level >= 1:
+                    claimed_quadrants.append("esquerda")
+                if quadrant_level >= 2:
+                    claimed_quadrants.append("cima")
+                if quadrant_level >= 3:
+                    claimed_quadrants.append("baixo")
 
+                directions = []
+
+                for quadrant in claimed_quadrants:
+                    dedicated_target = next(
+                        (e for e in ordered_enemies
+                         if self._get_quadrant(e.x - self.player.x, e.y - self.player.y) == quadrant),
+                        None)
+
+                    if dedicated_target is not None:
+                        direction = pygame.Vector2(
+                            dedicated_target.x - self.player.x, dedicated_target.y - self.player.y)
+
+                        if direction.length_squared() > 0:
+                            directions.append(direction.normalize())
+
+                front_target = next(
+                    (e for e in ordered_enemies
+                     if self._get_quadrant(e.x - self.player.x, e.y - self.player.y) not in claimed_quadrants),
+                    None)
+
+                if front_target is not None:
+                    direction = pygame.Vector2(
+                        front_target.x - self.player.x, front_target.y - self.player.y)
+
+                    if direction.length_squared() > 0:
+                        directions.append(direction.normalize())
+
+                if directions:
                     from src.entities.projectile import Projectile
-                    self.projectiles.append(Projectile(
-                        self.player.x, self.player.y, direction,
-                        max_range=self.player.range_radius,
-                        damage=self.player.shoot_damage))
+
+                    for direction in directions:
+                        self.projectiles.append(Projectile(
+                            self.player.x, self.player.y, direction,
+                            max_range=self.player.range_radius,
+                            damage=self.player.shoot_damage))
 
                     self.player.confirm_shot()
+
+            else:
+                # --- Diagonal, Paralelo, ou nenhuma variante: comportamento existente ---
+                target = self.find_closest_enemy(enemies)
+
+                if target is not None:
+
+                    direction = pygame.Vector2(
+                        target.x - self.player.x, target.y - self.player.y)
+
+                    if direction.length_squared() > 0:
+                        direction = direction.normalize()
+
+                        from src.entities.projectile import Projectile
+
+                        for shot in self.player.get_shot_vectors(direction):
+                            spawn_x = self.player.x + shot["offset"].x
+                            spawn_y = self.player.y + shot["offset"].y
+
+                            self.projectiles.append(Projectile(
+                                spawn_x, spawn_y, shot["direction"],
+                                max_range=self.player.range_radius,
+                                damage=self.player.shoot_damage))
+
+                        self.player.confirm_shot()
 
         # --- projeteis: movimento, colisao com obstaculos e com inimigos ---
         for projectile in self.projectiles:
