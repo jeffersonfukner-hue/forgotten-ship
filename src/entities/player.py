@@ -64,6 +64,11 @@ class Player(Entity):
         self.plasma_fire_cooldown: float = 0.0
         self.plasma_reload_timer: float = 0.0
 
+        # --- combate: metralhadora de pulso, municao + recarga + cadencia propria upavel ---
+        self.pulso_ammo: int = 0
+        self.pulso_fire_cooldown: float = 0.0
+        self.pulso_reload_timer: float = 0.0
+
         # --- combate: rajada de tiro, dispara N vezes em sequencia sem re-mirar ---
         self.pending_burst_shots: list = []
         self.burst_timer: float = 0.0
@@ -232,6 +237,20 @@ class Player(Entity):
         if self.plasma_ammo <= 0:
             self.plasma_reload_timer = self.get_passive_value("plasma_reload")
 
+    def ready_to_fire_pulso(self) -> bool:
+
+        return (self.pulso_ammo > 0 and self.pulso_fire_cooldown <= 0
+                and self.pulso_reload_timer <= 0)
+
+    def confirm_pulso_shot(self) -> None:
+
+        self.pulso_ammo -= 1
+        # diferente do Phaser/Plasma, a cadencia aqui e o proprio eixo upavel da arma
+        self.pulso_fire_cooldown = self.get_passive_value("pulso_cadencia")
+
+        if self.pulso_ammo <= 0:
+            self.pulso_reload_timer = self.get_passive_value("pulso_reload")
+
     def queue_burst(self, shots: list, repeats: int) -> None:
 
         # guarda 'repeats' copias da mesma lista de disparos, para reproduzir
@@ -382,6 +401,11 @@ class Player(Entity):
                     self.get_passive_value("plasma_capacidade"))
                 self.plasma_reload_timer = 0.0
 
+            elif key == "pulso_capacidade":
+                self.pulso_ammo = int(
+                    self.get_passive_value("pulso_capacidade"))
+                self.pulso_reload_timer = 0.0
+
     def upgrade_passive(self, key: str) -> None:
 
         # aumenta o nivel de um power-up passivo, respeitando o teto configurado
@@ -510,6 +534,16 @@ class Player(Entity):
             if self.plasma_reload_timer <= 0:
                 self.plasma_ammo = int(
                     self.get_passive_value("plasma_capacidade"))
+
+        if self.pulso_fire_cooldown > 0:
+            self.pulso_fire_cooldown -= dt
+
+        if self.pulso_reload_timer > 0:
+            self.pulso_reload_timer -= dt
+
+            if self.pulso_reload_timer <= 0:
+                self.pulso_ammo = int(
+                    self.get_passive_value("pulso_capacidade"))
 
         if self.burst_timer > 0:
             self.burst_timer -= dt  # intervalo entre tiros da mesma rajada

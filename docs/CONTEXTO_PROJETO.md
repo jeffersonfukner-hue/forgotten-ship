@@ -5,8 +5,8 @@
 ## Estado Atual
 - Projeto: Forgotten Ship (jogo 01 da A1 Game Academy), horde survival espacial em Python/Pygame CE
 - Vinculado a: canal do YouTube (documentação em vídeo) + curso pago futuro
-- Último sprint fechado: [SPRINT_041.md] — Canhão de Plasma (segunda arma de fogo) + correção de distribuição de alvo resiliente a poucos inimigos
-- Em andamento agora: Metralhadora de Pulso (terceira e última arma de fogo)
+- Último sprint fechado: [SPRINT_042.md] — Metralhadora de Pulso (terceira arma de fogo, cadência como eixo upável) — Bloco de Power-ups 100% completo (11 armas/sistemas)
+- Em andamento agora: decisão em aberto entre Bloco de Entidades de Chefes, Bloco de Restauração da Nave, refactor POWER_UPS, ou bugs/refinamentos pendentes de obstáculos
 
 ## Repositórios
 - `a1-game-academy`: metodologia e documentação institucional
@@ -60,10 +60,17 @@
 - Tempo de sessão e salas limpas: `session_time` vive na `GameScene` (confirmado via `game.py` que ela não é recriada durante a sessão), incrementado antes até da pausa de upgrade; salas limpas reaproveita `room.times_cleared` já existente, somado via `sum()` sobre todas as salas (Sprint 039)
 - Phaser Leve: primeira arma com munição/recarga — 3 condições combinadas em `ready_to_fire_phaser()` (munição > 0, cadência liberada, fora de reload); mira o 3º inimigo mais próximo; carregador enchido automaticamente ao upar capacidade; `Projectile` ganhou parâmetro `color` (Phaser em azul claro, tiro principal amarelo por padrão) (Sprint 040)
 - Canhão de Plasma: segunda arma de fogo, mesma estrutura do Phaser (munição/reload), calibrada para dano concentrado (mira o 4º mais próximo, carregador maior, dano mais alto, reload mais lento); projéteis roxo/lilás (Sprint 041)
-- Correção de distribuição de alvo: Sifão/Phaser/Plasma usam `ordered_enemies[min(N-1, len(ordered_enemies)-1)]` em vez de exigir quantidade mínima de inimigos — mira o mais distante disponível em vez de ficar mudo com poucos alvos no raio (Sprint 041)
+- Correção de distribuição de alvo: Sifão/Phaser/Plasma/Pulso usam `ordered_enemies[min(N-1, len(ordered_enemies)-1)]` em vez de exigir quantidade mínima de inimigos — mira o mais distante disponível em vez de ficar mudo com poucos alvos no raio (Sprint 041)
+- Metralhadora de Pulso: terceira arma de fogo, única com cadência como eixo upável (`pulso_cadencia`, via `get_passive_value()`, não constante fixa como Phaser/Plasma); mira o 5º mais próximo; projéteis laranja (Sprint 042)
 
-## Backlog — Bloco de Power-ups Restante
-- Metralhadora de Pulso (cadência muito alta, carregador intermediário) — última arma de fogo do backlog original
+### Bloco de Power-ups — Completo (Sprints 028-042)
+11 armas/sistemas implementados: Tiro base (dano/velocidade/penetração/rajada/alcance), Tiro Múltiplo (Diagonal/Paralelo/Quadrantes, exclusivos entre si), Ímã, Regeneração, Sabre Giratório, Sifão de Energia, Escudo Deflector (3 camadas cumulativas), Campo de Força, Phaser Leve, Canhão de Plasma, Metralhadora de Pulso. Arquitetura comum: `PASSIVE_POWERUPS` (dicionário genérico por chave), `CATEGORY_GROUPS` (agrupa eixos por arma para slots), `UPGRADE_PREREQUISITES` (cadeia de liberação), `POWERUP_SLOTS_BY_LEVEL` (2→5), `EXCLUSIVE_CATEGORIES`/`FREE_CATEGORIES`. Distribuição de alvo entre armas automáticas: tiro=1º mais próximo, Sifão=2º, Phaser=3º, Plasma=4º, Pulso=5º (todas resilientes a poucos inimigos). Detalhes de cada Sprint em `docs/sprints/SPRINT_028.md` a `SPRINT_042.md`.
+
+## Backlog — Próximos Blocos (decisão em aberto)
+- Bloco de Entidades de Chefes: mini-bosses, boss com barra de fases e stagger
+- Bloco de Restauração da Nave: mecânica narrativa central (reparo da nave = defesa)
+- Refactor `PASSIVE_POWERUPS` → `POWER_UPS` + campo `"type"` (registrado abaixo)
+- Bugs/refinamentos de obstáculos e consumíveis (registrados abaixo)
 
 ## Bugs e Refinamentos Pendentes (Sprint futura de correção — Obstáculos e Consumíveis)
 - Bug: obstáculo destrutível pode nascer sobre a posição de entrada de uma porta, prendendo o player sem chance de escapar do dano
@@ -76,10 +83,6 @@
 - Dificuldade escalável por reentrada e por nível de sala: `HORDE_ENEMIES_PER_VISIT` já existe em `settings.py` mas nunca foi conectado (`spawn_horde()` sempre usa `HORDE_BASE_ENEMIES` fixo); `ROOM_SURVIVAL_DURATION` também deveria escalar proporcionalmente por reentrada; campo `"level"` já existe em `room_data` mas ainda não influencia spawn/dificuldade. Conecta direto com a seção já existente no VISAO.md "Continuidade de Ondas Entre Visitas e Teto de Volume" (composição de tipos, não só quantidade, com teto ~18-20) — falta só implementar o que já está desenhado
 - Refactor: renomear `PASSIVE_POWERUPS` → `POWER_UPS` em `settings.py`, adicionando campo `"type": "active"/"passive"` em cada entrada — prepara terreno para estatística de eficiência por tipo de power-up escolhido, e uma futura área de simulação/comparação de builds (possível feature paga). Toca `settings.py`, `player.py` e `game_scene.py` em múltiplos pontos — Sprint dedicada, não mid-sprint
 - Revisar comentários de `settings.py` — vários ficaram desatualizados conforme o arquivo cresceu; fazer junto do refactor acima, já que renomear a variável exige passar por cada bloco mesmo
-
-## Backlog — Blocos Pendentes (VISAO.md v4.9)
-- Boss Entities: mini-bosses, boss com barra de fases e stagger
-- Ship Restoration: mecânica narrativa central (reparo da nave = defesa)
 
 ## Preferências de Estilo
 - Tema Star Trek (Stardate, terminologia de nave)

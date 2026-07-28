@@ -862,6 +862,30 @@ class GameScene(Scene):
 
                     self.player.confirm_plasma_shot()
 
+        # --- metralhadora de pulso: municao alta, cadencia propria upavel, mira o 5o mais proximo ---
+        if self.player.ready_to_fire_pulso():
+            ordered_enemies = self.get_enemies_by_distance(enemies)
+
+            if ordered_enemies:
+                # mira o 5o mais proximo; com menos alvos disponiveis, concentra
+                # fogo no mais distante que existir, em vez de ficar sem atirar
+                target = ordered_enemies[min(4, len(ordered_enemies) - 1)]
+
+                direction = pygame.Vector2(
+                    target.x - self.player.x, target.y - self.player.y)
+
+                if direction.length_squared() > 0:
+                    direction = direction.normalize()
+                    pulso_damage = self.player.get_passive_value("pulso_dano")
+
+                    from src.entities.projectile import Projectile
+                    self.projectiles.append(Projectile(
+                        self.player.x, self.player.y, direction,
+                        max_range=self.player.range_radius,
+                        damage=pulso_damage, pierce=1, color=(255, 180, 60)))
+
+                    self.player.confirm_pulso_shot()
+
         # --- inimigos: movimento e colisao com o player ---
         if not self.player.is_dead:  # inimigos param de agir assim que o jogador morre
 
@@ -1192,6 +1216,15 @@ class GameScene(Scene):
                 capacity = int(
                     self.player.get_passive_value("plasma_capacidade"))
                 base_text += f"  |  Plasma: {self.player.plasma_ammo}/{capacity}"
+
+        # metralhadora de pulso: mesmo padrao de feedback
+        if self.player.passive_levels["pulso_capacidade"] > 0:
+            if self.player.pulso_reload_timer > 0:
+                base_text += "  |  Pulso: recarregando..."
+            else:
+                capacity = int(
+                    self.player.get_passive_value("pulso_capacidade"))
+                base_text += f"  |  Pulso: {self.player.pulso_ammo}/{capacity}"
 
         font = pygame.font.Font(None, 26)
         text = font.render(base_text, True, (255, 255, 255))

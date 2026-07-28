@@ -168,6 +168,26 @@ PASSIVE_POWERUPS: dict = {
         "increment": -0.5,  # cada nivel reduz o tempo de recarga
         "max_level": 5,
     },
+    "pulso_capacidade": {
+        "base_value": 19,   # nivel 1 = 20 tiros no carregador
+        "increment": 1,     # nivel 5 = 24 tiros
+        "max_level": 5,
+    },
+    "pulso_dano": {
+        "base_value": 3,    # dano por tiro, no nivel 1 - baixo, compensado pela cadencia
+        "increment": 1,     # ganho de dano por nivel
+        "max_level": 5,
+    },
+    "pulso_reload": {
+        "base_value": 1.0,  # segundos de recarga, no nivel 1 - reload rapido
+        "increment": -0.15,  # cada nivel reduz o tempo de recarga
+        "max_level": 5,
+    },
+    "pulso_cadencia": {
+        "base_value": 0.12,  # segundos entre tiros, no nivel 1 - ja bem rapido de saida
+        "increment": -0.015,  # cada nivel acelera ainda mais a cadencia
+        "max_level": 5,
+    },
 }
 
 # --- agrupa eixos que pertencem a mesma arma, para contagem de slots (uma arma = 1 slot, nao 1 por eixo) ---
@@ -191,6 +211,10 @@ CATEGORY_GROUPS: dict = {
     "plasma_capacidade": "plasma",
     "plasma_dano": "plasma",
     "plasma_reload": "plasma",
+    "pulso_capacidade": "pulso",
+    "pulso_dano": "pulso",
+    "pulso_reload": "pulso",
+    "pulso_cadencia": "pulso",
 }
 
 # --- categorias onde a PRIMEIRA escolha entre os ramos bloqueia os demais para sempre -
@@ -218,7 +242,11 @@ UPGRADE_PREREQUISITES: dict = {
     "phaser_reload": ("phaser_capacidade", 1),
     "plasma_dano": ("plasma_capacidade", 1),
     "plasma_reload": ("plasma_capacidade", 1),
+    "pulso_dano": ("pulso_capacidade", 1),
+    "pulso_reload": ("pulso_capacidade", 1),
+    "pulso_cadencia": ("pulso_capacidade", 1),
 }
+
 # --- quantos power-ups diferentes (fora "damage") o jogador pode ter equipados, por nivel minimo ---
 POWERUP_SLOTS_BY_LEVEL: list = [
     (0, 2),
@@ -238,6 +266,7 @@ CATEGORY_LABELS: dict = {
     "campo": "CF",
     "phaser": "PL",
     "plasma": "CP",
+    "pulso": "MP"
 }
 
 # --- nomes exibidos na tela de escolha de upgrade (chave -> texto amigavel) ---
@@ -268,7 +297,12 @@ UPGRADE_LABELS: dict = {
     "plasma_capacidade": "Canhao de Plasma - Capacidade do Carregador",
     "plasma_dano": "Canhao de Plasma - Dano",
     "plasma_reload": "Canhao de Plasma - Velocidade de Recarga",
+    "pulso_capacidade": "Metralhadora de Pulso - Capacidade do Carregador",
+    "pulso_dano": "Metralhadora de Pulso - Dano",
+    "pulso_reload": "Metralhadora de Pulso - Velocidade de Recarga",
+    "pulso_cadencia": "Metralhadora de Pulso - Cadencia",
 }
+
 # --- Gemas: coleta e efeito de arrasto ---
 # distancia (entre centros) para a gema comecar a ser puxada
 GEM_PICKUP_RADIUS: float = 60
