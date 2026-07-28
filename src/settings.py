@@ -16,31 +16,47 @@ FPS: int = 60
 PLAYER_MAX_HP: int = 100
 PLAYER_MAX_LIVES: int = 5
 PLAYER_SHOOT_INTERVAL: float = 0.8  # segundos entre disparos automaticos
-# raio unico: percepcao de inimigos e alcance do tiro
+# valor inicial do alcance (percepcao de inimigos e alcance do tiro compartilham
+# este raio) - sobrescrito a cada frame por get_passive_value("range") assim que
+# o Player e criado; ver entrada "range" em POWER_UPS logo abaixo
 PLAYER_RANGE_RADIUS: float = 100
 PLAYER_KNOCKBACK_FORCE: int = 220
 PLAYER_SHOOT_DAMAGE: int = 10  # dano de cada projetil disparado automaticamente
 
-# --- Player: progressao (drops e upgrades automaticos) ---
-# pontos de drop necessarios para o proximo upgrade automatico
+# --- Player: progressao (drops e upgrades) ---
+# pontos de drop necessarios para o proximo level up (abre a tela de escolha de 3 opcoes)
 POINTS_PER_UPGRADE: int = 1
-UPGRADE_DAMAGE_INCREMENT: int = 5  # quanto o dano do tiro aumenta a cada upgrade
+# quanto o dano do tiro aumenta a cada escolha de "damage"
+UPGRADE_DAMAGE_INCREMENT: int = 5
 # limiar de pontos cresce 50% a cada upgrade conquistado
 UPGRADE_THRESHOLD_GROWTH: float = 1.5
 
-# --- Power-ups passivos: configuracao generica por chave ---
-# Cada entrada = um power-up passivo. Adicionar novo power-up aqui,
-# sem precisar mexer na logica do Player (mesmo padrao de ENEMY_TYPES).
-PASSIVE_POWERUPS: dict = {
+# ==========================================================================
+# POWER-UPS: configuracao generica por chave, ativos e passivos
+# Cada entrada e um eixo de upgrade escolhivel na tela de level up. O campo
+# "type" ("active" ou "passive") classifica o eixo para fins estatisticos
+# (comparacao de eficiencia entre tipos de escolha, futura area de simulacao
+# de builds) - nao afeta a logica de jogo, apenas metadados.
+# "active" = arma/sistema que causa dano por conta propria (Sabre, Sifao,
+# Campo de Forca, armas de fogo, variantes do Tiro Multiplo).
+# "passive" = modifica um atributo do player sem agir por si so (Ima,
+# Regeneracao, Escudo, e os eixos de Velocidade/Penetracao/Rajada/Alcance
+# do Tiro base).
+# Adicionar novo power-up aqui, sem precisar mexer na logica do Player
+# (mesmo padrao de ENEMY_TYPES).
+# ==========================================================================
+POWER_UPS: dict = {
     "magnet": {
         "base_value": 60,   # raio inicial de atracao, em pixels
         "increment": 20,    # ganho de raio por nivel
         "max_level": 5,
+        "type": "passive",
     },
     "regen": {
         "base_value": 1,    # HP regenerado por segundo, no nivel 1
         "increment": 1,     # ganho de HP/s por nivel
         "max_level": 5,
+        "type": "passive",
     },
     "sabre_quantidade": {
         # nivel 0 = nenhuma lamina (arma ainda nao escolhida)
@@ -48,145 +64,172 @@ PASSIVE_POWERUPS: dict = {
         # +1 lamina por nivel (nivel 1 = 1 lamina, nivel 5 = 5 laminas)
         "increment": 1,
         "max_level": 5,
+        "type": "active",
     },
     "sabre_velocidade": {
         "base_value": 90,   # graus por segundo de giro, no nivel 1
         "increment": 30,    # ganho de velocidade de giro por nivel
         "max_level": 5,
+        "type": "active",
     },
     "sabre_dano": {
         "base_value": 5,    # dano por lamina, no nivel 1
         "increment": 3,     # ganho de dano por nivel
         "max_level": 5,
+        "type": "active",
     },
     "siphon_dano": {
         # nivel 0 = arma nao dispara ainda (sem dano, sem efeito)
         "base_value": 0,
         "increment": 4,     # dano do raio extrator por disparo, por nivel
         "max_level": 5,
+        "type": "active",
     },
     "siphon_conversao": {
         "base_value": 0,    # nivel 0 = nenhuma cura, mesmo se a arma ja disparar
         # fracao do dano causado convertida em cura (0.1 = 10%)
         "increment": 0.1,
         "max_level": 5,
+        "type": "active",
     },
     "escudo_reducao": {
         "base_value": 10,   # 10% de reducao de dano no nivel 1
         "increment": 10,    # nivel 2 = 20%
         "max_level": 2,
+        "type": "passive",
     },
     "escudo_barreira": {
         "base_value": 30,   # HP maximo da barreira no nivel 1
         "increment": 30,    # nivel 2 = 60 HP maximo
         "max_level": 2,
+        "type": "passive",
     },
     "escudo_bloqueio": {
         "base_value": 1,    # so serve como "flag" - liga o bloqueio periodico
         "increment": 0,
         "max_level": 1,
+        "type": "passive",
     },
     "tiro_diagonal": {
         # nivel 1 = 1 par de tiros diagonais (3 tiros total, com o reto)
         "base_value": 1,
         "increment": 1,     # cada nivel soma mais um par angulado
         "max_level": 5,
+        "type": "active",
     },
     "tiro_quadrantes": {
         "base_value": 1,    # apenas marca o nivel (1=Tras, 2=+Cima, 3=+Baixo)
         "increment": 1,
         "max_level": 3,     # forca/velocidade ja vem dos upgrades globais existentes
+        "type": "active",
     },
     "tiro_paralelo": {
         "base_value": 1,    # nivel 1 = 2 tiros em paralelo
         "increment": 1,     # nivel 2 = 3 tiros, ate nivel 5 = 6 tiros
         "max_level": 5,
+        "type": "active",
     },
     "tiro_velocidade": {
         # velocidade padrao do projetil (mesmo valor de antes desta feature)
         "base_value": 400,
         "increment": 80,    # ganho de velocidade por nivel
         "max_level": 5,
+        "type": "passive",
     },
     "tiro_penetracao": {
         # nivel 0 = 1 impacto (comportamento atual, sem regressao)
         "base_value": 1,
         "increment": 1,     # +1 inimigo atravessado por nivel
         "max_level": 5,
+        "type": "passive",
     },
     "tiro_rajada": {
         "base_value": 1,    # nivel 0 = 1 tiro por gatilho (normal)
         "increment": 1,     # nivel 1 = 2 tiros, nivel 5 = 6 tiros por rajada
         "max_level": 5,
+        "type": "passive",
     },
     "range": {
         "base_value": 100,  # mesmo valor de PLAYER_RANGE_RADIUS, sem regressao no nivel 0
         "increment": 40,    # ganho de alcance por nivel
         "max_level": 5,
+        "type": "passive",
     },
     "campo_area": {
         # nivel 0 = campo nao existe ainda (raio zero, sem efeito)
         "base_value": 0,
         "increment": 40,    # ganho de raio por nivel, em pixels
         "max_level": 5,
+        "type": "active",
     },
     "campo_dano": {
         "base_value": 4,    # dano aplicado a cada tique (0.5s), no nivel 1
         "increment": 3,     # ganho de dano por tique, por nivel
         "max_level": 5,
+        "type": "active",
     },
     "phaser_capacidade": {
         # nivel 0 = arma nao existe (base_value nao usado, existencia checada por nivel > 0)
         "base_value": 4,
         "increment": 1,     # nivel 1 = 5 tiros, nivel 5 = 9 tiros por carregador
         "max_level": 5,
+        "type": "active",
     },
     "phaser_dano": {
         # dano por tiro, no nivel 1 (arma ja atira com esse valor de base)
         "base_value": 5,
         "increment": 3,     # ganho de dano por nivel
         "max_level": 5,
+        "type": "active",
     },
     "phaser_reload": {
         "base_value": 2.0,  # segundos de recarga, no nivel 1
         # cada nivel reduz o tempo de recarga (reload mais rapido)
         "increment": -0.3,
         "max_level": 5,
+        "type": "active",
     },
     "plasma_capacidade": {
         "base_value": 11,   # nivel 1 = 12 tiros no carregador
         "increment": 2,     # nivel 5 = 20 tiros
         "max_level": 5,
+        "type": "active",
     },
     "plasma_dano": {
         "base_value": 15,   # dano por tiro, no nivel 1 - bem mais alto que o Phaser
         "increment": 6,     # ganho de dano por nivel
         "max_level": 5,
+        "type": "active",
     },
     "plasma_reload": {
         "base_value": 3.5,  # segundos de recarga, no nivel 1 - mais lento que o Phaser
         "increment": -0.5,  # cada nivel reduz o tempo de recarga
         "max_level": 5,
+        "type": "active",
     },
     "pulso_capacidade": {
         "base_value": 19,   # nivel 1 = 20 tiros no carregador
         "increment": 1,     # nivel 5 = 24 tiros
         "max_level": 5,
+        "type": "active",
     },
     "pulso_dano": {
         "base_value": 3,    # dano por tiro, no nivel 1 - baixo, compensado pela cadencia
         "increment": 1,     # ganho de dano por nivel
         "max_level": 5,
+        "type": "active",
     },
     "pulso_reload": {
         "base_value": 1.0,  # segundos de recarga, no nivel 1 - reload rapido
         "increment": -0.15,  # cada nivel reduz o tempo de recarga
         "max_level": 5,
+        "type": "active",
     },
     "pulso_cadencia": {
         "base_value": 0.12,  # segundos entre tiros, no nivel 1 - ja bem rapido de saida
         "increment": -0.015,  # cada nivel acelera ainda mais a cadencia
         "max_level": 5,
+        "type": "active",
     },
 }
 
@@ -223,10 +266,12 @@ CATEGORY_GROUPS: dict = {
 EXCLUSIVE_CATEGORIES: set = {"tiro_multiplo"}
 
 # --- categorias que nunca ocupam slot de power-up, mesmo apos equipadas -
-# tiro multiplo e parte do Tiro (base), que ja nao ocupa slot como "damage" ---
+# tiro multiplo e os eixos soltos do Tiro base sao parte do Tiro (arma inicial),
+# que ja nao ocupa slot como "damage" ---
 FREE_CATEGORIES: set = {
     "tiro_multiplo", "tiro_velocidade", "tiro_penetracao", "tiro_rajada", "range",
 }
+
 # --- pre-requisitos: eixo -> (eixo do qual depende, nivel minimo exigido) ---
 # eixo com pre-requisito so aparece como opcao depois que o eixo base atingir o nivel exigido -
 # cria sensacao de progresso e novidade (feature nova se abre em nivel avancado, nao tudo de uma vez)
@@ -266,7 +311,7 @@ CATEGORY_LABELS: dict = {
     "campo": "CF",
     "phaser": "PL",
     "plasma": "CP",
-    "pulso": "MP"
+    "pulso": "MP",
 }
 
 # --- nomes exibidos na tela de escolha de upgrade (chave -> texto amigavel) ---
@@ -315,7 +360,8 @@ GEM_PULL_MAX_SPEED: float = 500
 
 # --- Horda: geracao de inimigos ---
 HORDE_BASE_ENEMIES: int = 30  # quantidade de inimigos na primeira horda de uma sala
-# incremento de inimigos a cada revisita (rejogabilidade)
+# incremento de inimigos a cada revisita (rejogabilidade) - constante ja existe mas
+# ainda nao esta conectada em spawn_horde(); ver Backlog em CONTEXTO_PROJETO.md
 HORDE_ENEMIES_PER_VISIT: int = 6
 # distancia minima entre um inimigo e qualquer porta ao nascer
 SAFE_SPAWN_DISTANCE: float = 120
@@ -363,12 +409,13 @@ BURST_SHOT_DELAY: float = 0.08  # segundos entre cada disparo dentro da mesma ra
 # --- Campo de Forca: dano em area ao redor do player, aplicado em tiques periodicos ---
 FORCE_FIELD_TICK_INTERVAL: float = 0.5  # segundos entre cada pulso de dano
 
-# --- Phaser Leve: municao limitada, mira o 3o inimigo mais proximo ---
+# --- Phaser Leve: municao limitada, mira o 3o inimigo mais proximo (cadencia fixa,
+# diferente da Metralhadora de Pulso, cuja cadencia e um eixo upavel em POWER_UPS) ---
 # segundos entre tiros, enquanto houver municao no carregador
 PHASER_FIRE_RATE: float = 0.3
 
-# --- Canhao de Plasma: dano concentrado, mira o 4o inimigo mais proximo ---
-PLASMA_FIRE_RATE: float = 0.6  # cadencia mais lenta que o Phaser, dano compensa
+# --- Canhao de Plasma: dano concentrado, mira o 4o inimigo mais proximo (cadencia fixa) ---
+PLASMA_FIRE_RATE: float = 0.6  # mais lenta que o Phaser, dano por tiro compensa
 
 # --- Sifao de Energia: raio extrator instantaneo, mira o 2o inimigo mais proximo ---
 # segundos entre disparos - cadencia propria, mais lenta que o tiro

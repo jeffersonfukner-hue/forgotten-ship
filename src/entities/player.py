@@ -89,9 +89,9 @@ class Player(Entity):
         # --- escolha de upgrade: sinaliza pra GameScene que precisa pausar e sortear opcoes ---
         self.level_up_pending: bool = False
 
-        # --- power-ups passivos: nivel atual de cada um (0 = nao adquirido) ---
-        self.passive_levels: dict = {
-            key: 0 for key in settings.PASSIVE_POWERUPS}
+        # --- power-ups (ativos e passivos): nivel atual de cada eixo (0 = nao adquirido) ---
+        self.power_up_levels: dict = {
+            key: 0 for key in settings.POWER_UPS}
 
         # --- regeneracao de vida: acumula fracao de HP entre frames, aplica quando >= 1 ---
         self._regen_accumulator: float = 0.0
@@ -117,14 +117,14 @@ class Player(Entity):
         self.shield_regen_timer = 0.0  # qualquer dano reinicia o delay de regeneracao
 
         # camada 3: bloqueio total periodico (mais forte, checada primeiro)
-        if self.passive_levels["escudo_bloqueio"] > 0 and self.block_cooldown <= 0:
+        if self.power_up_levels["escudo_bloqueio"] > 0 and self.block_cooldown <= 0:
             self.block_cooldown = settings.SHIELD_BLOCK_COOLDOWN
             self.damage_cooldown = self.damage_cooldown_time
             return 0, True
 
         # camada 1: reducao percentual
-        if self.passive_levels["escudo_reducao"] > 0:
-            reduction = self.get_passive_value("escudo_reducao") / 100
+        if self.power_up_levels["escudo_reducao"] > 0:
+            reduction = self.get_power_up_value("escudo_reducao") / 100
             amount = amount * (1 - reduction)
 
         # camada 2: barreira com transbordo (absorve o que der, o resto vai pro HP)
@@ -222,7 +222,7 @@ class Player(Entity):
         self.phaser_fire_cooldown = settings.PHASER_FIRE_RATE
 
         if self.phaser_ammo <= 0:
-            self.phaser_reload_timer = self.get_passive_value("phaser_reload")
+            self.phaser_reload_timer = self.get_power_up_value("phaser_reload")
 
     def ready_to_fire_plasma(self) -> bool:
 
@@ -235,7 +235,7 @@ class Player(Entity):
         self.plasma_fire_cooldown = settings.PLASMA_FIRE_RATE
 
         if self.plasma_ammo <= 0:
-            self.plasma_reload_timer = self.get_passive_value("plasma_reload")
+            self.plasma_reload_timer = self.get_power_up_value("plasma_reload")
 
     def ready_to_fire_pulso(self) -> bool:
 
@@ -246,10 +246,10 @@ class Player(Entity):
 
         self.pulso_ammo -= 1
         # diferente do Phaser/Plasma, a cadencia aqui e o proprio eixo upavel da arma
-        self.pulso_fire_cooldown = self.get_passive_value("pulso_cadencia")
+        self.pulso_fire_cooldown = self.get_power_up_value("pulso_cadencia")
 
         if self.pulso_ammo <= 0:
-            self.pulso_reload_timer = self.get_passive_value("pulso_reload")
+            self.pulso_reload_timer = self.get_power_up_value("pulso_reload")
 
     def queue_burst(self, shots: list, repeats: int) -> None:
 
@@ -302,7 +302,7 @@ class Player(Entity):
         # uma categoria conta como "equipada" se qualquer um dos seus eixos ja tiver nivel > 0
         return {
             self.get_category(key)
-            for key, level in self.passive_levels.items()
+            for key, level in self.power_up_levels.items()
             if level > 0
         }
 
@@ -311,7 +311,7 @@ class Player(Entity):
         # para armas com multiplos eixos (ex: sabre), usa o maior nivel entre eles
         # como indicador rapido de "quao fundo o jogador ja investiu" naquela categoria
         levels = [
-            level for key, level in self.passive_levels.items()
+            level for key, level in self.power_up_levels.items()
             if self.get_category(key) == category
         ]
 
@@ -340,9 +340,9 @@ class Player(Entity):
         countable_equipped = equipped_categories - settings.FREE_CATEGORIES
         slots_full = len(countable_equipped) >= max_slots
 
-        for key in settings.PASSIVE_POWERUPS:
+        for key in settings.POWER_UPS:
 
-            if self.passive_levels[key] >= settings.PASSIVE_POWERUPS[key]["max_level"]:
+            if self.power_up_levels[key] >= settings.POWER_UPS[key]["max_level"]:
                 continue  # eixo no teto, nunca mais aparece
 
             prereq = settings.UPGRADE_PREREQUISITES.get(key)
@@ -350,15 +350,15 @@ class Player(Entity):
             if prereq is not None:
                 prereq_key, min_level = prereq
 
-                if self.passive_levels[prereq_key] < min_level:
+                if self.power_up_levels[prereq_key] < min_level:
                     continue  # pre-requisito ainda nao atingido, eixo fica escondido
 
             category = self.get_category(key)
 
             # grupos de exclusividade: se um ramo irmao ja foi escolhido, este some para sempre
-            if category in settings.EXCLUSIVE_CATEGORIES and self.passive_levels[key] == 0:
+            if category in settings.EXCLUSIVE_CATEGORIES and self.power_up_levels[key] == 0:
                 sibling_chosen = any(
-                    self.passive_levels[sibling] > 0
+                    self.power_up_levels[sibling] > 0
                     for sibling, sibling_category in settings.CATEGORY_GROUPS.items()
                     if sibling_category == category and sibling != key
                 )
@@ -388,38 +388,38 @@ class Player(Entity):
         if key == "damage":
             self.shoot_damage += settings.UPGRADE_DAMAGE_INCREMENT
         else:
-            self.upgrade_passive(key)
+            self.increase_power_up_level(key)
 
             if key == "phaser_capacidade":
                 # arma nova ou carregador maior: enche o pente por completo
                 self.phaser_ammo = int(
-                    self.get_passive_value("phaser_capacidade"))
+                    self.get_power_up_value("phaser_capacidade"))
                 self.phaser_reload_timer = 0.0
 
             elif key == "plasma_capacidade":
                 self.plasma_ammo = int(
-                    self.get_passive_value("plasma_capacidade"))
+                    self.get_power_up_value("plasma_capacidade"))
                 self.plasma_reload_timer = 0.0
 
             elif key == "pulso_capacidade":
                 self.pulso_ammo = int(
-                    self.get_passive_value("pulso_capacidade"))
+                    self.get_power_up_value("pulso_capacidade"))
                 self.pulso_reload_timer = 0.0
 
-    def upgrade_passive(self, key: str) -> None:
+    def increase_power_up_level(self, key: str) -> None:
 
-        # aumenta o nivel de um power-up passivo, respeitando o teto configurado
-        config = settings.PASSIVE_POWERUPS[key]
+        # aumenta o nivel de um eixo de power-up, respeitando o teto configurado
+        config = settings.POWER_UPS[key]
 
-        if self.passive_levels[key] < config["max_level"]:
-            self.passive_levels[key] += 1
+        if self.power_up_levels[key] < config["max_level"]:
+            self.power_up_levels[key] += 1
 
-    def get_passive_value(self, key: str) -> float:
+    def get_power_up_value(self, key: str) -> float:
 
-        # calcula o valor atual de um power-up passivo a partir do nivel
-        config = settings.PASSIVE_POWERUPS[key]
+        # calcula o valor atual de um eixo de power-up a partir do nivel
+        config = settings.POWER_UPS[key]
 
-        return config["base_value"] + config["increment"] * self.passive_levels[key]
+        return config["base_value"] + config["increment"] * self.power_up_levels[key]
 
     def get_shot_vectors(self, base_direction: pygame.Vector2) -> list[dict]:
         """Retorna a lista de disparos a serem criados neste ciclo de tiro,
@@ -429,19 +429,19 @@ class Player(Entity):
         padrao do jogo antes desta feature."""
 
         for key in ("tiro_diagonal",  "tiro_paralelo"):
-            if self.passive_levels[key] > 0:
+            if self.power_up_levels[key] > 0:
                 active_variant = key
                 break
         else:
             return [{"direction": base_direction, "offset": pygame.Vector2(0, 0)}]
 
-        level = self.passive_levels[active_variant]
+        level = self.power_up_levels[active_variant]
         zero_offset = pygame.Vector2(0, 0)
 
         if active_variant == "tiro_diagonal":
 
             shots = [{"direction": base_direction, "offset": zero_offset}]
-            pairs = int(self.get_passive_value("tiro_diagonal"))
+            pairs = int(self.get_power_up_value("tiro_diagonal"))
 
             for i in range(pairs):
                 angle = 20 + i * 15  # graus - cada par adicional abre mais o leque
@@ -454,7 +454,7 @@ class Player(Entity):
 
         if active_variant == "tiro_paralelo":
 
-            count = int(self.get_passive_value("tiro_paralelo"))
+            count = int(self.get_power_up_value("tiro_paralelo"))
             perpendicular = pygame.Vector2(-base_direction.y, base_direction.x)
             spacing = 14  # pixels entre cada tiro paralelo
             start = -(count - 1) / 2
@@ -470,10 +470,10 @@ class Player(Entity):
     def update_regen(self, dt: float) -> None:
 
         # nivel 0 = sem regeneracao, nao acumula nada
-        if self.passive_levels["regen"] == 0 or self.hp >= self.max_hp:
+        if self.power_up_levels["regen"] == 0 or self.hp >= self.max_hp:
             return
 
-        regen_per_second = self.get_passive_value("regen")
+        regen_per_second = self.get_power_up_value("regen")
         self._regen_accumulator += regen_per_second * dt
 
         if self._regen_accumulator >= 1.0:
@@ -486,12 +486,12 @@ class Player(Entity):
         if self.block_cooldown > 0:
             self.block_cooldown -= dt
 
-        if self.passive_levels["escudo_barreira"] == 0:
+        if self.power_up_levels["escudo_barreira"] == 0:
             return  # barreira nao adquirida, nada a regenerar
 
         self.shield_regen_timer += dt
 
-        shield_max = self.get_passive_value("escudo_barreira")
+        shield_max = self.get_power_up_value("escudo_barreira")
 
         if self.shield_regen_timer >= settings.SHIELD_REGEN_DELAY and self.shield_hp < shield_max:
             self.shield_hp = min(shield_max, self.shield_hp +
@@ -523,7 +523,7 @@ class Player(Entity):
 
             if self.phaser_reload_timer <= 0:
                 self.phaser_ammo = int(
-                    self.get_passive_value("phaser_capacidade"))
+                    self.get_power_up_value("phaser_capacidade"))
 
         if self.plasma_fire_cooldown > 0:
             self.plasma_fire_cooldown -= dt
@@ -533,7 +533,7 @@ class Player(Entity):
 
             if self.plasma_reload_timer <= 0:
                 self.plasma_ammo = int(
-                    self.get_passive_value("plasma_capacidade"))
+                    self.get_power_up_value("plasma_capacidade"))
 
         if self.pulso_fire_cooldown > 0:
             self.pulso_fire_cooldown -= dt
@@ -543,7 +543,7 @@ class Player(Entity):
 
             if self.pulso_reload_timer <= 0:
                 self.pulso_ammo = int(
-                    self.get_passive_value("pulso_capacidade"))
+                    self.get_power_up_value("pulso_capacidade"))
 
         if self.burst_timer > 0:
             self.burst_timer -= dt  # intervalo entre tiros da mesma rajada
@@ -552,7 +552,7 @@ class Player(Entity):
             self.force_field_timer -= dt  # intervalo entre tiques do campo de forca
 
         # alcance recalculado todo frame, a partir do nivel atual do power-up "range"
-        self.range_radius = self.get_passive_value("range")
+        self.range_radius = self.get_power_up_value("range")
 
         self.update_regen(dt)
         self.update_shield(dt)
@@ -732,8 +732,8 @@ class Player(Entity):
 
         # barreira do escudo deflector: barra azul fina, logo acima da barra de HP,
         # so desenhada se a barreira ja foi adquirida (nivel > 0)
-        if self.passive_levels["escudo_barreira"] > 0:
-            shield_max = self.get_passive_value("escudo_barreira")
+        if self.power_up_levels["escudo_barreira"] > 0:
+            shield_max = self.get_power_up_value("escudo_barreira")
             shield_ratio = self.shield_hp / shield_max if shield_max > 0 else 0
 
             shield_bar_y = bar_y - bar_height - 2
@@ -764,7 +764,7 @@ class Player(Entity):
 
     def draw_force_field(self, screen: pygame.Surface, camera_x: float, camera_y: float) -> None:
 
-        field_radius = self.get_passive_value("campo_area")
+        field_radius = self.get_power_up_value("campo_area")
 
         if field_radius <= 0:
             return  # campo nao adquirido ainda, nada a desenhar

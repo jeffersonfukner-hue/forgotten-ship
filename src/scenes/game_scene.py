@@ -356,9 +356,11 @@ class GameScene(Scene):
     def get_enemies_by_distance(self, enemies: list) -> list:
         """Retorna os inimigos vivos dentro do raio de percepcao e com linha
         de visao livre, ordenados do mais proximo ao mais distante do
-        player. Base para qualquer arma que precise mirar o Nº mais
-        proximo (tiro principal usa o indice 0, Sifao usa o indice 1,
-        armas futuras podem consumir indices seguintes)."""
+        player. Base para toda arma automatica que mira o Nº mais
+        proximo: tiro principal usa o indice 0, Sifao o indice 1, Phaser
+        o indice 2, Plasma o indice 3, Metralhadora de Pulso o indice 4 -
+        todas usando min(indice, len-1) para nunca ficar sem alvo enquanto
+        houver ao menos 1 inimigo no raio."""
 
         in_range = []
 
@@ -409,8 +411,8 @@ class GameScene(Scene):
 
         from src.entities.projectile import Projectile
 
-        projectile_speed = self.player.get_passive_value("tiro_velocidade")
-        pierce = int(self.player.get_passive_value("tiro_penetracao"))
+        projectile_speed = self.player.get_power_up_value("tiro_velocidade")
+        pierce = int(self.player.get_power_up_value("tiro_penetracao"))
 
         for shot in shots:
             self.projectiles.append(Projectile(
@@ -439,7 +441,7 @@ class GameScene(Scene):
 
         from src.entities.saber import Saber
 
-        target_count = int(self.player.get_passive_value("sabre_quantidade"))
+        target_count = int(self.player.get_power_up_value("sabre_quantidade"))
 
         if target_count == len(self.sabers):
             return  # quantidade nao mudou, nada a fazer
@@ -557,7 +559,7 @@ class GameScene(Scene):
         # --- disparo automatico do player (1 ou mais projeteis, conforme Tiro Multiplo) ---
         elif self.player.ready_to_shoot() and enemies:
 
-            quadrant_level = self.player.passive_levels["tiro_quadrantes"]
+            quadrant_level = self.player.power_up_levels["tiro_quadrantes"]
 
             if quadrant_level > 0:
                 # --- Quadrantes: cada direcao liberada mira seu proprio alvo mais proximo,
@@ -605,7 +607,7 @@ class GameScene(Scene):
                     self._create_projectiles(shots)
 
                     burst_count = int(
-                        self.player.get_passive_value("tiro_rajada"))
+                        self.player.get_power_up_value("tiro_rajada"))
 
                     if burst_count > 1:
                         self.player.queue_burst(shots, burst_count - 1)
@@ -628,7 +630,7 @@ class GameScene(Scene):
                         self._create_projectiles(shots)
 
                         burst_count = int(
-                            self.player.get_passive_value("tiro_rajada"))
+                            self.player.get_power_up_value("tiro_rajada"))
 
                         if burst_count > 1:
                             self.player.queue_burst(shots, burst_count - 1)
@@ -684,7 +686,7 @@ class GameScene(Scene):
         self.floating_texts = [t for t in self.floating_texts if not t.is_dead]
 
         # --- gemas: inicia o arrasto ao entrar no raio (pickup normal OU ima), move, coleta ao chegar perto o suficiente ---
-        magnet_radius = self.player.get_passive_value("magnet")
+        magnet_radius = self.player.get_power_up_value("magnet")
         pull_trigger_radius = max(settings.GEM_PICKUP_RADIUS, magnet_radius)
 
         for gem in self.gems:
@@ -714,8 +716,8 @@ class GameScene(Scene):
         self.sync_sabers()
 
         if self.sabers:
-            rotation_speed = self.player.get_passive_value("sabre_velocidade")
-            saber_damage = self.player.get_passive_value("sabre_dano")
+            rotation_speed = self.player.get_power_up_value("sabre_velocidade")
+            saber_damage = self.player.get_power_up_value("sabre_dano")
 
             for saber in self.sabers:
                 saber.update(dt, self.player, rotation_speed)
@@ -744,7 +746,7 @@ class GameScene(Scene):
             self.siphon_beam = (
                 start, end, time_left) if time_left > 0 else None
 
-        siphon_damage = self.player.get_passive_value("siphon_dano")
+        siphon_damage = self.player.get_power_up_value("siphon_dano")
 
         if self.player.ready_to_siphon() and siphon_damage > 0:
             ordered_enemies = self.get_enemies_by_distance(enemies)
@@ -757,7 +759,7 @@ class GameScene(Scene):
                 target.take_damage(siphon_damage)
                 self.player.confirm_siphon()
 
-                conversion = self.player.get_passive_value("siphon_conversao")
+                conversion = self.player.get_power_up_value("siphon_conversao")
 
                 if conversion > 0:
                     # garante minimo de 1 HP sempre que a conversao estiver ativa -
@@ -784,10 +786,10 @@ class GameScene(Scene):
                         Gem(target.x, target.y, target.drop_value))
 
         # --- campo de forca: pulso de dano em area, atingindo todos os inimigos dentro do raio ---
-        field_radius = self.player.get_passive_value("campo_area")
+        field_radius = self.player.get_power_up_value("campo_area")
 
         if field_radius > 0 and self.player.force_field_timer <= 0:
-            field_damage = self.player.get_passive_value("campo_dano")
+            field_damage = self.player.get_power_up_value("campo_dano")
 
             self.player.force_field_timer = settings.FORCE_FIELD_TICK_INTERVAL
 
@@ -826,7 +828,7 @@ class GameScene(Scene):
 
                 if direction.length_squared() > 0:
                     direction = direction.normalize()
-                    phaser_damage = self.player.get_passive_value(
+                    phaser_damage = self.player.get_power_up_value(
                         "phaser_dano")
 
                     from src.entities.projectile import Projectile
@@ -851,7 +853,7 @@ class GameScene(Scene):
 
                 if direction.length_squared() > 0:
                     direction = direction.normalize()
-                    plasma_damage = self.player.get_passive_value(
+                    plasma_damage = self.player.get_power_up_value(
                         "plasma_dano")
 
                     from src.entities.projectile import Projectile
@@ -876,7 +878,7 @@ class GameScene(Scene):
 
                 if direction.length_squared() > 0:
                     direction = direction.normalize()
-                    pulso_damage = self.player.get_passive_value("pulso_dano")
+                    pulso_damage = self.player.get_power_up_value("pulso_dano")
 
                     from src.entities.projectile import Projectile
                     self.projectiles.append(Projectile(
@@ -1200,30 +1202,30 @@ class GameScene(Scene):
         base_text = f"Room {self.room.room_id}  |  Vidas: {self.player.lives}/{self.player.max_lives}"
 
         # phaser leve: mostra municao atual ou aviso de recarga, so se a arma ja foi adquirida
-        if self.player.passive_levels["phaser_capacidade"] > 0:
+        if self.player.power_up_levels["phaser_capacidade"] > 0:
             if self.player.phaser_reload_timer > 0:
                 base_text += "  |  Phaser: recarregando..."
             else:
                 capacity = int(
-                    self.player.get_passive_value("phaser_capacidade"))
+                    self.player.get_power_up_value("phaser_capacidade"))
                 base_text += f"  |  Phaser: {self.player.phaser_ammo}/{capacity}"
 
         # canhao de plasma: mesmo padrao de feedback do phaser
-        if self.player.passive_levels["plasma_capacidade"] > 0:
+        if self.player.power_up_levels["plasma_capacidade"] > 0:
             if self.player.plasma_reload_timer > 0:
                 base_text += "  |  Plasma: recarregando..."
             else:
                 capacity = int(
-                    self.player.get_passive_value("plasma_capacidade"))
+                    self.player.get_power_up_value("plasma_capacidade"))
                 base_text += f"  |  Plasma: {self.player.plasma_ammo}/{capacity}"
 
         # metralhadora de pulso: mesmo padrao de feedback
-        if self.player.passive_levels["pulso_capacidade"] > 0:
+        if self.player.power_up_levels["pulso_capacidade"] > 0:
             if self.player.pulso_reload_timer > 0:
                 base_text += "  |  Pulso: recarregando..."
             else:
                 capacity = int(
-                    self.player.get_passive_value("pulso_capacidade"))
+                    self.player.get_power_up_value("pulso_capacidade"))
                 base_text += f"  |  Pulso: {self.player.pulso_ammo}/{capacity}"
 
         font = pygame.font.Font(None, 26)
