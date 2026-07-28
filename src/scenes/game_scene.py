@@ -749,8 +749,10 @@ class GameScene(Scene):
         if self.player.ready_to_siphon() and siphon_damage > 0:
             ordered_enemies = self.get_enemies_by_distance(enemies)
 
-            if len(ordered_enemies) >= 2:
-                target = ordered_enemies[1]
+            if ordered_enemies:
+                # mira o 2o mais proximo; com menos alvos disponiveis, concentra
+                # fogo no mais distante que existir, em vez de ficar sem atirar
+                target = ordered_enemies[min(1, len(ordered_enemies) - 1)]
 
                 target.take_damage(siphon_damage)
                 self.player.confirm_siphon()
@@ -814,8 +816,10 @@ class GameScene(Scene):
         if self.player.ready_to_fire_phaser():
             ordered_enemies = self.get_enemies_by_distance(enemies)
 
-            if len(ordered_enemies) >= 3:
-                target = ordered_enemies[2]
+            if ordered_enemies:
+                # mira o 3o mais proximo; com menos alvos disponiveis, concentra
+                # fogo no mais distante que existir, em vez de ficar sem atirar
+                target = ordered_enemies[min(2, len(ordered_enemies) - 1)]
 
                 direction = pygame.Vector2(
                     target.x - self.player.x, target.y - self.player.y)
@@ -832,6 +836,31 @@ class GameScene(Scene):
                         damage=phaser_damage, pierce=1, color=(100, 200, 255)))
 
                     self.player.confirm_phaser_shot()
+
+        # --- canhao de plasma: municao limitada, mira o 4o inimigo mais proximo ---
+        if self.player.ready_to_fire_plasma():
+            ordered_enemies = self.get_enemies_by_distance(enemies)
+
+            if ordered_enemies:
+                # mira o 4o mais proximo; com menos alvos disponiveis, concentra
+                # fogo no mais distante que existir, em vez de ficar sem atirar
+                target = ordered_enemies[min(3, len(ordered_enemies) - 1)]
+
+                direction = pygame.Vector2(
+                    target.x - self.player.x, target.y - self.player.y)
+
+                if direction.length_squared() > 0:
+                    direction = direction.normalize()
+                    plasma_damage = self.player.get_passive_value(
+                        "plasma_dano")
+
+                    from src.entities.projectile import Projectile
+                    self.projectiles.append(Projectile(
+                        self.player.x, self.player.y, direction,
+                        max_range=self.player.range_radius,
+                        damage=plasma_damage, pierce=1, color=(200, 100, 255)))
+
+                    self.player.confirm_plasma_shot()
 
         # --- inimigos: movimento e colisao com o player ---
         if not self.player.is_dead:  # inimigos param de agir assim que o jogador morre
@@ -1154,6 +1183,15 @@ class GameScene(Scene):
                 capacity = int(
                     self.player.get_passive_value("phaser_capacidade"))
                 base_text += f"  |  Phaser: {self.player.phaser_ammo}/{capacity}"
+
+        # canhao de plasma: mesmo padrao de feedback do phaser
+        if self.player.passive_levels["plasma_capacidade"] > 0:
+            if self.player.plasma_reload_timer > 0:
+                base_text += "  |  Plasma: recarregando..."
+            else:
+                capacity = int(
+                    self.player.get_passive_value("plasma_capacidade"))
+                base_text += f"  |  Plasma: {self.player.plasma_ammo}/{capacity}"
 
         font = pygame.font.Font(None, 26)
         text = font.render(base_text, True, (255, 255, 255))

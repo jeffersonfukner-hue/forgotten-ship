@@ -153,6 +153,21 @@ PASSIVE_POWERUPS: dict = {
         "increment": -0.3,
         "max_level": 5,
     },
+    "plasma_capacidade": {
+        "base_value": 11,   # nivel 1 = 12 tiros no carregador
+        "increment": 2,     # nivel 5 = 20 tiros
+        "max_level": 5,
+    },
+    "plasma_dano": {
+        "base_value": 15,   # dano por tiro, no nivel 1 - bem mais alto que o Phaser
+        "increment": 6,     # ganho de dano por nivel
+        "max_level": 5,
+    },
+    "plasma_reload": {
+        "base_value": 3.5,  # segundos de recarga, no nivel 1 - mais lento que o Phaser
+        "increment": -0.5,  # cada nivel reduz o tempo de recarga
+        "max_level": 5,
+    },
 }
 
 # --- agrupa eixos que pertencem a mesma arma, para contagem de slots (uma arma = 1 slot, nao 1 por eixo) ---
@@ -173,6 +188,9 @@ CATEGORY_GROUPS: dict = {
     "phaser_capacidade": "phaser",
     "phaser_dano": "phaser",
     "phaser_reload": "phaser",
+    "plasma_capacidade": "plasma",
+    "plasma_dano": "plasma",
+    "plasma_reload": "plasma",
 }
 
 # --- categorias onde a PRIMEIRA escolha entre os ramos bloqueia os demais para sempre -
@@ -198,6 +216,8 @@ UPGRADE_PREREQUISITES: dict = {
     "campo_dano": ("campo_area", 1),
     "phaser_dano": ("phaser_capacidade", 1),
     "phaser_reload": ("phaser_capacidade", 1),
+    "plasma_dano": ("plasma_capacidade", 1),
+    "plasma_reload": ("plasma_capacidade", 1),
 }
 # --- quantos power-ups diferentes (fora "damage") o jogador pode ter equipados, por nivel minimo ---
 POWERUP_SLOTS_BY_LEVEL: list = [
@@ -217,6 +237,7 @@ CATEGORY_LABELS: dict = {
     "tiro_multiplo": "TM",
     "campo": "CF",
     "phaser": "PL",
+    "plasma": "CP",
 }
 
 # --- nomes exibidos na tela de escolha de upgrade (chave -> texto amigavel) ---
@@ -244,6 +265,9 @@ UPGRADE_LABELS: dict = {
     "phaser_capacidade": "Phaser Leve - Capacidade do Carregador",
     "phaser_dano": "Phaser Leve - Dano",
     "phaser_reload": "Phaser Leve - Velocidade de Recarga",
+    "plasma_capacidade": "Canhao de Plasma - Capacidade do Carregador",
+    "plasma_dano": "Canhao de Plasma - Dano",
+    "plasma_reload": "Canhao de Plasma - Velocidade de Recarga",
 }
 # --- Gemas: coleta e efeito de arrasto ---
 # distancia (entre centros) para a gema comecar a ser puxada
@@ -308,6 +332,9 @@ FORCE_FIELD_TICK_INTERVAL: float = 0.5  # segundos entre cada pulso de dano
 # --- Phaser Leve: municao limitada, mira o 3o inimigo mais proximo ---
 # segundos entre tiros, enquanto houver municao no carregador
 PHASER_FIRE_RATE: float = 0.3
+
+# --- Canhao de Plasma: dano concentrado, mira o 4o inimigo mais proximo ---
+PLASMA_FIRE_RATE: float = 0.6  # cadencia mais lenta que o Phaser, dano compensa
 
 # --- Sifao de Energia: raio extrator instantaneo, mira o 2o inimigo mais proximo ---
 # segundos entre disparos - cadencia propria, mais lenta que o tiro

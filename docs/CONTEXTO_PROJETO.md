@@ -5,8 +5,8 @@
 ## Estado Atual
 - Projeto: Forgotten Ship (jogo 01 da A1 Game Academy), horde survival espacial em Python/Pygame CE
 - Vinculado a: canal do YouTube (documentação em vídeo) + curso pago futuro
-- Último sprint fechado: [SPRINT_040.md] — Phaser Leve (primeira arma com munição/recarga), mira o 3º inimigo mais próximo
-- Em andamento agora: Canhão de Plasma (segunda arma de fogo, reaproveitando o padrão de munição/recarga)
+- Último sprint fechado: [SPRINT_041.md] — Canhão de Plasma (segunda arma de fogo) + correção de distribuição de alvo resiliente a poucos inimigos
+- Em andamento agora: Metralhadora de Pulso (terceira e última arma de fogo)
 
 ## Repositórios
 - `a1-game-academy`: metodologia e documentação institucional
@@ -59,9 +59,11 @@
 - Campo de Força: sem entidade própria (cálculo direto de distância no loop principal, diferente do Sabre que tem posição orbital); cronômetro único compartilhado (`force_field_timer`) aplica dano a todos os inimigos no raio simultaneamente a cada tique (0.5s), diferente do cooldown por inimigo do Sabre; ocupa slot normal (não é parte do Tiro base) (Sprint 038)
 - Tempo de sessão e salas limpas: `session_time` vive na `GameScene` (confirmado via `game.py` que ela não é recriada durante a sessão), incrementado antes até da pausa de upgrade; salas limpas reaproveita `room.times_cleared` já existente, somado via `sum()` sobre todas as salas (Sprint 039)
 - Phaser Leve: primeira arma com munição/recarga — 3 condições combinadas em `ready_to_fire_phaser()` (munição > 0, cadência liberada, fora de reload); mira o 3º inimigo mais próximo; carregador enchido automaticamente ao upar capacidade; `Projectile` ganhou parâmetro `color` (Phaser em azul claro, tiro principal amarelo por padrão) (Sprint 040)
+- Canhão de Plasma: segunda arma de fogo, mesma estrutura do Phaser (munição/reload), calibrada para dano concentrado (mira o 4º mais próximo, carregador maior, dano mais alto, reload mais lento); projéteis roxo/lilás (Sprint 041)
+- Correção de distribuição de alvo: Sifão/Phaser/Plasma usam `ordered_enemies[min(N-1, len(ordered_enemies)-1)]` em vez de exigir quantidade mínima de inimigos — mira o mais distante disponível em vez de ficar mudo com poucos alvos no raio (Sprint 041)
 
 ## Backlog — Bloco de Power-ups Restante
-- Canhão de Plasma (carregador maior, dano mais alto, reload mais lento) e Metralhadora de Pulso (cadência muito alta) — reaproveitam o padrão de munição/recarga validado no Phaser Leve (Sprint 040)
+- Metralhadora de Pulso (cadência muito alta, carregador intermediário) — última arma de fogo do backlog original
 
 ## Bugs e Refinamentos Pendentes (Sprint futura de correção — Obstáculos e Consumíveis)
 - Bug: obstáculo destrutível pode nascer sobre a posição de entrada de uma porta, prendendo o player sem chance de escapar do dano
@@ -72,7 +74,8 @@
 - Tela de Estatísticas dedicada (banco de dados): quando existir, registrar a build de power-ups equipada em cada visita de sala, não só o resultado agregado — permite comparar builds objetivamente e gerar gráficos de decisão (data science aplicada, conecta com "Ranking por Qualidade de Escolha" do VISAO.md)
 - Estudo (não decisão): avaliar migrar dicionários de configuração (`settings.py`) para JSON — vale a pena se surgir necessidade de edição por não-programador, hot-reload ou modding; nenhuma pressão real ainda
 - Dificuldade escalável por reentrada e por nível de sala: `HORDE_ENEMIES_PER_VISIT` já existe em `settings.py` mas nunca foi conectado (`spawn_horde()` sempre usa `HORDE_BASE_ENEMIES` fixo); `ROOM_SURVIVAL_DURATION` também deveria escalar proporcionalmente por reentrada; campo `"level"` já existe em `room_data` mas ainda não influencia spawn/dificuldade. Conecta direto com a seção já existente no VISAO.md "Continuidade de Ondas Entre Visitas e Teto de Volume" (composição de tipos, não só quantidade, com teto ~18-20) — falta só implementar o que já está desenhado
-- Novo eixo do Sifão de Energia: `siphon_cadencia` (reduz `siphon_interval` por nível, mesmo espírito da Cadência do Tiro base) — deve seguir o mesmo pré-requisito de `siphon_dano` nível 1 já usado pelos outros eixos secundários do Sifão
+- Refactor: renomear `PASSIVE_POWERUPS` → `POWER_UPS` em `settings.py`, adicionando campo `"type": "active"/"passive"` em cada entrada — prepara terreno para estatística de eficiência por tipo de power-up escolhido, e uma futura área de simulação/comparação de builds (possível feature paga). Toca `settings.py`, `player.py` e `game_scene.py` em múltiplos pontos — Sprint dedicada, não mid-sprint
+- Revisar comentários de `settings.py` — vários ficaram desatualizados conforme o arquivo cresceu; fazer junto do refactor acima, já que renomear a variável exige passar por cada bloco mesmo
 
 ## Backlog — Blocos Pendentes (VISAO.md v4.9)
 - Boss Entities: mini-bosses, boss com barra de fases e stagger
