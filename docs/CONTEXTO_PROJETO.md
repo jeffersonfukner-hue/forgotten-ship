@@ -5,8 +5,8 @@
 ## Estado Atual
 - Projeto: Forgotten Ship (jogo 01 da A1 Game Academy), horde survival espacial em Python/Pygame CE
 - Vinculado a: canal do YouTube (documentação em vídeo) + curso pago futuro
-- Último sprint fechado: [SPRINT_045.md] — Reabastecimento gradual (gatilho 20%) + dificuldade crescente por reentrada + correção de inimigo nascendo preso em obstáculo
-- Em andamento agora: Bloco de Entidades de Chefes (estrutura de ondas com swarms/mini-chefes/chefe/chefão já detalhada)
+- Último sprint fechado: [SPRINT_046A.md] — Sistema de ondas com acúmulo (Bloco de Entidades de Chefes, Parte 1/5)
+- Em andamento agora: Sprint B do Bloco de Chefes — Mini-chefe (~300 HP, drop de 3 upgrades + puxão de gemas)
 
 ## Repositórios
 - `a1-game-academy`: metodologia e documentação institucional
@@ -65,17 +65,18 @@
 - Refactor `POWER_UPS`: renomeado de `PASSIVE_POWERUPS`, cada entrada com `"type": "active"/"passive"` (metadado, sem uso funcional ainda); métodos renomeados em cadeia (`passive_levels`→`power_up_levels`, `get_passive_value`→`get_power_up_value`, `upgrade_passive`→`increase_power_up_level`); arquivos entregues completos, não em diffs, dado o volume (Sprint 043)
 - Bugs de obstáculos corrigidos: `DESTRUCTIBLE_OBSTACLE_DOOR_MARGIN`/`DESTRUCTIBLE_OBSTACLE_WALL_MARGIN` evitam spawn sobre porta ou colado à parede (faixa protegida por `min()`/`max()` para salas estreitas); obstáculos fixos adicionados às Salas 2 e 3 (Sprint 044)
 - Reabastecimento gradual + dificuldade por reentrada: gatilho de 20% de baixa populacional antes de repor (`HORDE_REINFORCEMENT_TRIGGER_RATIO`), reposição de 1 inimigo por vez com intervalo (`HORDE_REINFORCEMENT_INTERVAL`) — distinto de reposição "em massa" (reservado para futuro modo swarm); piso de inimigos escala com `room.times_cleared` via `HORDE_ENEMIES_PER_VISIT` (finalmente conectado); corrigido bug de inimigo nascendo preso em obstáculo fixo (`_spawn_wave_enemies` agora também checa `colliderect` contra obstáculos) (Sprint 045)
+- Sistema de Ondas (Bloco de Chefes, Parte 1/5): `Room.current_wave`/`wave_timer` — cada onda soma `HORDE_ENEMIES_PER_VISIT` inimigos aos remanescentes após `WAVE_DURATION` (15s), nunca espera limpar a onda atual; roda em paralelo ao critério de vitória existente (`ROOM_SURVIVAL_DURATION`, agora 90s), ainda não integrados — integração completa fica pra Sprint E (Sprint 046A)
 
 ### Bloco de Power-ups — Completo (Sprints 028-042)
 11 armas/sistemas implementados: Tiro base (dano/velocidade/penetração/rajada/alcance), Tiro Múltiplo (Diagonal/Paralelo/Quadrantes, exclusivos entre si), Ímã, Regeneração, Sabre Giratório, Sifão de Energia, Escudo Deflector (3 camadas cumulativas), Campo de Força, Phaser Leve, Canhão de Plasma, Metralhadora de Pulso. Arquitetura comum: `POWER_UPS` (dicionário genérico por chave, com campo `"type"`), `CATEGORY_GROUPS` (agrupa eixos por arma para slots), `UPGRADE_PREREQUISITES` (cadeia de liberação), `POWERUP_SLOTS_BY_LEVEL` (2→5), `EXCLUSIVE_CATEGORIES`/`FREE_CATEGORIES`. Distribuição de alvo entre armas automáticas: tiro=1º mais próximo, Sifão=2º, Phaser=3º, Plasma=4º, Pulso=5º (todas resilientes a poucos inimigos). Detalhes de cada Sprint em `docs/sprints/SPRINT_028.md` a `SPRINT_045.md`.
 
 ## Backlog — Próximos Blocos (decisão em aberto)
 - Bloco de Entidades de Chefes — quebrado em 5 Sprints menores, nesta ordem:
-  - **Sprint A:** Sistema de ondas com timer e acúmulo — cada onda tem countdown próprio; o countdown é para a PRÓXIMA onda começar, não para a atual acabar; se o player demorar, a próxima onda soma aos inimigos remanescentes (inclusive o chefe da onda anterior), nunca espera limpar tudo. Sem chefes ainda, só a mecânica base.
-  - **Sprint B:** Mini-chefe — fraco, ~300 HP; drop: 3 upgrades garantidos (+1 nível em power-ups já adquiridos pelo player) + puxão automático de todas as gemas da sala ao morrer.
+  - **Sprint A (concluída — 046A):** Sistema de ondas com timer e acúmulo — cada onda tem countdown próprio; soma inimigos remanescentes, nunca substitui.
+  - **Sprint B (em andamento):** Mini-chefe — fraco, ~300 HP; drop: 3 upgrades garantidos (+1 nível em power-ups já adquiridos pelo player) + puxão automático de todas as gemas da sala ao morrer.
   - **Sprint C:** Chefe — normal, ~700 HP; drop CUMULATIVO: tudo que o Mini-chefe dropa (3 upgrades) + 50% de HP do player + puxão automático de gemas.
   - **Sprint D:** Chefão — forte, ~2000 HP; ataque de projétil sequencial (~12 tiros lentos e desviáveis, cada um mirando a posição do player NO MOMENTO do disparo, não perseguição contínua — 1º mira onde o player está, ele se move, 2º mira a última posição registrada, etc. — testar); chefes de "retorno de sala" (revisitas) podem reaproveitar esse padrão + variação "raio" que persegue o player por um tempo; chefões variam de tipo entre si; drop cumulativo dos dois anteriores + o que for específico dele.
-  - **Sprint E:** Composição final — as 3 ondas completas (Onda 1: 1 swarm central + 1 mini-chefe; Onda 2: 2 swarms divididos + 1 mini-chefe central + 1 chefe; Onda 3/final: 3 swarms + 2 mini-chefes + 1 chefe + o chefão); contador grande e chamativo avisando a chegada do chefão na onda final.
+  - **Sprint E:** Composição final — as 3 ondas completas (Onda 1: 1 swarm central + 1 mini-chefe; Onda 2: 2 swarms divididos + 1 mini-chefe central + 1 chefe; Onda 3/final: 3 swarms + 2 mini-chefes + 1 chefe + o chefão); contador grande e chamativo avisando a chegada do chefão na onda final; **duração total da sala ~5 minutos, dividida proporcionalmente entre as ondas** (ex: 20/30/50%, ajustável — referência de mercado trazida na Sprint A, substitui `WAVE_DURATION` fixo); integração completa do sistema de ondas com o critério de vitória da sala (hoje ainda rodam em paralelo, não integrados).
   - Regra transversal: energia dos 3 chefes escala proporcionalmente tanto por reentrada QUANTO por mudança de nível (campo `"level"` de `room_data`, hoje sem uso — conecta com o item de dificuldade por nível já pendente abaixo).
 - Bloco de Restauração da Nave: mecânica narrativa central (reparo da nave = defesa)
 

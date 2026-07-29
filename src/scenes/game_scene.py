@@ -178,6 +178,10 @@ class GameScene(Scene):
         # zera o cronometro de reabastecimento - nova horda comeca sem reposicao pendente
         self.reinforcement_timer = 0.0
 
+        # reinicia o sistema de ondas: primeira onda desta visita, countdown zerado
+        room.current_wave = 1
+        room.wave_timer = settings.WAVE_DURATION
+
         self._spawn_wave_enemies(room, enemy_count)
 
     def _spawn_wave_enemies(self, room: Room, enemy_count: int) -> None:
@@ -572,6 +576,19 @@ class GameScene(Scene):
         if can_reinforce and self.reinforcement_timer <= 0:
             self._spawn_wave_enemies(self.room, 1)
             self.reinforcement_timer = settings.HORDE_REINFORCEMENT_INTERVAL
+
+        # --- sistema de ondas: a cada WAVE_DURATION segundos, soma uma leva nova aos ---
+        # --- inimigos remanescentes - nao espera a onda atual acabar, nao substitui ---
+        if (not self.room.cleared and not self.room.time_expired and not game_over):
+
+            self.room.wave_timer -= dt
+
+            if self.room.wave_timer <= 0:
+                self.room.current_wave += 1
+                self.room.wave_timer = settings.WAVE_DURATION
+
+                self._spawn_wave_enemies(
+                    self.room, settings.HORDE_ENEMIES_PER_VISIT)
 
         # --- condicao de vitoria: sobreviver por tempo determinado ---
         if game_over:
@@ -1332,6 +1349,7 @@ class GameScene(Scene):
             f"Reentradas: {self.room.reentries}/{self.room.max_reentries}")
 
         lines.append(self._build_survival_line())
+        lines.append(self._build_wave_line())
         lines.append(self._build_enemy_counter_line())
         lines.append(self._build_progress_line())
         lines.append(
@@ -1391,6 +1409,11 @@ class GameScene(Scene):
         remaining = max(0.0, self.room.survival_duration - elapsed)
 
         return f"Sobrevivendo: {elapsed:.1f}s (faltam {remaining:.1f}s)"
+
+    def _build_wave_line(self) -> str:
+
+        return (f"Onda {self.room.current_wave} | "
+                f"Proxima onda em: {max(0.0, self.room.wave_timer):.1f}s")
 
     def _build_enemy_counter_line(self) -> str:
 

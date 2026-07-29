@@ -6,6 +6,10 @@ from src.entities.player import Player
 
 
 class Room:
+    """Representa uma sala navegavel do Modo 1 (Horde Interna): geometria,
+    portas, obstaculos, inimigos vivos, e todo o estado de rejogabilidade
+    (visitas, reentradas, cronometro de sobrevivencia, estatisticas e
+    historico por visita)."""
 
     def __init__(self, x: int, y: int, width: int, height: int, room_id: int, wall: int = 20) -> None:
 
@@ -23,8 +27,10 @@ class Room:
 
         # --- rejogabilidade: contagem de visitas e ciclo de limpeza ---
         self.times_cleared: int = 0  # quantas vezes esta sala ja foi totalmente limpa
-        self.cleared: bool = False  # True quando a sala foi esvaziada neste ciclo, ate ser reaberta
-        self.horde_total_enemies: int = 0  # tamanho da horda ao ser gerada, para exibir X/Y na HUD
+        # True quando a sala foi esvaziada neste ciclo, ate ser reaberta
+        self.cleared: bool = False
+        # tamanho da horda ao ser gerada, para exibir X/Y na HUD
+        self.horde_total_enemies: int = 0
 
         # --- reentradas: limite de revisitas, regenera com o tempo ---
         self.max_reentries: int = settings.ROOM_MAX_REENTRIES
@@ -37,9 +43,18 @@ class Room:
         self.horde_clear_time: float | None = None  # None enquanto a horda esta ativa
 
         # --- piso continuo de inimigos: sala mantem uma quantidade minima viva, reabastecendo sempre ---
-        self.survival_start_time: float = 0.0  # quando a sala atual (desta visita) comecou
-        self.survival_duration: float = settings.ROOM_SURVIVAL_DURATION  # segundos para "vencer" a sala
-        self.time_expired: bool = False  # True quando o tempo esgota - para o reabastecimento, mas exige eliminar quem restou
+        # quando a sala atual (desta visita) comecou
+        self.survival_start_time: float = 0.0
+        # segundos para "vencer" a sala
+        self.survival_duration: float = settings.ROOM_SURVIVAL_DURATION
+        # True quando o tempo esgota - para o reabastecimento, mas exige eliminar quem restou
+        self.time_expired: bool = False
+
+        # --- sistema de ondas: cada onda soma inimigos aos remanescentes, sem esperar limpar a atual -
+        # (Sprint A do Bloco de Entidades de Chefes - so a mecanica de acumulo, sem chefes ainda) ---
+        self.current_wave: int = 1  # onda atual desta visita, reinicia a cada spawn_horde()
+        # countdown ate a PROXIMA onda ser somada
+        self.wave_timer: float = settings.WAVE_DURATION
 
         # --- estatisticas desta sala: mortos e pontos gerados, por tipo de inimigo ---
         self.kills_by_type: dict = {}
@@ -167,7 +182,7 @@ class Room:
 
     def remove_destroyed_obstacles(self) -> None:
 
-        self.obstacles = [o for o in self.obstacles if not o.is_dead]   
+        self.obstacles = [o for o in self.obstacles if not o.is_dead]
 
     def register_kill(self, enemy_type: str, points: float) -> None:
 
@@ -184,7 +199,8 @@ class Room:
 
         # grade sutil no piso, para dar referencia visual de movimento
         grid_size = 64
-        grid_color = (60, 66, 78)  # levemente mais claro que o piso (55, 60, 70)
+        # levemente mais claro que o piso (55, 60, 70)
+        grid_color = (60, 66, 78)
 
         # linhas verticais
         x = self.wall
@@ -215,7 +231,7 @@ class Room:
 
         # Parede Superior
         pygame.draw.rect(screen, (95, 100, 115),
-                          (rl, rt, self.rect.width, self.wall),)
+                         (rl, rt, self.rect.width, self.wall),)
 
         # Parede Inferior
         pygame.draw.rect(screen, (95, 100, 115), (rl,
@@ -223,7 +239,7 @@ class Room:
 
         # Parede Esquerda
         pygame.draw.rect(screen, (95, 100, 115),
-                          (rl, rt, self.wall, self.rect.height),)
+                         (rl, rt, self.wall, self.rect.height),)
 
         # Parede Direita
         pygame.draw.rect(screen, (95, 100, 115), (rl + self.rect.width -
@@ -231,7 +247,7 @@ class Room:
 
         # Contorno
         pygame.draw.rect(screen, (145, 150, 165),
-                          (rl, rt, self.rect.width, self.rect.height), width=2,)
+                         (rl, rt, self.rect.width, self.rect.height), width=2,)
 
         # texto de sala/visitas vive na HUD fixa (GameScene.draw_ui), Sprint 016
 

@@ -360,6 +360,9 @@ GEM_PULL_MAX_SPEED: float = 500
 
 # --- Horda: geracao de inimigos ---
 HORDE_BASE_ENEMIES: int = 12  # quantidade de inimigos na primeira horda de uma sala
+# segundos que cada onda dura antes da proxima ser somada aos inimigos remanescentes -
+# nao espera a onda atual acabar, e nao substitui: acumula (ver Room.wave_timer)
+WAVE_DURATION: float = 15.0
 # incremento de inimigos a cada revisita (rejogabilidade) - conectado em spawn_horde(),
 # multiplicado por room.times_cleared (quantidade de vezes que a sala ja foi vencida)
 HORDE_ENEMIES_PER_VISIT: int = 6
@@ -372,7 +375,7 @@ HORDE_REINFORCEMENT_INTERVAL: float = 1.0
 # distancia minima entre um inimigo e qualquer porta ao nascer
 SAFE_SPAWN_DISTANCE: float = 120
 # segundos que o jogador precisa sobreviver para limpar a sala
-ROOM_SURVIVAL_DURATION: float = 30.0
+ROOM_SURVIVAL_DURATION: float = 90.0
 # tempo (s) para a chance de inimigo forte atingir o maximo
 STRONG_ENEMY_RAMP_TIME: float = 20.0
 # chance maxima (50%) de spawnar um inimigo forte no reabastecimento
