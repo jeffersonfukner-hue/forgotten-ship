@@ -43,8 +43,10 @@ class Room:
         self.horde_clear_time: float | None = None  # None enquanto a horda esta ativa
 
         # --- piso continuo de inimigos: sala mantem uma quantidade minima viva, reabastecendo sempre ---
-        # quando a sala atual (desta visita) comecou
-        self.survival_start_time: float = 0.0
+        # survival_elapsed acumula via dt (nao time.time()), para pausar corretamente
+        # durante a tela de escolha de upgrade - sem isso, o jogador podia "descontar"
+        # tempo de sobrevivencia/onda so ficando parado na tela de escolha
+        self.survival_elapsed: float = 0.0
         # segundos para "vencer" a sala
         self.survival_duration: float = settings.ROOM_SURVIVAL_DURATION
         # True quando o tempo esgota - para o reabastecimento, mas exige eliminar quem restou
@@ -55,6 +57,14 @@ class Room:
         self.current_wave: int = 1  # onda atual desta visita, reinicia a cada spawn_horde()
         # countdown ate a PROXIMA onda ser somada
         self.wave_timer: float = settings.WAVE_DURATION
+
+        # --- agenda de chefes: guarda (boss_type, indice) ja disparados nesta visita,
+        # para cada ponto de settings.BOSS_SPAWN_SCHEDULE nascer uma unica vez -
+        # reiniciado a cada spawn_horde() (nova visita/reentrada) ---
+        self.boss_spawns_triggered: set = set()
+
+        # --- mesmo controle, mas para o AVISO visual (dispara antes do spawn real) ---
+        self.boss_warnings_triggered: set = set()
 
         # --- estatisticas desta sala: mortos e pontos gerados, por tipo de inimigo ---
         self.kills_by_type: dict = {}

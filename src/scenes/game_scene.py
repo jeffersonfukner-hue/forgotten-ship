@@ -42,6 +42,9 @@ class GameScene(Scene):
         from src.entities.gem import Gem
         self.gems: list[Gem] = []
 
+        from src.entities.super_magnet import SuperMagnet
+        self.super_magnets: list[SuperMagnet] = []
+
         from src.entities.saber import Saber
         self.sabers: list[Saber] = []
 
@@ -142,6 +145,9 @@ class GameScene(Scene):
         # --- sifao de energia: feixe visual instantaneo, (inicio, fim, tempo_restante) ou None ---
         self.siphon_beam: tuple | None = None
 
+        # --- aviso de chefe se aproximando: (texto, tempo_restante) ou None ---
+        self.boss_warning: tuple | None = None
+
         # --- painel de debug: TAB expande/recolhe o historico detalhado (estatisticas, salas) ---
         self.debug_expanded: bool = False
 
@@ -163,7 +169,8 @@ class GameScene(Scene):
         cresce a cada reentrada (room.times_cleared), tornando cada
         revisita mais dificil que a anterior."""
 
-        room.survival_start_time = time.time()
+        # zera o cronometro de sobrevivencia (acumulado via dt, nao relogio real)
+        room.survival_elapsed = 0.0
         room.time_expired = False
 
         # zera estatisticas da visita anterior - o historico ja foi preservado em visit_history
@@ -183,6 +190,13 @@ class GameScene(Scene):
         room.wave_timer = settings.WAVE_DURATION
 
         self._spawn_wave_enemies(room, enemy_count)
+
+        # Bloco de Entidades de Chefes: zera os gatilhos de spawn agendado desta
+        # visita - cada chefe (Mini-chefe agora; Chefe/Chefao quando existirem)
+        # nasce nos pontos definidos em settings.BOSS_SPAWN_SCHEDULE, verificados
+        # a cada frame em _update_boss_schedule()
+        room.boss_spawns_triggered = set()
+        room.boss_warnings_triggered = set()
 
     def _spawn_wave_enemies(self, room: Room, enemy_count: int) -> None:
         """Sorteia posicoes nas bordas da sala para uma leva de inimigos,
@@ -234,14 +248,109 @@ class GameScene(Scene):
             enemy_type = self._pick_enemy_type(room)
             room.add_enemy(Enemy(x, y, enemy_type=enemy_type))
 
+    def _spawn_boss(self, room: Room, boss_type: str) -> None:
+        """Nasce 1 unica instancia de chefe, numa borda da sala, respeitando
+        a mesma distancia minima de porta/obstaculo usada para inimigos
+        comuns - metodo separado de _spawn_wave_enemies porque o chefe e'
+        uma unidade so (nao uma leva), sem necessidade do laço de N
+        repeticoes nem do sorteio de tipo fraco/forte."""
+
+        left, top, right, bottom = room.get_bounds()
+
+        door_positions = [door.rect.center for door in room.get_doors()]
+        obstacle_rects = [o.rect for o in room.get_obstacles()]
+
+        boss_size = settings.ENEMY_TYPES[boss_type]["width"]
+
+        for _attempt in range(20):
+
+            edge = random.randint(0, 3)
+
+            if edge == 0:
+                x, y = random.randint(left, right), top
+            elif edge == 1:
+                x, y = random.randint(left, right), bottom
+            elif edge == 2:
+                x, y = left, random.randint(top, bottom)
+            else:
+                x, y = right, random.randint(top, bottom)
+
+            far_enough = all(
+                pygame.Vector2(
+                    x - dx, y - dy).length() >= self.SAFE_DISTANCE_FROM_DOOR
+                for dx, dy in door_positions)
+
+            candidate_rect = pygame.Rect(x, y, boss_size, boss_size)
+            overlaps_obstacle = any(
+                candidate_rect.colliderect(rect) for rect in obstacle_rects)
+
+            if (far_enough or not door_positions) and not overlaps_obstacle:
+                break
+
+        from src.entities.enemy import Enemy
+        room.add_enemy(Enemy(x, y, enemy_type=boss_type))
+
+    def _get_wave_time_bounds(self, room: Room) -> list[tuple[float, float]]:
+        """Retorna [(inicio, fim), ...] em segundos de cada onda, proporcional
+        a duracao total da sala (settings.BOSS_WAVE_RATIOS) - ex: com 180s e
+        [0.20, 0.30, 0.50], as ondas ocupam [0-36], [36-90], [90-180]."""
+
+        total = room.survival_duration
+        bounds = []
+        start = 0.0
+
+        for ratio in settings.BOSS_WAVE_RATIOS:
+            end = start + ratio * total
+            bounds.append((start, end))
+            start = end
+
+        return bounds
+
+    def _update_boss_schedule(self, room: Room) -> None:
+        """Verifica se o tempo decorrido da sala cruzou algum ponto agendado
+        em settings.BOSS_SPAWN_SCHEDULE e nasce o chefe correspondente - uma
+        unica vez por ponto, por visita a sala (controlado por
+        room.boss_spawns_triggered). Tambem dispara o aviso visual
+        BOSS_WARNING_LEAD_TIME segundos antes de cada spawn (controlado
+        separadamente por room.boss_warnings_triggered, ja que aviso e
+        spawn cruzam o limiar de tempo em momentos diferentes)."""
+
+        wave_bounds = self._get_wave_time_bounds(room)
+
+        for boss_type, schedule in settings.BOSS_SPAWN_SCHEDULE.items():
+            for index, (wave_number, fraction) in enumerate(schedule):
+
+                trigger_key = (boss_type, index)
+
+                wave_start, wave_end = wave_bounds[wave_number - 1]
+                trigger_time = wave_start + fraction * (wave_end - wave_start)
+
+                # aviso: dispara antes do spawn real, uma unica vez por ponto
+                if (trigger_key not in room.boss_warnings_triggered
+                        and room.survival_elapsed >= trigger_time - settings.BOSS_WARNING_LEAD_TIME):
+
+                    label = settings.BOSS_WARNING_LABELS.get(boss_type)
+
+                    if label:
+                        self.boss_warning = (
+                            label, settings.BOSS_WARNING_DURATION)
+
+                    room.boss_warnings_triggered.add(trigger_key)
+
+                # spawn real, no horario agendado
+                if (trigger_key not in room.boss_spawns_triggered
+                        and room.survival_elapsed >= trigger_time):
+
+                    self._spawn_boss(room, boss_type)
+                    room.boss_spawns_triggered.add(trigger_key)
+
     def _pick_enemy_type(self, room: Room) -> str:
         """Escolhe o tipo do inimigo individualmente: a chance de ser
         'strong' cresce linearmente com o tempo de permanencia na sala,
         ate um teto configurado."""
 
-        elapsed = time.time() - room.survival_start_time
-
-        progress = min(1.0, elapsed / settings.STRONG_ENEMY_RAMP_TIME)
+        progress = min(1.0, room.survival_elapsed /
+                       settings.STRONG_ENEMY_RAMP_TIME)
         chance = progress * settings.STRONG_ENEMY_MAX_CHANCE
 
         return "strong" if random.random() < chance else "weak"
@@ -405,6 +514,24 @@ class GameScene(Scene):
         self.floating_texts.append(
             FloatingText(x, y - 20, "Bloqueado!", color=(120, 180, 240)))
 
+    def _handle_enemy_death(self, enemy) -> None:
+        """Centraliza o que acontece na morte de qualquer inimigo: registra
+        estatisticas de kill (player e sala) e decide o drop - gema normal,
+        ou o Ima Super Power se for um chefe (dropa 1 pickup unico, que so
+        libera upgrades garantidos + puxao de gemas quando coletado, nao
+        na morte). Usado por todas as fontes de dano (tiro, sabre, sifao,
+        campo de forca), evitando duplicar essa decisao 4 vezes."""
+
+        self.player.register_kill(enemy.enemy_type, enemy.drop_value)
+        self.room.register_kill(enemy.enemy_type, enemy.drop_value)
+
+        if enemy.is_boss:
+            from src.entities.super_magnet import SuperMagnet
+            self.super_magnets.append(SuperMagnet(enemy.x, enemy.y))
+        else:
+            from src.entities.gem import Gem
+            self.gems.append(Gem(enemy.x, enemy.y, enemy.drop_value))
+
     def get_enemies_by_distance(self, enemies: list) -> list:
         """Retorna os inimigos vivos dentro do raio de percepcao e com linha
         de visao livre, ordenados do mais proximo ao mais distante do
@@ -519,6 +646,14 @@ class GameScene(Scene):
             self.debug_expanded = not self.debug_expanded
             return
 
+        # TODO: tecla de teste temporaria para o Mini-chefe (Sprint B) - remover
+        # depois de validar o drop do Ima Super Power, nao faz parte do jogo final
+        if event.key == pygame.K_b:
+            from src.entities.enemy import Enemy
+            self.room.add_enemy(
+                Enemy(self.player.x + 100, self.player.y, "mini_boss"))
+            return
+
         if self.upgrade_choices is None:
             return  # teclas 1/2/3 so processam quando a tela de escolha esta ativa
 
@@ -546,6 +681,12 @@ class GameScene(Scene):
         # --- entidades e camera ---
         self.entity_manager.update(dt)
         self.update_camera()
+
+        # --- regeneracao de vida: exibe o texto flutuante verde no frame em que curou ---
+        if self.player.pending_regen_heal > 0:
+            self.spawn_heal_text(
+                self.player.x, self.player.y, self.player.pending_regen_heal)
+            self.player.pending_regen_heal = 0
 
         # --- limpeza de inimigos mortos e obstaculos destruidos ---
         self.room.remove_dead_enemies()
@@ -591,10 +732,18 @@ class GameScene(Scene):
                     self.room, settings.HORDE_ENEMIES_PER_VISIT)
 
         # --- condicao de vitoria: sobreviver por tempo determinado ---
+        # acumula via dt (nao relogio real) - so avanca quando o jogo nao esta pausado,
+        # ja que este trecho inteiro do update() so roda apos o early return da pausa
+        if not game_over:
+            self.room.survival_elapsed += dt
+
+            if not self.room.cleared and not self.room.time_expired:
+                self._update_boss_schedule(self.room)
+
         if game_over:
             survival_elapsed = self.room.horde_clear_time or 0.0
         else:
-            survival_elapsed = time.time() - self.room.survival_start_time
+            survival_elapsed = self.room.survival_elapsed
 
         # ao esgotar o tempo, para de reabastecer - so destranca quando nao houver mais inimigos vivos
         if not game_over and survival_elapsed >= self.room.survival_duration:
@@ -736,14 +885,7 @@ class GameScene(Scene):
                         enemy.x, enemy.y, projectile.damage)
 
                     if enemy.is_dead:
-                        self.player.register_kill(
-                            enemy.enemy_type, enemy.drop_value)
-                        self.room.register_kill(
-                            enemy.enemy_type, enemy.drop_value)
-
-                        from src.entities.gem import Gem
-                        self.gems.append(
-                            Gem(enemy.x, enemy.y, enemy.drop_value))
+                        self._handle_enemy_death(enemy)
                     break
 
         left, top, right, bottom = self.room.get_bounds()
@@ -788,6 +930,37 @@ class GameScene(Scene):
 
         self.gems = [g for g in self.gems if not g.is_dead]
 
+        # --- ima super power: pickup de chefe, mesma logica de atracao da gema, mas ao
+        # ser coletado aplica os upgrades garantidos e puxa todas as gemas da sala ---
+        for magnet in self.super_magnets:
+            if magnet.is_dead:
+                continue
+
+            distance = pygame.Vector2(
+                magnet.rect.centerx - self.player.rect.centerx,
+                magnet.rect.centery - self.player.rect.centery
+            ).length()
+
+            if not magnet.being_pulled and distance <= pull_trigger_radius:
+                magnet.start_pull()
+
+            if magnet.being_pulled:
+                magnet.update_pull(
+                    dt, self.player.rect.centerx, self.player.rect.centery,
+                    settings.GEM_PULL_ACCELERATION, settings.GEM_PULL_MAX_SPEED)
+
+                if distance <= settings.GEM_COLLECT_DISTANCE:
+                    self.player.apply_boss_reward()
+
+                    # puxao automatico: inicia o arrasto de toda gema que ainda nao estava sendo puxada
+                    for gem in self.gems:
+                        if not gem.being_pulled:
+                            gem.start_pull()
+
+                    magnet.is_dead = True
+
+        self.super_magnets = [m for m in self.super_magnets if not m.is_dead]
+
         # --- sabre giratorio: sincroniza quantidade, orbita e aplica dano por contato ---
         self.sync_sabers()
 
@@ -806,14 +979,15 @@ class GameScene(Scene):
                         self.spawn_damage_text(enemy.x, enemy.y, saber_damage)
 
                         if enemy.is_dead:
-                            self.player.register_kill(
-                                enemy.enemy_type, enemy.drop_value)
-                            self.room.register_kill(
-                                enemy.enemy_type, enemy.drop_value)
+                            self._handle_enemy_death(enemy)
+                    break
 
-                            from src.entities.gem import Gem
-                            self.gems.append(
-                                Gem(enemy.x, enemy.y, enemy.drop_value))
+        # --- aviso de chefe se aproximando: some sozinho apos BOSS_WARNING_DURATION ---
+        if self.boss_warning is not None:
+            text, time_left = self.boss_warning
+            time_left -= dt
+            self.boss_warning = (
+                text, time_left) if time_left > 0 else None
 
         # --- sifao de energia: raio extrator instantaneo, mira o 2o inimigo mais proximo ---
         if self.siphon_beam is not None:
@@ -881,14 +1055,8 @@ class GameScene(Scene):
                     self.spawn_damage_text(enemy.x, enemy.y, field_damage)
 
                     if enemy.is_dead:
-                        self.player.register_kill(
-                            enemy.enemy_type, enemy.drop_value)
-                        self.room.register_kill(
-                            enemy.enemy_type, enemy.drop_value)
-
-                        from src.entities.gem import Gem
-                        self.gems.append(
-                            Gem(enemy.x, enemy.y, enemy.drop_value))
+                        self._handle_enemy_death(enemy)
+                    break
 
         # --- phaser leve: municao limitada, mira o 3o inimigo mais proximo ---
         if self.player.ready_to_fire_phaser():
@@ -1125,6 +1293,9 @@ class GameScene(Scene):
         self.draw_world(screen)
         self.draw_ui(screen)
 
+        if self.boss_warning is not None:
+            self.draw_boss_warning(screen)
+
         if self.upgrade_choices is not None:
             self.draw_upgrade_choices(screen)
 
@@ -1143,6 +1314,9 @@ class GameScene(Scene):
 
         for gem in self.gems:
             gem.draw(screen, self.camera_x, self.camera_y)
+
+        for magnet in self.super_magnets:
+            magnet.draw(screen, self.camera_x, self.camera_y)
 
         for saber in self.sabers:
             saber.draw(screen, self.camera_x, self.camera_y)
@@ -1168,6 +1342,25 @@ class GameScene(Scene):
 
         # --- painel de debug, compacto e translucido ---
         self.draw_debug_panel(screen)
+
+    def draw_boss_warning(self, screen: pygame.Surface) -> None:
+
+        text, time_left = self.boss_warning
+
+        font = pygame.font.Font(None, 40)
+        rendered = font.render(text, True, (255, 210, 60))
+        rect = rendered.get_rect(center=(settings.WINDOW_WIDTH / 2, 60))
+
+        # retangulo vermelho pisca-pisca ao redor do aviso - alterna visivel/invisivel
+        # a cada BOSS_WARNING_BLINK_INTERVAL, calculado a partir do tempo restante
+        # (nao de um cronometro proprio), entao o pisca-pisca nunca dessincroniza
+        blink_phase = int(time_left / settings.BOSS_WARNING_BLINK_INTERVAL) % 2
+
+        if blink_phase == 0:
+            border_rect = rect.inflate(30, 20)
+            pygame.draw.rect(screen, (200, 40, 40), border_rect, width=3)
+
+        screen.blit(rendered, rect)
 
     def draw_upgrade_choices(self, screen: pygame.Surface) -> None:
 
@@ -1405,7 +1598,7 @@ class GameScene(Scene):
         if self.player.is_dead and not self.player.has_lives_left():
             return "Sobrevivendo: -- (GAME OVER)"
 
-        elapsed = time.time() - self.room.survival_start_time
+        elapsed = self.room.survival_elapsed
         remaining = max(0.0, self.room.survival_duration - elapsed)
 
         return f"Sobrevivendo: {elapsed:.1f}s (faltam {remaining:.1f}s)"

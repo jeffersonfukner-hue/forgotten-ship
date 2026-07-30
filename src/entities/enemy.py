@@ -10,13 +10,19 @@ class Enemy(Entity):
 
         config = settings.ENEMY_TYPES[enemy_type]
 
-        super().__init__(x=x, y=y, width=config["width"], height=config["height"])
+        super().__init__(
+            x=x, y=y, width=config["width"], height=config["height"])
 
         # --- combate ---
         self.enemy_type: str = enemy_type
         self.max_hp: int = config["hp"]
         self.hp: int = self.max_hp
-        self.damage: int = config["damage"]  # dano causado ao player por contato
+        # dano causado ao player por contato
+        self.damage: int = config["damage"]
+
+        # chefes nao dropam gema direto na morte - dropam o Ima Super Power
+        # (ver GameScene, ponto de morte do inimigo)
+        self.is_boss: bool = config.get("is_boss", False)
 
         # pontos de drop proporcionais ao poder do inimigo (hp + dano), nao fixos por tipo
         self.drop_value: float = (self.max_hp + self.damage) / \
@@ -102,7 +108,7 @@ class Enemy(Entity):
                     if self.rect.colliderect(obstacle.rect):
                         self.y = previous_y
                         self.rect.y = self.y
-                            
+
     # ==================================================================
     # DESENHO
     # ==================================================================
@@ -127,6 +133,6 @@ class Enemy(Entity):
         hp_ratio = self.hp / self.max_hp
 
         pygame.draw.rect(screen, (80, 30, 30),
-                          (bar_x, bar_y, bar_width, bar_height))
+                         (bar_x, bar_y, bar_width, bar_height))
         pygame.draw.rect(screen, (60, 180, 90),
-                          (bar_x, bar_y, bar_width * hp_ratio, bar_height))
+                         (bar_x, bar_y, bar_width * hp_ratio, bar_height))

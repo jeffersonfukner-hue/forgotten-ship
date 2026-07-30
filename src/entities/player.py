@@ -96,6 +96,10 @@ class Player(Entity):
         # --- regeneracao de vida: acumula fracao de HP entre frames, aplica quando >= 1 ---
         self._regen_accumulator: float = 0.0
 
+        # cura pendente neste frame, para a GameScene desenhar o texto flutuante verde -
+        # o Player nao desenha FloatingText diretamente (responsabilidade da GameScene)
+        self.pending_regen_heal: int = 0
+
         # --- estatisticas: mortos e pontos gerados, por tipo de inimigo ---
         self.kills_by_type: dict = {}
         self.points_by_type: dict = {}
@@ -414,6 +418,23 @@ class Player(Entity):
         if self.power_up_levels[key] < config["max_level"]:
             self.power_up_levels[key] += 1
 
+    def apply_boss_reward(self) -> None:
+        """Recompensa garantida de chefe (disparada ao coletar o Ima Super
+        Power, nao na morte do chefe): sorteia ate 3 eixos ja equipados
+        (nivel > 0) e sobe 1 nivel em cada, sem tela de escolha - diferente
+        do level up normal, que sorteia entre eixos ainda nao adquiridos
+        tambem. Se o player tiver menos de 3 eixos equipados, aplica em
+        todos os que existirem, sem erro."""
+
+        equipped_axes = [
+            key for key, level in self.power_up_levels.items() if level > 0
+        ]
+
+        chosen = random.sample(equipped_axes, min(3, len(equipped_axes)))
+
+        for key in chosen:
+            self.increase_power_up_level(key)
+
     def get_power_up_value(self, key: str) -> float:
 
         # calcula o valor atual de um eixo de power-up a partir do nivel
@@ -480,6 +501,7 @@ class Player(Entity):
             healed = int(self._regen_accumulator)
             self.hp = min(self.max_hp, self.hp + healed)
             self._regen_accumulator -= healed
+            self.pending_regen_heal = healed
 
     def update_shield(self, dt: float) -> None:
 

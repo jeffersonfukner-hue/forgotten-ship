@@ -375,7 +375,37 @@ HORDE_REINFORCEMENT_INTERVAL: float = 1.0
 # distancia minima entre um inimigo e qualquer porta ao nascer
 SAFE_SPAWN_DISTANCE: float = 120
 # segundos que o jogador precisa sobreviver para limpar a sala
-ROOM_SURVIVAL_DURATION: float = 90.0
+ROOM_SURVIVAL_DURATION: float = 180.0
+
+# --- Bloco de Entidades de Chefes: divisao proporcional do tempo total da sala
+# entre as 3 ondas (crescente, mais dificil no final - mesma referencia de
+# mercado registrada no VISAO.md) ---
+BOSS_WAVE_RATIOS: list = [0.20, 0.30, 0.50]
+
+# --- agenda de spawn de cada chefe: lista de (numero_da_onda, fracao_dentro_da_onda).
+# Cada entrada dispara 1 spawn daquele boss_type quando o tempo decorrido da sala
+# atinge aquele ponto - uma unica vez por visita. Mini-chefe: fim da Onda 1, meio
+# da Onda 2, 1/3 da Onda 3 (Sprint B). Chefe e Chefao seguem o mesmo padrao nas
+# suas proprias sprints (C e D) - registrado aqui como documentacao do formato,
+# ainda comentado ate as entidades existirem. ---
+BOSS_SPAWN_SCHEDULE: dict = {
+    "mini_boss": [(1, 1.0), (2, 0.5), (3, 1 / 3)],
+    # "chefe": [(2, 1.0), (3, 2 / 3)],   # Sprint C - fim da Onda 2, 2/3 da Onda 3
+    # "chefao": [(3, 1.0)],              # Sprint D - ultimo, absorve sobreviventes
+}
+
+# --- Bloco de Entidades de Chefes: aviso visual antes de cada chefe nascer ---
+BOSS_WARNING_LEAD_TIME: float = 4.0  # segundos de antecedencia do aviso
+BOSS_WARNING_DURATION: float = 3.0   # segundos que o aviso fica visivel na tela
+# segundos entre cada estado (visivel/invisivel) do retangulo vermelho pisca-pisca
+BOSS_WARNING_BLINK_INTERVAL: float = 0.15
+
+BOSS_WARNING_LABELS: dict = {
+    "mini_boss": "MINI-CHEFE SE APROXIMANDO",
+    # "chefe": "CHEFE SE APROXIMANDO",     # Sprint C
+    # "chefao": "CHEFAO SE APROXIMANDO",   # Sprint D
+}
+
 # tempo (s) para a chance de inimigo forte atingir o maximo
 STRONG_ENEMY_RAMP_TIME: float = 20.0
 # chance maxima (50%) de spawnar um inimigo forte no reabastecimento
@@ -403,7 +433,20 @@ ENEMY_TYPES: dict = {
         "color": (120, 40, 90),  # roxo escuro, visualmente distinto
         "damage": 20,  # mais forte, condizente com o tamanho e HP maiores
     },
+    "mini_boss": {
+        "hp": 300,
+        "speed": 60,  # mais lento que os Terrestres comuns, compensando o HP alto
+        "width": 32,
+        "height": 32,
+        # dourado, visualmente distinto de weak/strong
+        "color": (210, 170, 40),
+        "damage": 25,
+        # flag lida por Enemy.__init__ e usada em GameScene para desviar do
+        # drop de gema normal (chefe dropa o Ima Super Power, nao gema direto)
+        "is_boss": True,
+    },
 }
+
 # (hp + damage) / este valor = pontos de drop do inimigo
 ENEMY_POINTS_DIVISOR: float = 30
 
