@@ -1,0 +1,1 @@
+> Contrato global de trabalho para Mac/iPad remoto e navegador: [CONTRATO_GLOBAL.md](CONTRATO_GLOBAL.md). As regras atuais do proprietário sobre CI econômico e testes prevalecem sobre referências históricas de CI obrigatório em cada commit.
